@@ -1,0 +1,40 @@
+{
+  "name": "libp2p-discv5",
+  "version": "0.0.1",
+  "description": "An implementation of Discovery V5 using Libp2p components",
+  "main": "index.js",
+  "files": [
+    "src",
+    "dist"
+  ],
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "lint": "aegir lint",
+    "release": "aegir release",
+    "build": "aegir build",
+    "test": "aegir test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChainSafe/libp2p-discv5.git"
+  },
+  "keywords": [
+    "discovery",
+    "discv5",
+    "ethereum",
+    "libp2p",
+    "peer",
+    "p2p"
+  ],
+  "author": "ChainSafe Systems",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/ChainSafe/libp2p-discv5/issues"
+  },
+  "homepage": "https://github.com/ChainSafe/libp2p-discv5#readme",
+  "devDependencies": {
+    "aegir": "^19.0.3"
+  }
+}
