@@ -1,5 +1,5 @@
-const { Buffer } from; "types/Buffer";
-const { RLP } from; "rlp";
+import { RLP } from "rlp";
+import { Buffer } from "types/Buffer";
 
 // Constants in bytes
 const MAX_RECORD_SIZE: number = 300;
