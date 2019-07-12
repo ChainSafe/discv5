@@ -13,13 +13,13 @@ export interface IPacket {
 /*
  * Packet messages
  */
-export interface IRandomPacket {
+export interface IRandomPacket extends IPacket{
   random_packet: Buffer;
   auth_tag: Buffer;
   random_data: Buffer;
 }
 
-export interface IWhoAreYou {
+export interface IWhoAreYou extends IPacket{
   whoareyou_packet: Buffer;
   magic: Buffer;
   token: Buffer;
@@ -30,7 +30,7 @@ export interface IWhoAreYou {
  * To distinguish between both Message packet types,
  * check the value at offset 32 after the fixed-sized tag is an RLP list or a byte array
  */
-export interface IMessagePacket {
+export interface IMessagePacket extends IPacket{
   message_packet: Buffer;
   auth_header: Buffer[];
   auth_scheme_name: string;
@@ -44,11 +44,12 @@ export interface IMessagePacket {
   auth_tag: Buffer;
 }
 
-export interface IMessagePacketHandshake {
+export interface IMessagePacketHandshake extends IPacket{
   message_packet: Buffer;
   message: Buffer;
 }
 
+type packet = IPacket | IRandomPacket | IWhoAreYou | IMessagePacket | IMessagePacketHandshake;
 type request = IPing | IFindNode | IReqTicket | IRegTopic | ITopicQuery;
 type response = IPong | INodes | ITicket | IRegConfirmation;
 
@@ -121,3 +122,5 @@ export interface ITopicQuery {
   message_data: any[];
   topic: Buffer;
 }
+
+
