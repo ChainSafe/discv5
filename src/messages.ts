@@ -3,6 +3,8 @@
 
 import { Buffer } from "types/Buffer";
 
+type packet = IRandomPacket | IWhoAreYou | IKeyAgreementPacket | IAuthPacket | IMessagePacket;
+
 // Packet format
 export interface IPacket {
   tag: Buffer;
@@ -26,25 +28,23 @@ export interface IWhoAreYou extends IPacket {
   enr_seq: bigint;
 } 
 
-export interface IAuthPacket extends IPacket {
-  message_packet: Buffer;
-  auth_header: Buffer[];
-  auth_scheme_name: string;
-  auth_response: Buffer;
-  auth_response_pt: Buffer[];
-  zero_nonce: Buffer;
-  id_nonce_sig: Buffer;
-  static_node_key: Buffer;
-  message: Buffer;
-  message_pt: Buffer;
-  auth_tag: Buffer;
+export interface IKeyAgreementPacket extends IPacket {
+  ephemeral_key: Buffer;
+  ephemeral_pubkey: Buffer;
+  dest_pubkey: Buffer;
+  secret: Buffer;
+  info: Buffer; // Might change to string
+  prk: Buffer;
+  initiator_key: Buffer;
+  recipient_key: Buffer;
+  auth_resp_key: Buffer;
 }
 
 /**
  * To distinguish between both Message packet types,
  * check the value at offset 32 after the fixed-sized tag is an RLP list or a byte array
  */
-export interface IMessagePacket extends IPacket{
+export interface IAuthPacket extends IPacket {
   message_packet: Buffer;
   auth_header: Buffer[];
   auth_scheme_name: string;
@@ -58,7 +58,7 @@ export interface IMessagePacket extends IPacket{
   auth_tag: Buffer;
 }
 
-export interface IMessagePacketHandshake extends IPacket{
+export interface IMessagePacket extends IPacket {
   message_packet: Buffer;
   message: Buffer;
 }
@@ -69,14 +69,14 @@ export interface IMessagePacketHandshake extends IPacket{
 
 // 0x01
 // Request
-export interface IPing {
+export interface IPing extends IMessagePacket {
   message_data: any[];
   enr_seq: bigint;
 }
 
 // 0x02
 // Response
-export interface IPong {
+export interface IPong extends IMessagePacket {
   message_data: any[];
   enr_seq: bigint;
   packet_ip: Buffer;
@@ -85,28 +85,28 @@ export interface IPong {
 
 // 0x03
 // Request
-export interface IFindNode {
+export interface IFindNode extends IMessagePacket {
   message_data: any[];
   distance: number;
 }
 
 // 0x04
 // Response
-export interface INodes {
+export interface INodes extends IMessagePacket {
   message_data: any[];
   total: number;
 }
 
 // 0x05
 // Request
-export interface IReqTicket {
+export interface IReqTicket extends IMessagePacket {
   message_data: any[];
   topic: Buffer;
 }
 
 // 0x06
 // Response
-export interface ITicket {
+export interface ITicket extends IMessagePacket {
   message_data: any[];
   ticket: Buffer;
   wait_time: bigint;
@@ -133,10 +133,19 @@ export interface ITopicQuery {
   topic: Buffer;
 }
 
-type packet = IPacket | IRandomPacket | IWhoAreYou | IAuthPacket |IMessagePacket | IMessagePacketHandshake;
-type request = IPing | IFindNode | IReqTicket | IRegTopic | ITopicQuery;
-type response = IPong | INodes | ITicket | IRegConfirmation;
+export enum messageType {
+  PING = 0x01,
+  PONG = 0x02,
+  FINDNODE = 0x03,
+  NODES = 0x04,
+  REQTICKET = 0x05,
+  TICKET = 0x06,
+  REGTOPIC = 0x07,
+  REGCONFIRMATION = 0x08,
+  TOPICQUERY = 0x09
+}
 
+/*
 // Type mappings 
 export const typeMaps = {
   byType = {
@@ -162,4 +171,6 @@ export const typeMaps = {
     'REGCONFIRMATION': 0x08,
     'TOPICQUERY': 0x09
   }
-};
+};*/
+
+
