@@ -133,7 +133,7 @@ export interface ITopicQuery {
   topic: Buffer;
 }
 
-export enum messageType {
+export enum MessageType {
   PING = 0x01,
   PONG = 0x02,
   FINDNODE = 0x03,
@@ -145,32 +145,11 @@ export enum messageType {
   TOPICQUERY = 0x09
 }
 
-/*
-// Type mappings 
-export const typeMaps = {
-  byType = {
-    0x01: 'PING',
-    0x02: 'PONG',
-    0x03: 'FINDNODE',
-    0x04: 'NODES',
-    0x05: 'REQTICKET',
-    0x06: 'TICKET',
-    0x07: 'REGTOPIC',
-    0x08: 'REGCONFIRMATION',
-    0x09: 'TOPICQUERY'
-  },
-
-  byName = {
-    'PING': 0x01,
-    'PONG': 0x02,
-    'FINDNODE': 0x03,
-    'NODES': 0x04,
-    'REQTICKET': 0x05,
-    'TICKET': 0x06,
-    'REGTOPIC': 0x07,
-    'REGCONFIRMATION': 0x08,
-    'TOPICQUERY': 0x09
-  }
-};*/
-
+export enum PacketType {
+  RandomPacket = 1,
+  KeyAgreementPacket,
+  WhoAreYouPacket,
+  AuthPacket,
+  MessagePacket
+}
 
