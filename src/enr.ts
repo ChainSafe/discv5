@@ -1,5 +1,6 @@
 import { RLP } from "rlp";
 import { Buffer } from "types/Buffer";
+import { keccak } from "ethereumjs-util";
 
 // Constants in bytes
 const MAX_RECORD_SIZE: number = 300;
@@ -13,6 +14,7 @@ export class EthereumNodeRecord {
   public signature: Buffer;
   public sequence: bigint;
   public keyPairs: Map<string, string>;
+  public nodeId: Buffer;
 
   private privKey: Buffer;
 
@@ -27,12 +29,16 @@ export class EthereumNodeRecord {
      sign: Buffer = Buffer.from,
      seq: bigint = BigInt(0),
      kp: string[][] = [
-       ["id", "v4"], ["secp256k1", ""], ["ip", ""], ["tcp", ""], ["udp", ""]     ],
+       ["id", "v4"], ["secp256k1", ""], ["ip", ""], ["tcp", ""], ["udp", ""]],
    ) {
      this.signature = sign;
      this.sequence = seq;
      this.keyPairs = new Map(Object.assign([], kp));
      this.privKey = privateKey;
+
+     if (this.keyPairs.get("secp256k1") != "") {
+       this.nodeId = keccak(this.keyPairs.get("secp256k1"));
+     }
   }
 
   /**
