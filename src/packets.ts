@@ -1,9 +1,9 @@
 // DISCV5 message packet types
 // Max packet size = 1280 bytes
 
-type packet = IRandomPacket | IWhoAreYouPacket | IAuthPacket | IMessagePacket;
+export type packet = IRandomPacket | IWhoAreYouPacket | IAuthPacket | IMessagePacket;
 
-type AuthHeader = IAuthHeader;
+export type AuthHeader = IAuthHeader;
 
 // Packet format
 export interface IPacket {
@@ -41,6 +41,7 @@ export interface IMessagePacket extends IPacket {
   message: Buffer;
   auth_tag: Buffer;
 }
+
 export enum PacketType {
   RandomPacket = 1,
   WhoAreYouPacket,
