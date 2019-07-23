@@ -1,8 +1,8 @@
-import { IAuthPacket, IMessagePacket, IRandomPacket, IWhoAreYouPacket, PacketType } from "./packets";
+import { IAuthPacket, IMessagePacket, IRandomPacket, IWhoAreYouPacket, packet, PacketType } from "./packets";
 import RLP = require("rlp");
 
 
-export function encodePacket(data: Object, pt: any): Buffer {
+export function encodePacket(data: packet, pt: any): Buffer {
   switch(pt) {
     case pt.RandomPacket: 
       return encodeRandomPacket(data as IRandomPacket);
