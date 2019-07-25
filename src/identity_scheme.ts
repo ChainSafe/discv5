@@ -1,11 +1,10 @@
 import { keccak256 } from "ethereumjs-util";
 import { secp256k1 } from "secp256k1";
-import { Buffer } from "types/Buffer";
 
 /**
  * Defines the default identity scheme as specified in EIP 778
  */
-class IdentityScheme {
+export class IdentityScheme {
 
   /**
    * Returns the signature for a signed record content

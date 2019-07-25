@@ -1,7 +1,6 @@
-import { RLP } from "rlp";
-import { Buffer } from "types/Buffer";
+const RLP = require("rlp");
 import { keccak } from "ethereumjs-util";
-
+import { IdentityScheme } from "./identity_scheme";
 // Constants in bytes
 const MAX_RECORD_SIZE: number = 300;
 const SEQUENCE_SIZE: number = 8;
