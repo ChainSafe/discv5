@@ -1,9 +1,7 @@
 const RLP = require("rlp");
 import { keccak } from "ethereumjs-util";
 import { IdentityScheme } from "./identity_scheme";
-// Constants in bytes
-const MAX_RECORD_SIZE: number = 300;
-const SEQUENCE_SIZE: number = 8;
+import { DISCV5Constants } from "./constants"
 
 /*
  * Implementation of an Ethereum Node Record (ENR) as defined in EIP 778
@@ -25,7 +23,7 @@ export class EthereumNodeRecord {
    */
   constructor(
      privateKey,
-     sign: Buffer = Buffer.from,
+     sign: Buffer = Buffer.from(""),
      seq: bigint = BigInt(0),
      kp: string[][] = [
        ["id", "v4"], ["secp256k1", ""], ["ip", ""], ["tcp", ""], ["udp", ""]],
@@ -54,7 +52,7 @@ export class EthereumNodeRecord {
     ];
     this.signature = IdentityScheme.sign(content, this.privKey);
     const totalSize = content.length + this.signature.length;
-    if (totalSize > MAX_RECORD_SIZE) {
+      if (totalSize > DISCV5Constants.MAX_RECORD_SIZE) {
       // reject record
       throw new RangeError("Size of the record is larger than 300 bytes. It's size is " + totalSize);
     }
