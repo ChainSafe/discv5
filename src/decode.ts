@@ -1,5 +1,6 @@
 import { AuthHeader, IAuthPacket, IMessagePacket, IRandomPacket, IWhoAreYouPacket, packet, PacketType } from "./packets";
 import RLP = require("rlp");
+import { Input } from 'rlp';
 
 
 export function decodePayload(payload: Buffer, pt: any): packet {
@@ -17,8 +18,8 @@ export function decodePayload(payload: Buffer, pt: any): packet {
 
 export function decodeRandomPacket(payload: Buffer): IRandomPacket {
   let tag = payload.slice(0,33);
-  let auth_tag = payload.slice(33,46);
-  let random_data = payload.slice(46);
+  let auth_tag = RLP.decode(payload.slice(33,47));
+  let random_data = payload.slice(47);
 
   return {tag: tag, auth_tag: auth_tag, random_data: random_data};
 }
@@ -26,22 +27,21 @@ export function decodeRandomPacket(payload: Buffer): IRandomPacket {
 export function decodeWhoAreYouPacket(payload: Buffer): IWhoAreYouPacket {
   let tag = payload.slice(0, 33);
   let magic = payload.slice(33, 66);
-  let rlpList = RLP.decode(payload.slice(66));
+  let rlpList = RLP.decode(payload.slice(66) as Input);
 
-  return {tag: tag, token: rlpList[0] as Buffer, id_nonce: rlpList[1] as Buffer, enr_seq: bigint(rlpList[2]), magic: magic};
+  return {tag: tag, token: rlpList[0], id_nonce: rlpList[1], enr_seq: BigInt(rlpList[2]), magic: magic};
 
 }
 
 export function decodeAuthPacket(payload: Buffer): IAuthPacket {
   let tag = payload.slice(0, 33);
-  let rlpList = payload.slice(33, 162);
-  rlpList = RLP.decode(rlpList);
-  let message = payload.slice(162);
+  let rlpList = RLP.decode(payload.slice(33, 177) as Input);
+  let message = payload.slice(177);
 
   let ah: AuthHeader = {
     auth_tag: rlpList[0],
     auth_scheme_name: "gcm",
-    auth_ephemeral_pubkey: rlpList[2],
+    ephemeral_pubkey: rlpList[2],
     auth_response: rlpList[3]
   }
 
@@ -54,7 +54,7 @@ export function decodeAuthPacket(payload: Buffer): IAuthPacket {
 
 export function decodeMessagePacket(payload: Buffer): IMessagePacket{
   let tag = payload.slice(0, 33);
-  let auth_tag = RLP.decode(payload.slice(33, 46));
+  let auth_tag = RLP.decode(payload.slice(33, 47));
   let message = payload.slice(46);
 
   return {tag: tag, message: message, auth_tag: auth_tag};

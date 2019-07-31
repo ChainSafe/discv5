@@ -27,7 +27,7 @@ export interface IWhoAreYouPacket extends IPacket {
 
 export interface IAuthHeader {
   auth_tag: Buffer;
-  auth_scheme_name: string;
+  auth_scheme_name: "gcm";
   ephemeral_pubkey: Buffer;
   auth_response: Buffer;
 }
