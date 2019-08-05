@@ -43,12 +43,17 @@
     "aegir": "^19.0.3"
   },
   "dependencies": {
+    "@types/lru-cache": "^5.1.0",
     "chai": "^4.2.0",
     "debug": "^4.1.1",
     "dgram": "^1.0.1",
     "ethereumjs-util": "^6.1.0",
+    "futoin-hkdf": "^1.2.0",
+    "libp2p-bootstrap": "^0.9.7",
     "libp2p-crypto-secp256k1": "^0.3.0",
     "libp2p-kad-dht": "^0.15.0",
+    "lru-cache": "^5.1.1",
+    "milagro-crypto-js": "^3.3.0",
     "peer-id": "^0.12.2",
     "peer-info": "^0.15.1",
     "promisify-es6": "^1.0.3",

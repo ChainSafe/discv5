@@ -1,7 +1,6 @@
-import { AuthHeader, IAuthPacket, IMessagePacket, IRandomPacket, IWhoAreYouPacket, packet, PacketType } from "./packets";
+import { AuthHeader, IAuthMessagePacket, IAuthResponsePacket, IMessagePacket, IRandomPacket, IWhoAreYouPacket, packet, PacketType } from "./packets";
 import RLP = require("rlp");
 import { Input } from 'rlp';
-
 
 export function decodePayload(payload: Buffer, pt: any): packet {
   switch(pt) {
@@ -9,8 +8,10 @@ export function decodePayload(payload: Buffer, pt: any): packet {
       return decodeRandomPacket(payload);
     case pt.WhoAreYouPacket:
       return decodeWhoAreYouPacket(payload);
-    case pt.AuthPacket:
-      return decodeAuthPacket(payload);
+    case pt.AuthResponsePacket:
+      return decodeAuthResponsePacket(payload);
+    case pt.AuthMessagePacket:
+      return decodeAuthMessagePacket(payload);
     case pt.MessagePacket(payload):
       return decodeMessagePacket(payload);
   }
@@ -25,15 +26,20 @@ export function decodeRandomPacket(payload: Buffer): IRandomPacket {
 }
 
 export function decodeWhoAreYouPacket(payload: Buffer): IWhoAreYouPacket {
-  let tag = payload.slice(0, 33);
-  let magic = payload.slice(33, 66);
-  let rlpList = RLP.decode(payload.slice(66) as Input);
+  let magic = payload.slice(0, 33);
+  let rlpList = RLP.decode(payload.slice(33) as Input);
 
-  return {tag: tag, token: rlpList[0], id_nonce: rlpList[1], enr_seq: BigInt(rlpList[2]), magic: magic};
+  return {token: rlpList[0], id_nonce: rlpList[1], enr_seq: BigInt(rlpList[2]), magic: magic};
 
 }
 
-export function decodeAuthPacket(payload: Buffer): IAuthPacket {
+export function decodeAuthResponsePacket(payload: Buffer): IAuthResponsePacket {
+  let rlpList = RLP.decode(payload as Input);
+
+  return {version: rlpList[0], id_nonce_sig: rlpList[1], node_record: rlpList[2]};
+}
+
+export function decodeAuthMessagePacket(payload: Buffer): IAuthMessagePacket {
   let tag = payload.slice(0, 33);
   let rlpList = RLP.decode(payload.slice(33, 177) as Input);
   let message = payload.slice(177);

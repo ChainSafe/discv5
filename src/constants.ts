@@ -22,4 +22,13 @@ export namespace DISCV5Constants {
 
     // Max length of nonce
     export const ID_NONCE_LENGTH = 32;
+
+    // Min length of a NODES message
+    export const NODES_MSG_LENGTH = 4800;
+
+    // Timeout for 1 request/response communication in milliseconds
+    export const RQRS_TIMEOUT = 500;
+
+    // Timeout for handshake in milliseconds
+    export const HANDSHAKE_TIMEOUT = 1000;
 }

@@ -1,5 +1,4 @@
-import { IAuthPacket, IMessagePacket, IRandomPacket, IWhoAreYouPacket, packet, PacketType } from "./packets";
-import {} from ".messages";
+import { IAuthMessagePacket, IAuthResponsePacket, IMessagePacket, IRandomPacket, IWhoAreYouPacket, packet, PacketType } from "./packets";
 import RLP = require("rlp");
 
 
@@ -9,8 +8,10 @@ export function encodePacket(data: packet, pt: any): Buffer {
       return encodeRandomPacket(data as IRandomPacket);
     case pt.WhoAreYouPacket:
       return encodeWhoAreYouPacket(data as IWhoAreYouPacket);
-    case pt.AuthPacket:
-      return encodeAuthPacket(data as IAuthPacket);
+    case pt.AuthResponsePacket:
+      return encodeAuthResponsePacket(data as IAuthResponsePacket);
+    case pt.AuthMessagePacket:
+      return encodeAuthMessagePacket(data as IAuthMessagePacket);
     case pt.MessagePacket:
       return encodeMessagePacket(data as IMessagePacket);
   }
@@ -22,22 +23,32 @@ function encodeRandomPacket(rp: IRandomPacket): Buffer {
 }
 
 function encodeWhoAreYouPacket(wp: IWhoAreYouPacket): Buffer {
-  let rlpList = [
-    RLP.encode(wp.token), 
-    RLP.encode(wp.id_nonce),
-    RLP.encode(wp.enr_seq)  
-  ];  
+  let rlpList = RLP.encode([
+    wp.token, 
+    wp.id_nonce,
+    wp.enr_seq  
+  ]);  
 
-  return Buffer.concat([wp.tag, wp.magic, rlpList]);  
+  return Buffer.concat([wp.magic, rlpList]);  
 }
 
-function encodeAuthPacket(ap: IAuthPacket): Buffer {
-  let rlpList = [
-    RLP.encode(ap.auth_header.auth_tag),
-    RLP.encode(ap.auth_header.auth_scheme_name),
-    RLP.encode(ap.auth_header.ephemeral_pubkey),
-    RLP.encode(p.auth_header.auth_response) 
-  ];
+function encodeAuthResponsePacket(ar: IAuthResponsePacket): Buffer {
+  let rlpList = RLP.encode([
+    ar.version,
+    ar.id_nonce_sig,
+    ar.node_record
+  ]);
+
+  return rlpList;
+}
+
+function encodeAuthMessagePacket(ap: IAuthMessagePacket): Buffer {
+  let rlpList = RLP.encode([
+    ap.auth_header.auth_tag,
+    ap.auth_header.auth_scheme_name,
+    ap.auth_header.ephemeral_pubkey,
+    ap.auth_header.auth_response 
+  ]);
   return Buffer.concat([ap.tag, rlpList, ap.message]);
 }
 
