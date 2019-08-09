@@ -31,4 +31,13 @@ export namespace DISCV5Constants {
 
     // Timeout for handshake in milliseconds
     export const HANDSHAKE_TIMEOUT = 1000;
+
+    // Length of a Node ID
+    export const NODE_ID_LENGTH = 32;
+
+    // Length of info tag
+    export const INFO_LENGTH = 26 + 2 * NODE_ID_LENGTH;
+
+    // Length of key
+    export const KEY_LENGTH = 16;
 }
