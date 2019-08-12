@@ -31,7 +31,7 @@ export function HKDFExtract(ikm: ArrayLike<number>, salt: ArrayLike<number>): Ar
 
 export function HKDFexpand(prk: ArrayLike<number>, info: string): ArrayLike<number> {
   const hash_length: number = 32;
-  const length: number = DISCV5Constants.KEY_LENGTH;
+  const length: number = DISCV5Constants.KEY_LENGTH * 3;
   const sha256: number = 32;  
   let n: number = Math.ceil(length/hash_length);
   let t: number[] = []; // t.length = 0
