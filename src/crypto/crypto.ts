@@ -47,3 +47,35 @@ export function HKDFexpand(prk: ArrayLike<number>, info: string): ArrayLike<numb
 
   return okm.slice(0, length);
 }
+
+export function generateSessionKeys () {
+
+}
+
+export function deriveKeys () {
+
+}
+
+export function deriveKeysFromPubkey () {
+
+}
+
+export function decryptAuthHeader () {
+
+}
+
+export function verifyAuthNonce () {
+
+}
+
+export function decryptMessage () {
+
+}
+
+export function encryptWithHeader () {
+
+}
+
+export function encryptMsg () {
+
+}
