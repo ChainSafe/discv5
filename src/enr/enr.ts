@@ -1,40 +1,179 @@
-const RLP = require("rlp");
 import { sha256 } from "js-sha256";
-import { IdentityScheme} from "./identity_scheme";
-import { DISCV5Constants } from "../constants"
-import { PeerInfo } from "peer-info";
-import { PeerId }from "peer-id";
 import { multihash } from "multihashes";
+import { PeerId } from "peer-id";
+import { PeerInfo } from "peer-info";
+import RLP from "rlp";
+import * as constants from "../constants";
 import { ENRKeyPair } from "./enr_keypair";
+import { NodeId } from "./enr_types";
 
 /*
  * Implementation of an Ethereum Node Record (ENR) as defined in EIP 778
  * */
 export class EthereumNodeRecord {
 
+  // Getters
+
+  public set sequenceNumber(seq: bigint): void {
+    this.sequence = seq;
+  }
+
+  public get sequenceNumber(): bigint {
+    return this.sequence;
+  }
+
+  public set signature(sig: Buffer): void {
+    this.signature = sig;
+  }
+
+  public get signature(): Buffer {
+    return this.signature;
+  }
+
+  public get keyPairs(): Map<string, any> {
+    return this.keyPairs;
+  }
+
+  public set id(i: string): void {
+    this.keyPairs.set("id", i);
+  }
+
+  public get id(): string {
+    return this.keyPairs.get("id");
+  }
+
+  public get compressedPubKey(): Buffer {
+    return this.enrKeyPair.CompressedPublicKey;
+  }
+
+  public get uncompressedPubKey(): Buffer {
+    return this.enrKeyPair.UncompressedPublicKey;
+  }
+
+  public set ipV4(ipAddr: string): void {
+     this.keyPairs.set("ip", ipAddr);
+  }
+
+  public get ipV4(): string {
+    return this.keyPairs.get("ip");
+  }
+
+  public set tcp(port: number): void {
+     this.keyPairs.set("tcp", port);
+  }
+
+  public get tcp(): number {
+    return this.keyPairs.get("tcp");
+  }
+
+  public set udp(port: number): void {
+     this.keyPairs.set("udp", port);
+  }
+
+  public get udp(): number {
+    return this.keyPairs.get("udp");
+  }
+
+  public set ipV6(ipAddr: string): void {
+     this.keyPairs.set("ip6", ipAddr);
+  }
+
+  public get ipV6(): string {
+    return this.keyPairs.get("ip6");
+  }
+
+  public set tcp6(port: number): void {
+     this.keyPairs.set("tcp6", port);
+  }
+
+  public get tcp6(): number {
+    return this.keyPairs.get("tcp6");
+  }
+
+  public set udp6(port: number): void {
+     this.keyPairs.set("udp6", port);
+  }
+
+  public get udp6(): number {
+    return this.keyPairs.get("udp6");
+  }
+
+  public get nodeId(): NodeId {
+    return this.nodeId;
+  }
+
+  public get libp2pPeerInfo(): PeerInfo {
+    return this.libp2pPeerInfo;
+  }
+
+  public set ENRKeyPair(newEnrKeyPair: ENRKeyPair): void {
+     this.enrKeyPair = newEnrKeyPair;
+  }
+
+  public static decode(record: Buffer): EthereumNodeRecord {
+    const decodedRecord = RLP.decode(record);
+    const enr = new EthereumNodeRecord();
+    enr.signature(RLP.decode(decodedRecord[0]));
+    enr.sequenceNumber(RLP.decode(decodedRecord[1]));
+    enr.id(decodedRecord[2]);
+
+    const indexOfCompPubKey = decodedRecord.indexOf("secp256k1");
+    if (indexOfCompPubKey !== -1) {
+
+    }
+
+    const indexOfIp = decodedRecord.indexOf("ip");
+    if (indexOfIp !== -1) {
+       enr.ipV4 = RLP.decode(decodedRecord[indexOfIp + 1]);
+    }
+
+    const indexOfTCP = decodedRecord.indexOf("tcp");
+    if (indexOfTCP !== -1) {
+       enr.tcp = RLP.decode(decodedRecord[indexOfTCP + 1]);
+    }
+
+    const indexOfUDP = decodedRecord.indexOf("udp");
+    if (indexOfUDP !== -1) {
+       enr.udp = RLP.decode(decodedRecord[indexOfUDP + 1]);
+    }
+
+    const indexOfIPv6 = decodedRecord.indexOf("ip6");
+    if (indexOfIPv6 !== -1) {
+      enr.ipV6 = RLP.decode(decodedRecord[indexOfIpv6 + 1]);
+    }
+
+    const indexOfTCP6 = decodedRecord.indexOf("tcp6");
+    if (indexOfTCP6 !== -1) {
+      enr.tcp6 = RLP.decode(decodedRecord[indexOfTCP6 + 1]);
+    }
+
+    const indexOfUDP6 = decodedRecord.indexOf("udp6");
+    if (indexOfUDP6 !== -1) {
+      enr.udp6 = RLP.decode(decodedRecord[indexOfUDP6 + 1]);
+    }
+
+    return enr;
+  }
+
   public signature: Buffer;
   public sequence: bigint;
   public keyPairs: Map<string, any>;
-  public nodeId: Buffer;
+  public nodeId: NodeId;
   public libp2pPeerInfo: PeerInfo;
 
   private enrKeyPair: ENRKeyPair;
 
   /**
    * constructor
-   * @param ArrayLike<number> privateKey
-   * @param Signature sign
-   * @param number seq
-   * @param Array<Array<string>> kp
    */
   constructor(enrKeyPair?: ENRKeyPair) {
      this.enrKeyPair = ENRKeyPair;
-     this.keyPairs.set("secp256k1", this.enrKeyPair.compressedPublicKey());
-     this.nodeId = IdentityScheme.derive(this.enrKeyPair.uncompressedPublicKey());
+     this.keyPairs.set("secp256k1", this.enrKeyPair.compressedPublicKey.toString());
+     this.nodeId = enrKeyPair.derive();
 
      let peerIdBuf = Buffer.from(sha256(this.keyPairs.get("secp256k1")), "hex");
-     peerIdBuf = multihash.encode(peerIdBuf, "sha2-256")
-     let peerId = new PeerId(peerIdBuf);
+     peerIdBuf = multihash.encode(peerIdBuf, "sha2-256");
+     const peerId = new PeerId(peerIdBuf);
      this.libp2pPeerInfo = new PeerInfo(peerId);
   }
 
@@ -49,9 +188,9 @@ export class EthereumNodeRecord {
     if (this.keyPairs.get("secp256k1")) {
        content.push("secp256k1", RLP.encode(this.keyPairs.get("secp256k1")));
     }
-    
+
     if (this.keyPairs.get("ip")) {
-      content.push("ip", RLP.encode(this.keyPairs.get("ip"))); 
+      content.push("ip", RLP.encode(this.keyPairs.get("ip")));
     }
 
     if (this.keyPairs.get("tcp")) {
@@ -74,9 +213,9 @@ export class EthereumNodeRecord {
       content.push("udp6", RLP.encode(this.keyPairs.get("udp6")));
     }
 
-    this.signature = IdentityScheme.sign(content, this.privKey);
+    this.signature = enrKeyPair.sign(content);
     const totalSize = content.length + this.signature.length;
-    if (totalSize > DISCV5Constants.MAX_RECORD_SIZE) {
+    if (totalSize > constants.MAX_RECORD_SIZE) {
       // reject record
       throw new RangeError("Size of the record is larger than 300 bytes. It's size is " + totalSize);
     }
@@ -91,153 +230,5 @@ export class EthereumNodeRecord {
   public encodeTxt(): string {
     const record = this.encode();
     return "enr:" + Buffer.from(record).toString("base64");
-  }
-
-  public static decode(record: Buffer): EthereumNodeRecord {
-    let decodedRecord = RLP.decode(record);
-    let enr = new EthereumNodeRecord();
-    enr.signature(RLP.decode(decodedRecord[0]);
-    enr.sequenceNumber(RLP.decode(decodedRecord[1]));
-    enr.id(decodedRecord[2]);
-
-    let indexOfCompPubKey = decodedRecord.indexOf("secp256k1");    
-    if (indexOfCompPubKey !== -1) {
-      let enrKeyPair: ENRKeyPair = new ENRKeyPair();
-      enrKeyPair.compressedPublicKey(RLP.decode(decodedRecord[indexOfCompPubKey + 1]));
-      enr.enrKeyPair = enrKeyPair;
-    }
-
-    let indexOfIp = decodedRecord.indexOf("ip");
-    if (indexOfIp !== -1) {
-       enr.ipV4(RLP.decode(decodedRecord[indexOfIp + 1]));
-    }
-
-    let indexOfTCP = decodedRecord.indexOf("tcp");
-    if (indexOfTCP !== -1) {
-       enr.tcp(RLP.decode(decodedRecord[indexOfTCP + 1]));
-    }
-
-    let indexOfUDP = decodedRecord.indexOf("udp");
-    if (indexOfUDP !== -1) {
-       enr.udp(RLP.decode(decodedRecord[indexOfUDP + 1]));
-    }
-
-    let indexOfIPv6 = decodedRecord.indexOf("ip6");
-    if (indexOfIPv6 !== -1) {
-      enr.ipV6(RLP.decode(decodedRecord[indexOfIpv6 + 1]));
-    }
-
-    let indexOfTCP6 = decodedRecord.indexOf("tcp6");
-    if (indexOfTCP6 !== -1) {
-      enr.tcp6(RLP.decode(decodedRecord[indexOfTCP6 + 1]));
-    } 
-
-    let indexOfUDP6 = decodedRecord.indexOf("udp6");
-    if (indexOfUDP6 !== -1) {
-      enr.udp6(RLP.decode(decodedRecord[indexOfUDP6 + 1]));
-    }
-
-    return enr;
-  }
-
-  // Getters 
-
-  public get sequenceNumber(): bigint {
-    return this.sequence;
-  }
-
-  public get signature(): Signature {
-    return this.signature;  
-  }
-
-  public get keyPairs(): Map<string, any> {
-    return this.keyPairs;
-  }
-
-  public get id(): string {
-    return this.keyPairs.get("id");
-  } 
-
-  public get compressedPubKey(): string {
-    return this.enrKeyPair.getCompressedPublicKey();  
-  }
-
-  public get uncompressedPubKey(): string {
-    return this.enrKeyPair.getUncompressedPublicKey();
-  }
-
-  public get ipV4(): string {
-    return this.keyPairs.get("ip");
-  }
-
-  public get tcp(): number {
-    return this.keyPairs.get("tcp");
-  }
-
-  public get udp(): number {
-    return this.keyPairs.get("udp");
-  }
-
-  public get ipV6(): string {
-    return this.keyPairs.get("ip6");
-  }
-
-  public get tcp6(): number {
-    return this.keyPairs.get("tcp6");
-  }
-
-  public get udp6(): number {
-    return this.keyPairs.get("udp6");
-  }
-
-  public get nodeId(): Buffer {
-    return this.nodeId;
-  }
-
-  public get libp2pPeerInfo(): Buffer {
-    return this.libp2pPeerInfo;
-  }
-
-  // Setters
-
-  public set id(i: string): void {
-    this.keyPairs.set("id", i);
-  }
-
-  public set sequenceNumber(seq: bigint): void {
-    this.sequence = seq;
-  }
-
-  public set signature(sig: Signature): void {
-    this.signature = sig;
-  } 
-
-  public set ENRKeyPair(newEnrKeyPair: ENRKeyPair): void {
-     this.enrKeyPair = newEnrKeyPair;
-      // this.nodeId = IdentityScheme.derive(this.enrKeyPair.uncompressedPublicKey());
-  }
-
-  public set ipV4(ipAddr: string): void {
-     this.keyPairs.set("ip", ipAddr);
-  }
-
-  public set ipV6(ipAddr: string): void {
-     this.keyPairs.set("ip6", ipAddr);
-  }
-
-  public set tcp(port: number): void {
-     this.keyPairs.set("tcp", port);
-  }
-
-  public set udp(port: number): void {
-     this.keyPairs.set("udp", port);
-  }
-
-  public set tcp6(port: number): void {
-     this.keyPairs.set("tcp6", port);
-  }
-
-  public set udp6(port: number): void {
-     this.keyPairs.set("udp6", port);
   }
 }

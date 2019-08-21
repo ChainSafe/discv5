@@ -1,44 +1,38 @@
-import CTX from "../crypto/ctx";
+import crypto from "@chainsafe/libp2p-crypto";
+import { keccak256 } from "ethereumjs-util";
+import { Secp256k1PrivateKey, Secp256k1PublicKey } from "libp2p-crypto-secp256k1";
+import { NodeId } from "./enr_types";
 
 export class ENRKeyPair {
-  private privateKey: ArrayLike<number>;
-  public compressedPublicKey: ArrayLike<number>;
-  public uncompressedPublicKey: ArrayLike<number>;
+  private privateKey: Secp256k1PrivateKey;
+  private publicKey: Secp256k1PublicKey;
 
-  constructor() {
-    this.privateKey = number[];
-    this.compressedPublicKey = number[];
-    this.uncompressedPublicKey = number[];
+  public async generateKeyPair(): Promise<void> {
+    this.privateKey = await crypto.keys.generateKeyPair("secp256k1", 256);
+    this.publicKey = this.privateKey.public;
   }
 
-  public generateKeyPair(): void {
-    CTX.ECDH.KEY_PAIR_GENERATE(new CTX.RAND(), this.privateKey, this.compressedPublicKey, true);
-    // Needs to be optimized
-    CTX.ECDH.KEY_PAIR_GENERATE(new CTX.RAND(), this.privateKey, this.uncompressedPublicKey, false);
+  public get CompressedPublicKey(): Buffer {
+    return crypto.compressPublicKey(this.publicKey);
   }
 
-  public get CompressedPublicKey(): ArrayLike<number> {
-    return this.compressedPublicKey;
+  public get UncompressedPublicKey(): Buffer {
+    return crypto.decompressPublicKey(this.publicKey);
   }
 
-  public get UncompressedPublicKey(): ArrayLike<number> {
-    return this.uncompressedPublicKey;
+  public get privateKeyBuf(): Buffer {
+    return crypto.keys.marshalPrivateKey(this.privateKey, "SECP256K1");
   }
 
-  private set privateKey(privKey: ArrayLike<number>): void {
-    this.privateKey = privKey;  
+  public async sign(msg: Buffer): Promise<Buffer> {
+    return await this.privateKey.sign(msg);
   }
 
-  public setPrivateKey(privKey: ArrayLike<number>): void {
-    this.privateKey = privKey;
+  public async verify(sig: Buffer, msg: Buffer): Promise<boolean> {
+    return await this.publicKey.verify(msg, sig);
   }
 
-  public set uncompressedPublicKey(uncompPubKey: ArrayLike<number>): void {
-    this.uncompressedPublicKey = uncomPubKey;
+  public derive(): NodeId {
+     return keccak256(this.UncompressedPublicKey);
   }
-
-  public set compressedPublicKey(compPubKey: ArrayLike<number>): void {
-    this.compressedPublicKey = compPubKey;
-  }
-
 }
