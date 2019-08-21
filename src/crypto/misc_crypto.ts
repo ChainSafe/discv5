@@ -1,17 +1,3 @@
-/*
- * Session Key generation for Discv5
- * 
- */
-
-import {
-    AuthHeader,
-    IAuthResponsePacket,
-    IAuthMessagePacket,
-} from "../packets";
-
-import { DISCV5Constants } from "../constants";
-
-import { EthereumNodeRecord } from "../enr";
 import ctx from "./ctx";
 import { ECDH } from "@chainsafe/milagro-crypto-js/src/ecdh";
 /**
@@ -48,34 +34,4 @@ export function HKDFexpand(prk: ArrayLike<number>, info: string): ArrayLike<numb
   return okm.slice(0, length);
 }
 
-export function generateSessionKeys () {
 
-}
-
-export function deriveKeys () {
-
-}
-
-export function deriveKeysFromPubkey () {
-
-}
-
-export function decryptAuthHeader () {
-
-}
-
-export function verifyAuthNonce () {
-
-}
-
-export function decryptMessage () {
-
-}
-
-export function encryptWithHeader () {
-
-}
-
-export function encryptMsg () {
-
-}
