@@ -1,5 +1,6 @@
 // DISCV5 message packet types
 // Max packet size = 1280 bytes
+import { Nonce } from "../crypto/misc_crypto_types";
 
 export type packet = IRandomPacket | IWhoAreYouPacket | IAuthResponsePacket | IAuthMessagePacket | IMessagePacket;
 
@@ -22,7 +23,7 @@ export interface IWhoAreYouPacket {
   magic: Buffer;
   token: Buffer;
   enr_seq: bigint;
-  id_nonce: Buffer;
+  id_nonce: Nonce;
 }
 
 export interface IAuthResponsePacket {

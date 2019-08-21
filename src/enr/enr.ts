@@ -6,6 +6,7 @@ import { PeerInfo } from "peer-info";
 import { PeerId }from "peer-id";
 import { multihash } from "multihashes";
 import { ENRKeyPair } from "./enr_keypair";
+import { NodeId } from "./enr_types";
 
 /*
  * Implementation of an Ethereum Node Record (ENR) as defined in EIP 778
@@ -15,7 +16,7 @@ export class EthereumNodeRecord {
   public signature: Buffer;
   public sequence: bigint;
   public keyPairs: Map<string, any>;
-  public nodeId: Buffer;
+  public nodeId: NodeId;
   public libp2pPeerInfo: PeerInfo;
 
   private enrKeyPair: ENRKeyPair;
@@ -190,11 +191,11 @@ export class EthereumNodeRecord {
     return this.keyPairs.get("udp6");
   }
 
-  public get nodeId(): Buffer {
+  public get nodeId(): NodeId {
     return this.nodeId;
   }
 
-  public get libp2pPeerInfo(): Buffer {
+  public get libp2pPeerInfo(): PeerInfo {
     return this.libp2pPeerInfo;
   }
 
