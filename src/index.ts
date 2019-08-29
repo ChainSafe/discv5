@@ -89,11 +89,10 @@ export class Discv5 extends EventEmitter {
     this.socket.on("message", (msg, rinfo) => {
       try {
         this._handler(msg, rinfo);
-      } 
-      catch {
+      } catch {
         this.emit("error", err);
       }
-    })
+    });
 
   }
 
@@ -101,7 +100,7 @@ export class Discv5 extends EventEmitter {
 
   }
 
-  public async stop (callback) : Promise < void > {
+  public async stop(callback): Promise < void > {
     // Stop bucket maintenance
     // Stop topic advertisement
     this.dht.stop();
@@ -110,7 +109,7 @@ export class Discv5 extends EventEmitter {
 
   }
 
-  private _handler(msg: Buffer, rinfo: RemoteAddressInfo) : void {
+  private _handler(msg: Buffer, rinfo: RemoteAddressInfo): void {
     log("msg received: " + msg.toString());
     log("msg size: " + msg.length);
 
@@ -124,7 +123,7 @@ export class Discv5 extends EventEmitter {
 
   }
 
-  private _onPeer(peerInfo: PeerInfo) : void {
+  private _onPeer(peerInfo: PeerInfo): void {
       // emit peer
   }
 }
