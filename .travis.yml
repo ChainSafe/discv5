@@ -27,17 +27,17 @@ jobs:
         - npx aegir dep-check
         - npm run lint
 
-    - stage: test
-      name: chrome
-      addons:
-        chrome: stable
-      script: npx aegir test -t browser -t webworker
+#    - stage: test
+#      name: chrome
+#      addons:
+#        chrome: stable
+#      script: npx aegir test -t browser -t webworker
 
-    - stage: test
-      name: firefox
-      addons:
-        firefox: latest
-      script: npx aegir test -t browser -t webworker -- --browsers FirefoxHeadless
+#    - stage: test
+#      name: firefox
+#      addons:
+#        firefox: latest
+#      script: npx aegir test -t browser -t webworker -- --browsers FirefoxHeadless
     
 #    - stage: test
 #      name: electron
