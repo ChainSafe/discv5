@@ -16,7 +16,7 @@
     "build": "aegir build",
     "test": "mocha -r ts-node/register test/**/*.test.ts",
     "test:node": "aegir test --target node",
-    "test:browser": "aegir test --target browser",
+    "test:browser": "aegir test --target browser --target webworker",
     "tsc": "tsc"
   },
   "pre-push": [
