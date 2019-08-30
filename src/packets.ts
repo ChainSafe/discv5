@@ -39,7 +39,7 @@ export interface IAuthHeader {
   auth_response: Buffer;
 }
 
-export interface IAuthMessagePacket extends IRegularPacket { 
+export interface IAuthMessagePacket extends IRegularPacket {
   auth_header: AuthHeader;
   message: Buffer;
 }

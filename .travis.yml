@@ -27,25 +27,25 @@ jobs:
         - npx aegir dep-check
         - npm run lint
 
-    - stage: test
-      name: chrome
-      addons:
-        chrome: stable
-      script: npx aegir test -t browser -t webworker
+#    - stage: test
+#      name: chrome
+#      addons:
+#        chrome: stable
+#      script: npx aegir test -t browser -t webworker
 
-    - stage: test
-      name: firefox
-      addons:
-        firefox: latest
-      script: npx aegir test -t browser -t webworker -- --browsers FirefoxHeadless
+#    - stage: test
+#      name: firefox
+#      addons:
+#        firefox: latest
+#      script: npx aegir test -t browser -t webworker -- --browsers FirefoxHeadless
     
-    - stage: test
-      name: electron
-      install:
-        - export DISPLAY=':99.0'
-        - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-      script:
-        - npx aegir test -t electron-main
-        - npx aegir test -t electron-renderer
+#    - stage: test
+#      name: electron
+#      install:
+#        - export DISPLAY=':99.0'
+#        - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+#      script:
+#        - npx aegir test -t electron-main
+#        - npx aegir test -t electron-renderer
 notifications:
   email: false
