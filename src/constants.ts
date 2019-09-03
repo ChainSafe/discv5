@@ -45,3 +45,9 @@ export const KEY_AGREEMENT_STR = "discovery v5 key agreement";
 
 // Scheme
 export const KNOWN_SCHEME = "gcm";
+
+// Who are you string
+export const WHOAREYOU_STR = "WHOAREYOU";
+
+// Nonce string
+export const NONCE_STR = "discovery-id-nonce";
