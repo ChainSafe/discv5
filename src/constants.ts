@@ -51,3 +51,12 @@ export const WHOAREYOU_STR = "WHOAREYOU";
 
 // Nonce string
 export const NONCE_STR = "discovery-id-nonce";
+
+// Milliseconds before a timeout expires
+export const REQUEST_TIMEOUT = 10000;
+
+// Number of times to retry a request
+export const REQUEST_RETRIES = 2
+
+// Timeout for a session in milliseconds
+export const SESSION_TIMEOUT = 86400000

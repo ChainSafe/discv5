@@ -25,13 +25,13 @@ export interface IMessage {
   rpc_type: RpcType;
 }
 
-export interface IPing extends Message {
+export interface IPing extends IMessage {
   msg_type: MsgType.Ping;
   enr_seq: bigint;
   rpc_type: RpcType.Request;
 }
 
-export interface IPong extends Message {
+export interface IPong extends IMessage {
   msg_type: MsgType.Pong;
   enr_seq: bigint;
   rpc_type: RpcType.Response;
@@ -39,46 +39,46 @@ export interface IPong extends Message {
   recipient_port: number;
 }
 
-export interface IFindNode extends Message {
+export interface IFindNode extends IMessage {
   msg_type: MsgType.FindNode;
   rpc_type: RpcType.Request;
   distance: number;
 }
 
-export interface INodes extends Message {
+export interface INodes extends IMessage {
   msg_type: MsgType.Nodes;
   rpc_type: RpcType.Response;
   total: number;
   nodes: any[];
 }
 
-export interface IReqTicket extends Message {
+export interface IReqTicket extends IMessage {
   msg_type: MsgType.ReqTicket;
   rpc_type: RpcType.Request;
   topic: Buffer;
 }
 
-export interface ITicket extends Message {
+export interface ITicket extends IMessage {
   msg_type: MsgType.Ticket;
   rpc_type: RpcType.Response;
   ticket: Buffer[];
   wait_time: number;
 }
 
-export interface IRegTopic extends Message {
+export interface IRegTopic extends IMessage {
   msg_type: MsgType.RegTopic;
   rpc_type: RpcType.Request;
   ticket: Buffer[];
   node_record: any[];
 }
 
-export interface IRegConfirmation extends Message {
+export interface IRegConfirmation extends IMessage {
   msg_type: MsgType.RegConfirmation;
   rpc_type: RpcType.Response;
   registered: boolean;
 }
 
-export interface ITopicQuery extends Message {
+export interface ITopicQuery extends IMessage {
   msg_type: MsgType.TopicQuery;
   rpc_type: RpcType.Request;
   topic: Buffer;
@@ -99,7 +99,7 @@ export function matchRequestToResponse(reqType: MsgType): MsgType {
     }
 }
 
-export function encode(msg: Message): Buffer {
+export function encode(msg: IMessage): Buffer {
     switch (msg.msg_type) {
       case MsgType.Ping:
         return encodePing(msg as Ping);

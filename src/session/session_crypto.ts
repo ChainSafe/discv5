@@ -35,6 +35,11 @@ export interface ISessionKeys {
   ephemKey?: Buffer;
 }
 
+export interface AuthenticatedCiphertext {
+  authHeader: AuthHeader;
+  ciphertext: Buffer;
+}
+
 export async function generateSessionKeys(
     remoteEnr: EthereumNodeRecord,
     localId: NodeId,
@@ -74,7 +79,7 @@ export async function deriveKeysFromPubkey(
     remoteId: NodeId,
     idNonce: cryptoTypes.Nonce,
     ephemPubKey: Buffer,
-): Promise<any> {
+): Promise<ISessionKeys> {
   let secret: Buffer;
   const remotePubKey: Buffer = Buffer.alloc(16);
   ephemPubKey.copy(remotePubKey, 0, ephemPubKey.length);
@@ -95,7 +100,7 @@ export async function decryptAuthHeader(
     throw new Error("Invalid authentication scheme");
   }
 
-  const rlpEncodedAuthResp: Buffer = await encryptMsg(authRespKey, Buffer.alloc(16), header.auth_response);
+  const rlpEncodedAuthResp: Buffer = await decryptMsg(authRespKey, Buffer.alloc(constants.KEY_LENGTH), header.auth_response, tag);
   const authResponse = decodeAuthResponsePacket(rlpEncodedAuthResp);
   return authResponse;
 }
@@ -108,12 +113,14 @@ export async function verifyAuthNonce(
   return await remotePubKey.verify(generatedNonce, sig);
 }
 
-export async function decryptMessage(
+export async function decryptMsg(
     key: Buffer,
     nonce: Buffer,
     msg: Buffer,
-): Promise<Buffer> {
+aad: Buffer): Promise<Buffer> {
   const aesCipherObj = await crypto.aes.create(key, nonce);
+  aesCipherObj.setAAD(add);
+
   return await aesCipherObj.decrypt(msg);
 }
 
@@ -124,10 +131,10 @@ export async function encryptWithHeader(
     msg: Buffer,
     ephemPubKey: Buffer,
     tag: Buffer,
-): Promise<any> {
-  let ciphertext: Buffer = await encryptMsg(authRespKey, Buffer.alloc(12), authPart);
+): Promise<AuthenticatedCiphertext> {
+  let ciphertext: Buffer = await encryptMsg(authRespKey, Buffer.alloc(constants.AUTH_TAG_LENGTH), authPart);
 
-  const authTag: cryptoTypes.Nonce = crypto.randomBytes(12);
+  const authTag: cryptoTypes.Nonce = crypto.randomBytes(constants.AUTH_TAG_LENGTH);
   const authHeader: AuthHeader = {
     auth_response: ciphertext,
     auth_scheme_name: "gcm",
@@ -135,7 +142,9 @@ export async function encryptWithHeader(
     ephemeral_pubkey: ephemPubKey,
   };
 
-  ciphertext = await encryptMsg(encryptionKey, authTag, msg);
+  const authData = Buffer.concat([tag, encodeAuthHeader]);
+
+  ciphertext = await encryptMsg(encryptionKey, authTag, msg, authData);
   return { authHeader, ciphertext };
 }
 
@@ -143,7 +152,9 @@ export async function encryptMsg(
     key: Buffer,
     nonce: cryptoTypes.Nonce,
     msg: Buffer,
+    aad: Buffer
 ): Promise<Buffer> {
   const aesCipherObj = await crypto.aes.create(key, nonce);
+  aesCipherObj.setAAD(add);
   return await aesCipherObj.encrypt(msg);
 }
