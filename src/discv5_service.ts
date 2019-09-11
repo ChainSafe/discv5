@@ -42,7 +42,14 @@ export class Discv5Service {
         break;
       }
     }
-    
+
+    this.socket.on("message", async (msg, rinfo) => {
+       let decodeWhoAreYouPAcket = decodePayload(msg, PacketType.WhoAreYouPacket);
+       let src = Socket Addr { rinfo.port, rinfo.address };
+       return [src, [decodeWhoAreYouPacket, PacketType.WhoAreYouPacket]];
+    });
+
+    /*
     this.socket[promisify.argumentNames] = ["msg", "rinfo"];
     const on = promisify(this.socket.on.bind(this.socket));
     try {  
@@ -53,5 +60,7 @@ export class Discv5Service {
     } catch (err) {
       this.emit("error", err);
     }
+    */
+
   }
 }
