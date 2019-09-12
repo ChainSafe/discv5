@@ -5,8 +5,7 @@ import { promisify } from "es6-promisify";
 import * as constants from "./constants";
 import * as dgram from "dgram";
 
-
-export interface SocketAddr {
+export interface ISocketAddr {
   port: number;
   address: string;
 }
@@ -15,21 +14,21 @@ export class Discv5Service {
 
   public socket: dgram.Socket;
   public recvBuffer: Buffer;
-  public sendQueue: [SocketAddr, [packet, packetType]][];
+  public sendQueue: [ISocketAddr, [packet, packetType]][];
   public whoAreYouMagic: Buffer;
 
-  constructor(socketAddr: SocketAddr, whoAreYouMagic: buffer) {
+  constructor(socketAddr: ISocketAddr, whoAreYouMagic: buffer) {
      this.socket = dgram.createSocket("udp4");
      this.socket.bind(socketAddr.port, socketAddr.address0);
      this.socket.setRecvBufferSize(constants.PACKET_SIZE);
      this.socket.setSendBufferSize(constants.PACKET_SIZE);
   }
 
-  send(to: SocketAddr, p: packet, pt: any): void {
+  send(to: ISocketAddr, p: packet, pt: any): void {
     this.sendQueue.push([to, [p, pt]]); 
   }
 
-  async poll(): Promise<[SocketAddr, [packet, packetType]]> {
+  async poll(): Promise<[ISocketAddr, [packet, packetType]]> {
     this.socket.send[promisify.argumentNames] = ["error"];
     const sendPacket = promisify(this.socket.send.bind(this.socket));
     while(this.sendQueue.length !== 0) {

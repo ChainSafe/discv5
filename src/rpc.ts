@@ -1,6 +1,10 @@
 import RLP = require("rlp");
 import { Input } from "rlp";
-import { EthereumNodeRecord } from "./enr";
+import { EthereumNodeRecord } from "./enr/enr";
+import { packet } from "./packets";
+import { ISocketAddr } from "./discv5_session";
+import * as utils from "./utils";
+import * as constants from "./constants";
 
 export enum MsgType {
   Ping = 1,
@@ -17,6 +21,14 @@ export enum MsgType {
 export enum RpcType {
   Request,
   Response,
+}
+
+export interface IRequest {
+  destinationAddr: SocketAddr;
+  packet: packet;
+  message: IMessage;
+  timeout: Promise<void>;
+  retries: number;
 }
 
 export interface IMessage {
@@ -135,6 +147,7 @@ export function encodePing(ping: IPing): Buffer {
 export function encodePong(pong: IPong): Buffer {
   const rlpList = RLP.encode([
     pong.request_id,
+    pong.enr_seq,
     pong.enr_seq,
     pong.recipient_ip,
     pong.recipient_port,
@@ -270,7 +283,6 @@ export function decodeFindNode(data: Buffer): IFindNode {
   return {
     distance: rlpList[1],
     msg_type: MsgType.FindNode,
-    request_id: rlpList[0],
     rpc_type: RpcType.Request,
   };
 }
@@ -341,5 +353,15 @@ export function decodeTopicQuery(data: Buffer): ITopicQuery {
     request_id: rlpList[0],
     rpc_type: RpcType.Request,
     topic: rlpList[1],
+  };
+}
+
+export function newRequest(dst: ISocketAddr, p: packet, msg?: IMessage): IRequest {
+  return IRequest {
+    dst,
+    p,
+    msg,
+    delay(Date.now() + constants.REQUEST_TIMEOUT),
+    1
   };
 }

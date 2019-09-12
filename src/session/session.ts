@@ -4,8 +4,7 @@ import {
   IMessagePacket,  
   IRandomPacket,
   IRegularPacket,
-  IWhoAreYouPacket
- 
+  IWhoAreYouPacket 
 } from "../packets";
 
 import * as cryptoTypes from "../crypto/misc_crypto_types";
@@ -17,9 +16,8 @@ import * as constants from "../constants";
 import * as sessionCrypto from "./session_crypto";
 import * as dgram from "dgram";
 import * as crypto from "chainsafe/libp2p-crypto";
-import { promisify } from "es6-promisify";
-
-const delay = promisify(setTimeout);
+import * as utils from "../utils";
+import { ISocketAddr } from "../discv5_service";
 
 export enum SessionStatus {
   WhoAreYouSent,
@@ -40,7 +38,7 @@ export class Session {
   public ephemPubKey: Buffer;
   public keys: Keys;
   public timeout: Promise<void>;
-  public lastSeenSocket: dgram.Socket;
+  public lastSeenSocket: ISocketAddr;
 
   static newRandomSession(tag: Buffer, remoteEnr: EthereumNodeRecord): { session: Session, randomPacket: packet } {
     let randomPacket = IRandomPacket {auth_tag: tag, random_data: crypto.randomBytes(44)};
@@ -51,19 +49,19 @@ export class Session {
     session.ephemPubKey = null;
     session.keys = {};
     session.timeout = null;
-    session.lastSeenSocket = dgram.createSocket();
+    session.lastSeenSocket = {};
 
     return { session, randomPacket };
   }
 
-  static newWhoAreYou(tag: Buffer, nodeId: NodeId, enrSeq: bigint, remoteEnr: EthereumNodeRecord, auth_tag: Buffer): {session: Session, packet} {
+  static newWhoAreYou(tag: Buffer, nodeId: NodeId, enrSeq: bigint, remoteEnr: EthereumNodeRecord, authTag: Buffer): {session: Session, whoAreYouPacket: packet} {
     let magic: Buffer = sha256(Buffer.concat([nodeId, constants.WHOAREYOU_STR]));
     let idNonce: Nonce = crypto.randomBytes(constants.ID_NONCE_LENGTH);
 
     let whoareyouPacket = IWhoAreYouPacket {
       tag: tag,
       magic: magic,
-      token: auth_tag,
+      token: authTag,
       id_nonce: idNonce,
       enr_seq: enrSeq
     };
@@ -74,7 +72,7 @@ export class Session {
     session.ephemPubKey = null;
     session.keys = {};
     session.timeout = null;
-    session.lastSeenSocket = dgram.createSocket();
+    session.lastSeenSocket = {};
 
     return { session, whoareyouPacket };
   }
@@ -89,7 +87,7 @@ export class Session {
       authRepKey,
     };
 
-    this.timeout = delay(Date.now() + constants.SESSION_TIMEOUT);
+    this.timeout = utils.delay(Date.now() + constants.SESSION_TIMEOUT);
 
     this.status = SessionStatus.Established;
   }
@@ -128,7 +126,7 @@ export class Session {
     return authMsg;
   }
 
-  generateNonce(idNonce: Nonce): Nonce {
+  static generateNonce(idNonce: Nonce): Nonce {
    return Buffer.concat([Buffer.from(constants.NONCE_STR), idNonce]);     
   }
 
@@ -178,7 +176,7 @@ export class Session {
         decKey
       };
 
-      this.timeout = delay(Date.now() + constants.SESSION_TIMEOUT);
+      this.timeout = utils.delay(Date.now() + constants.SESSION_TIMEOUT);
       
       this.status = SessionStatus.Untrusted;
 
@@ -213,12 +211,12 @@ export class Session {
       return false;
   }
 
-  set lastSeenSocket(socket: dgram.Socket): void {
+  set lastSeenSocket(socket: ISocketAddr): void {
       this.lastSeenSocket = socket;
   }
 
   incrementTimeout(millisecs: number): void {
-      self.timeout = delay(Date.now() + millisecs);
+      self.timeout = utils.delay(Date.now() + millisecs);
   }
 
   get timeout(): Promise<void> {

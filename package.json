@@ -61,6 +61,7 @@
     "crypto": "^1.0.1",
     "debug": "^4.1.1",
     "dgram": "^1.0.1",
+    "es6-promisify": "^6.0.2",
     "js-sha256": "^0.9.0",
     "k-bucket": "^5.0.0",
     "libp2p-bootstrap": "^0.9.7",

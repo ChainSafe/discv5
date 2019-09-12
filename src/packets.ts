@@ -1,8 +1,10 @@
 // DISCV5 message packet types
 // Max packet size = 1280 bytes
-import { Nonce } from "../crypto/misc_crypto_types";
+import { Nonce } from "./crypto/misc_crypto_types";
 
-export type packet = IRandomPacket | IWhoAreYouPacket | IAuthResponsePacket | IAuthMessagePacket | IMessagePacket;
+import { EthereumNodeRecord } from "./enr/enr";
+
+export type packet = IRandomPacket | IRegularPacket | IWhoAreYouPacket | IAuthResponsePacket | IAuthMessagePacket | IMessagePacket;
 
 export type AuthHeader = IAuthHeader;
 
@@ -19,7 +21,7 @@ export interface IRandomPacket extends IRegularPacket {
   random_data: Buffer;
 }
 
-export interface IWhoAreYouPacket {
+export interface IWhoAreYouPacket extends IRegularPacket {
   magic: Buffer;
   token: Buffer;
   enr_seq: bigint;
@@ -29,7 +31,7 @@ export interface IWhoAreYouPacket {
 export interface IAuthResponsePacket {
   version: 5;
   id_nonce_sig: Buffer;
-  node_record: any[];
+  node_record: EthereumNodeRecord[];
 }
 
 export interface IAuthHeader {
