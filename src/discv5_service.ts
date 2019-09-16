@@ -48,18 +48,4 @@ export class Discv5Service {
        return [src, [decodeWhoAreYouPacket, PacketType.WhoAreYouPacket]];
     });
 
-    /*
-    this.socket[promisify.argumentNames] = ["msg", "rinfo"];
-    const on = promisify(this.socket.on.bind(this.socket));
-    try {  
-      let {msg, rinfo} = on("message");
-      let decodedWhoAreYouPacket =  decodePayload(msg, PacketType.WhoAreYouPacket);
-      let src = SocketAddr {rinfo.port, rinfo.address};
-      return [src, [decodeWhoAreYouPacket, PacketType.WhoAreYouPacket]];
-    } catch (err) {
-      this.emit("error", err);
-    }
-    */
-
-  }
 }

@@ -1,7 +1,7 @@
 import * as constants from "../constants";
 import { sha256 } from "js-sha256";
 import { Session, SessionStatus } from "./session";
-import { AuthHeader, AuthResponseMessage, IRandomPacket, packet, PacketType } from "../packets";
+import { AuthHeader, AuthResponseMessage, IRandomPacket, IWhoAreYouPacket, packet, PacketType } from "../packets";
 import * as cryptoTypes from "./crypto/misc_crypto_types";
 import { encode, decode, IMessage, IRequest, newRequest } from "./rpc";
 import { EthereumNodeRecord } from "./enr/enr";
@@ -301,14 +301,65 @@ class SessionService extends EventEmitter {
    async flushMessages(dstSocketAddr: ISocketAddr, dstId: NodeId): Promise<void> {
      let requestsToSend = [];
 
+     let session = this.sessions.get(dstId).established() ? this.sessions.get(dstId) : (function(){ throw new Error("no session")});
+
+     let tag = this.tag(dstId);
+
+     let msgs = this.pendingMessages.get(dstId);
+     this.pendingMessages.delete(dstId);
+
+     for (msg in msgs) {
+       let p = await session.encryptMsg(tag, encode(msg));
+       let req = newRequest(dst, p, msg);
+       requestsToSend.push(req);
+     }
+
+     for (r in requestsToSend) {
+       this.processRequest(dstId, r);
+     }
    }
 
    async processRequest(nodeId: NodeId, request: IRequest): Promise<void> {
-   
+     this.service.send(request.destination, request.packet);
+     
+     if (request.packet instanceof IWhoAreYouPacket) {
+       this.whoAreYouRequests.set(nodeId, request);  
+     } else {
+       this.pendingRequests.set(nodeId, this.pendingRequests.get(nodeId).push(request));
+     }
    }
 
    async checkTimeouts(): Promise<void> {
-   
+     for (let [nodeId, requests] of this.pendingRequests) {
+        let expiredRequests = [];
+
+        for (let [pos, req] in requests.entries()) {
+        try {
+          let res = await req.timeout();
+          if (req.retries >= constants.REQUEST_RETRIES) {
+            // RPC expired
+            switch(req.packet) {
+              case req.packet instanceof IRandomPacket:
+                let pm = this.pendingMessages.get(nodeId);
+                this.pendingMessages.delete(nodeId);
+                
+                for (msg of pm) {
+                  this.emit("session::requestFailed", nodeId, msg.id);
+                }
+
+                this.sessions.delete(nodeId);
+              case req.packet instanceof IAuthMessage:
+              case req.packet instanceof IMessage:
+              case req.packet instanceof IWhoAreYouPacket
+
+            }
+          }
+
+        } catch (err) {
+        
+        }       
+     } 
+
    }
 
    async poll(): Promise<void> {
