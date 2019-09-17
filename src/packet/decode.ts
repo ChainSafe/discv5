@@ -1,27 +1,27 @@
 import RLP = require("rlp");
-import { Input } from "rlp";
 import {
   IAuthHeader,
   IAuthMessagePacket,
-  IAuthResponsePacket,
   IMessagePacket,
   IRandomPacket,
   IWhoAreYouPacket,
   Packet,
   PacketType,
+  Tag,
 } from "./types";
 
 import {
   AUTH_TAG_LENGTH,
+  ERR_INVALID_BYTE_SIZE,
   ERR_TOO_SMALL,
+  ERR_UNKNOWN_FORMAT,
   ERR_UNKNOWN_PACKET,
+  ID_NONCE_LENGTH,
   MAGIC_LENGTH,
   TAG_LENGTH,
-  ERR_UNKNOWN_FORMAT,
-  ERR_INVALID_BYTE_SIZE,
 } from "../constants";
 
-export function decode(data: Buffer, magic: Buffer): [PacketType, Packet] {
+export function decode(data: Buffer, magic: Buffer): Packet {
   // ensure the packet is large enough to contain the correct headers
   if (data.length < TAG_LENGTH + AUTH_TAG_LENGTH + 1) {
     throw new Error(ERR_TOO_SMALL);
@@ -33,7 +33,7 @@ export function decode(data: Buffer, magic: Buffer): [PacketType, Packet] {
     data.length >= TAG_LENGTH + MAGIC_LENGTH &&
     data.slice(TAG_LENGTH, TAG_LENGTH + MAGIC_LENGTH).equals(magic)
   ) {
-    return decodeWhoAreYouPacket(tag, data);
+    return decodeWhoAreYou(tag, data);
   } else if (data[TAG_LENGTH] === 140) { // check for RLP(bytes) or RLP(list)
     return decodeStandardMessage(tag, data);
   }
@@ -47,80 +47,75 @@ export function decode(data: Buffer, magic: Buffer): [PacketType, Packet] {
   throw new Error(ERR_UNKNOWN_PACKET);
 }
 
-export function decodeRandomPacket(payload: Buffer): IRandomPacket {
-  const tag = payload.slice(0, 33);
-  const authTag = RLP.decode(payload.slice(33, 47));
-  const randomData = payload.slice(47);
-
-  return {tag, auth_tag, random_data};
-}
-
-export function decodeWhoAreYouPacket(tag: Tag, data: Buffer): IWhoAreYouPacket {
+export function decodeWhoAreYou(tag: Tag, data: Buffer): IWhoAreYouPacket {
   // 32 tag + 32 magic + 32 token + 12 id + 2 enr + 1 rlp
   const magic = data.slice(TAG_LENGTH, TAG_LENGTH + MAGIC_LENGTH);
   // decode the rlp list
   let rlp: Buffer[];
   try {
-    rlp = RLP.decode(data.slice(TAG_LENGTH + MAGIC_LENGTH));
+    rlp = RLP.decode(data.slice(TAG_LENGTH + MAGIC_LENGTH)) as unknown as Buffer[];
   } catch (e) {
     throw new Error(ERR_UNKNOWN_FORMAT);
   }
   if (rlp.length !== 3) {
     throw new Error(ERR_UNKNOWN_FORMAT);
   }
-  const [enrSeqBytes, idNonceBytes, tokenBytes] = rlp;
+  const [enrSeqBytes, idNonce, token] = rlp;
   if (
-    idNonceBytes.length !== ID_NONCE_LENGTH ||
-    tokenBytes.length !== AUTH_TAG_LENGTH
+    idNonce.length !== ID_NONCE_LENGTH ||
+    token.length !== AUTH_TAG_LENGTH
   ) {
     throw new Error(ERR_INVALID_BYTE_SIZE);
   }
   const enrSeq = BigInt(`0x${enrSeqBytes.toString("hex")}`);
-
-
-
-
-  return {token: rlpList[0], id_nonce: rlpList[1], enr_seq: BigInt(rlpList[2]), magic};
-
-}
-
-export function decodeAuthResponsePacket(payload: Buffer): IAuthResponsePacket {
-  const rlpList = RLP.decode(payload as Input);
-
-  return {version: rlpList[0], id_nonce_sig: rlpList[1], node_record: rlpList[2]};
-}
-
-export function decodeAuthMessagePacket(payload: Buffer): IAuthMessagePacket {
-  const tag = payload.slice(0, 33);
-  const rlpList = RLP.decode(payload.slice(33, 177) as Input);
-  const message = payload.slice(177);
-
-  const ah: AuthHeader = {
-    auth_response: rlpList[3],
-    auth_scheme_name: "gcm",
-    auth_tag: rlpList[0],
-    ephemeral_pubkey: rlpList[2],
-  };
-
   return {
-    auth_header: ah,
-    message,
     tag,
+    token,
+    magic,
+    id_nonce: idNonce,
+    enr_seq: enrSeq,
   };
 }
 
-export function decodeMessagePacket(payload: Buffer): IMessagePacket {
-  const tag = payload.slice(0, 33);
-  const authTag = RLP.decode(payload.slice(33, 47));
-  const message = payload.slice(46);
+export function decodeStandardMessage(tag: Tag, data: Buffer): IMessagePacket {
 
-  return {tag, message, auth_tag};
+  let authTag: Buffer;
+  try {
+    authTag = RLP.decode(data.slice(TAG_LENGTH, TAG_LENGTH + AUTH_TAG_LENGTH + 1));
+  } catch (e) {
+    throw new Error(ERR_UNKNOWN_FORMAT);
+  }
+  return {
+    tag,
+    auth_tag: authTag,
+    message: data.slice(TAG_LENGTH + AUTH_TAG_LENGTH + 1),
+  };
 }
 
-export function decodeAuthHeader(payload: Buffer): AuthHeader {
-  const authTag = RLP.decode(payload.slice(0, 13));
-  const authSchemeName = RLP.decode(payload.slice(13, 17));
-  const ephemeralPubkey = RLP.decode(payload.slice(17, 34));
-  const authResponse = RLP.decode(payload.slice(34));
-  return { auth_tag, auth_scheme_name, ephemeral_pubkey, auth_response};
+export function decodeAuthHeader(tag: Tag, data: Buffer, rlpLength: number): IAuthMessagePacket {
+  let authHeaderRlp: Buffer[];
+  try {
+    authHeaderRlp = RLP.decode(data.slice(TAG_LENGTH, TAG_LENGTH + rlpLength)) as unknown as Buffer[];
+  } catch (e) {
+    throw new Error(ERR_UNKNOWN_FORMAT);
+  }
+  if (authHeaderRlp.length !== 4) {
+    throw new Error(ERR_UNKNOWN_FORMAT);
+  }
+  const [
+    authTag,
+    authSchemeNameBytes,
+    ephemeralPubkey,
+    authResponse,
+  ] = authHeaderRlp;
+  return {
+    tag,
+    auth_header: {
+      auth_tag: authTag,
+      auth_scheme_name: authSchemeNameBytes.toString("utf8"),
+      ephemeral_pubkey: ephemeralPubkey,
+      auth_response: authResponse,
+    },
+    message: data.slice(TAG_LENGTH + rlpLength),
+  };
 }

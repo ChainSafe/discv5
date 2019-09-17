@@ -18,7 +18,7 @@ export type Packet = IRandomPacket | IWhoAreYouPacket | IAuthMessagePacket | IMe
 
 export interface IAuthHeader {
   auth_tag: Buffer;
-  auth_scheme_name: "gcm";
+  auth_scheme_name: "gcm" | string;
   ephemeral_pubkey: Buffer;
   auth_response: Buffer;
 }
