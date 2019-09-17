@@ -56,7 +56,12 @@ export const NONCE_STR = "discovery-id-nonce";
 export const REQUEST_TIMEOUT = 10000;
 
 // Number of times to retry a request
-export const REQUEST_RETRIES = 2
+export const REQUEST_RETRIES = 2;
 
 // Timeout for a session in milliseconds
-export const SESSION_TIMEOUT = 86400000
+export const SESSION_TIMEOUT = 86400000;
+
+export const ERR_TOO_SMALL = "packet too small";
+export const ERR_UNKNOWN_PACKET = "unknown packet";
+export const ERR_UNKNOWN_FORMAT = "unknown format";
+export const ERR_INVALID_BYTE_SIZE = "invalid byte size";
