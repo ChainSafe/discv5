@@ -21,6 +21,8 @@ import {
   TAG_LENGTH,
 } from "../constants";
 
+// Decode raw bytes into a packet. The `magic` value (SHA2256(node-id, b"WHOAREYOU")) is passed as a parameter to check
+// for the magic byte sequence.
 export function decode(data: Buffer, magic: Buffer): Packet {
   // ensure the packet is large enough to contain the correct headers
   if (data.length < TAG_LENGTH + AUTH_TAG_LENGTH + 1) {
@@ -53,11 +55,11 @@ export function decodeWhoAreYou(tag: Tag, data: Buffer): IWhoAreYouPacket {
   // decode the rlp list
   let rlp: Buffer[];
   try {
-    rlp = RLP.decode(data.slice(TAG_LENGTH + MAGIC_LENGTH)) as unknown as Buffer[];
+    rlp = RLP.decode(data.slice(TAG_LENGTH + MAGIC_LENGTH) as RLP.Input) as Buffer[];
   } catch (e) {
     throw new Error(ERR_UNKNOWN_FORMAT);
   }
-  if (rlp.length !== 3) {
+  if (!Array.isArray(rlp) || rlp.length !== 3) {
     throw new Error(ERR_UNKNOWN_FORMAT);
   }
   const [enrSeqBytes, idNonce, token] = rlp;
@@ -78,7 +80,6 @@ export function decodeWhoAreYou(tag: Tag, data: Buffer): IWhoAreYouPacket {
 }
 
 export function decodeStandardMessage(tag: Tag, data: Buffer): IMessagePacket {
-
   let authTag: Buffer;
   try {
     authTag = RLP.decode(data.slice(TAG_LENGTH, TAG_LENGTH + AUTH_TAG_LENGTH + 1));
@@ -92,14 +93,15 @@ export function decodeStandardMessage(tag: Tag, data: Buffer): IMessagePacket {
   };
 }
 
+// Decode a message that contains an authentication header
 export function decodeAuthHeader(tag: Tag, data: Buffer, rlpLength: number): IAuthMessagePacket {
   let authHeaderRlp: Buffer[];
   try {
-    authHeaderRlp = RLP.decode(data.slice(TAG_LENGTH, TAG_LENGTH + rlpLength)) as unknown as Buffer[];
+    authHeaderRlp = RLP.decode(data.slice(TAG_LENGTH, TAG_LENGTH + rlpLength) as RLP.Input) as Buffer[];
   } catch (e) {
     throw new Error(ERR_UNKNOWN_FORMAT);
   }
-  if (authHeaderRlp.length !== 4) {
+  if (!Array.isArray(authHeaderRlp) || authHeaderRlp.length !== 4) {
     throw new Error(ERR_UNKNOWN_FORMAT);
   }
   const [
