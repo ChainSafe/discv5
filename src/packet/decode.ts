@@ -5,6 +5,7 @@ import {
   IMessagePacket,
   IRandomPacket,
   IWhoAreYouPacket,
+  Magic,
   Packet,
   PacketType,
   Tag,
@@ -23,7 +24,7 @@ import {
 
 // Decode raw bytes into a packet. The `magic` value (SHA2256(node-id, b"WHOAREYOU")) is passed as a parameter to check
 // for the magic byte sequence.
-export function decode(data: Buffer, magic: Buffer): Packet {
+export function decode(data: Buffer, magic: Magic): Packet {
   // ensure the packet is large enough to contain the correct headers
   if (data.length < TAG_LENGTH + AUTH_TAG_LENGTH + 1) {
     throw new Error(ERR_TOO_SMALL);
@@ -62,7 +63,7 @@ export function decodeWhoAreYou(tag: Tag, data: Buffer): IWhoAreYouPacket {
   if (!Array.isArray(rlp) || rlp.length !== 3) {
     throw new Error(ERR_UNKNOWN_FORMAT);
   }
-  const [enrSeqBytes, idNonce, token] = rlp;
+  const [token, idNonce, enrSeqBytes] = rlp;
   if (
     idNonce.length !== ID_NONCE_LENGTH ||
     token.length !== AUTH_TAG_LENGTH

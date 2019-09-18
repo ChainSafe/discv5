@@ -41,11 +41,12 @@ function encodeRandomPacket(p: IRandomPacket): Buffer {
 
 function encodeWhoAreYouPacket(p: IWhoAreYouPacket): Buffer {
   return Buffer.concat([
+    p.tag,
     p.magic,
     RLP.encode([
       p.token,
       p.idNonce,
-      p.enrSeq,
+      Buffer.from(p.enrSeq.toString(16).padStart(8 * 2, "0").slice(0, 8 * 2), "hex"),
     ]),
   ]);
 }
