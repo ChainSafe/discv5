@@ -2,7 +2,6 @@ import RLP = require("rlp");
 import {
   IAuthHeader,
   IAuthMessagePacket,
-  IAuthResponsePacket,
   IMessagePacket,
   IRandomPacket,
   IWhoAreYouPacket,
@@ -12,33 +11,31 @@ import {
 
 export function encode(type: PacketType, packet: Packet): Buffer {
   switch (type) {
-    case PacketType.RandomPacket:
+    case PacketType.Random:
       return encodeRandomPacket(packet as IRandomPacket);
-    case PacketType.WhoAreYouPacket:
+    case PacketType.WhoAreYou:
       return encodeWhoAreYouPacket(packet as IWhoAreYouPacket);
-    case PacketType.AuthResponsePacket:
-      return encodeAuthResponsePacket(packet as IAuthResponsePacket);
-    case PacketType.AuthMessagePacket:
+    case PacketType.AuthMessage:
       return encodeAuthMessagePacket(packet as IAuthMessagePacket);
-    case PacketType.MessagePacket:
+    case PacketType.Message:
       return encodeMessagePacket(packet as IMessagePacket);
   }
 }
 
 export function encodeAuthHeader(h: IAuthHeader): Buffer {
   return RLP.encode([
-    h.auth_tag,
-    h.auth_scheme_name,
-    h.ephemeral_pubkey,
-    h.auth_response,
+    h.authTag,
+    h.authSchemeName,
+    h.ephemeralPubkey,
+    h.authResponse,
   ]);
 }
 
 function encodeRandomPacket(p: IRandomPacket): Buffer {
   return Buffer.concat([
     p.tag,
-    RLP.encode(p.auth_tag),
-    p.random_data,
+    RLP.encode(p.authTag),
+    p.randomData,
   ]);
 }
 
@@ -47,24 +44,16 @@ function encodeWhoAreYouPacket(p: IWhoAreYouPacket): Buffer {
     p.magic,
     RLP.encode([
       p.token,
-      p.id_nonce,
-      p.enr_seq,
+      p.idNonce,
+      p.enrSeq,
     ]),
-  ]);
-}
-
-function encodeAuthResponsePacket(p: IAuthResponsePacket): Buffer {
-  return RLP.encode([
-    p.version,
-    p.id_nonce_sig,
-    p.node_record,
   ]);
 }
 
 function encodeAuthMessagePacket(p: IAuthMessagePacket): Buffer {
   return Buffer.concat([
     p.tag,
-    encodeAuthHeader(p.auth_header),
+    encodeAuthHeader(p.authHeader),
     p.message,
   ]);
 }
@@ -72,7 +61,7 @@ function encodeAuthMessagePacket(p: IAuthMessagePacket): Buffer {
 function encodeMessagePacket(p: IMessagePacket): Buffer {
   return Buffer.concat([
     p.tag,
-    RLP.encode(p.auth_tag),
+    RLP.encode(p.authTag),
     p.message,
   ]);
 }

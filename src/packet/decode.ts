@@ -74,8 +74,8 @@ export function decodeWhoAreYou(tag: Tag, data: Buffer): IWhoAreYouPacket {
     tag,
     token,
     magic,
-    id_nonce: idNonce,
-    enr_seq: enrSeq,
+    idNonce,
+    enrSeq,
   };
 }
 
@@ -88,7 +88,7 @@ export function decodeStandardMessage(tag: Tag, data: Buffer): IMessagePacket {
   }
   return {
     tag,
-    auth_tag: authTag,
+    authTag,
     message: data.slice(TAG_LENGTH + AUTH_TAG_LENGTH + 1),
   };
 }
@@ -112,11 +112,11 @@ export function decodeAuthHeader(tag: Tag, data: Buffer, rlpLength: number): IAu
   ] = authHeaderRlp;
   return {
     tag,
-    auth_header: {
-      auth_tag: authTag,
-      auth_scheme_name: authSchemeNameBytes.toString("utf8"),
-      ephemeral_pubkey: ephemeralPubkey,
-      auth_response: authResponse,
+    authHeader: {
+      authTag,
+      authSchemeName: authSchemeNameBytes.toString("utf8"),
+      ephemeralPubkey,
+      authResponse,
     },
     message: data.slice(TAG_LENGTH + rlpLength),
   };

@@ -17,10 +17,10 @@ export enum PacketType {
 export type Packet = IRandomPacket | IWhoAreYouPacket | IAuthMessagePacket | IMessagePacket;
 
 export interface IAuthHeader {
-  auth_tag: Buffer;
-  auth_scheme_name: "gcm" | string;
-  ephemeral_pubkey: Buffer;
-  auth_response: Buffer;
+  authTag: Buffer;
+  authSchemeName: "gcm" | string;
+  ephemeralPubkey: Buffer;
+  authResponse: Buffer;
 }
 
 // Packet format
@@ -36,9 +36,9 @@ export interface IRegularPacket {
 
 export interface IRandomPacket extends IRegularPacket {
   // Random auth_tag formatted as rlp_bytes(bytes).
-  auth_tag: AuthTag;
+  authTag: AuthTag;
   // At least 44 bytes of random data.
-  random_data: Buffer;
+  randomData: Buffer;
 }
 
 export interface IWhoAreYouPacket extends IRegularPacket {
@@ -47,21 +47,21 @@ export interface IWhoAreYouPacket extends IRegularPacket {
   // The auth-tag of the request.
   token: AuthTag;
   // The `id-nonce` to prevent handshake replays.
-  id_nonce: Nonce;
+  idNonce: Nonce;
   // Highest known ENR sequence number of node.
-  enr_seq: bigint;
+  enrSeq: bigint;
 }
 
 export interface IAuthMessagePacket extends IRegularPacket {
   // Authentication header.
-  auth_header: IAuthHeader;
+  authHeader: IAuthHeader;
   // The encrypted message including the authentication header.
   message: Buffer;
 }
 
 export interface IMessagePacket extends IRegularPacket {
   // 12 byte Authentication nonce.
-  auth_tag: AuthTag;
+  authTag: AuthTag;
   // The encrypted message as raw bytes.
   message: Buffer;
 }
