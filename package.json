@@ -11,7 +11,7 @@
     "test": "test"
   },
   "scripts": {
-    "lint": "tslint src/*",
+    "lint": "tslint --project tsconfig.json",
     "release": "aegir release",
     "build": "aegir build",
     "test": "mocha -r ts-node/register test/**/*.test.ts",
