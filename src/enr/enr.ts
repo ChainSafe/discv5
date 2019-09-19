@@ -12,6 +12,84 @@ import { NodeId } from "./enr_types";
  * */
 export class EthereumNodeRecord {
 
+  public signature: Buffer;
+  public sequence: bigint;
+  public keyPairs: Map<string, any>;
+  public nodeId: NodeId;
+  public libp2pPeerInfo: PeerInfo;
+
+  private enrKeyPair: ENRKeyPair;
+
+  /**
+   * constructor
+   */
+  constructor(enrKeyPair?: ENRKeyPair) {
+     this.enrKeyPair = ENRKeyPair;
+     this.keyPairs.set("secp256k1", this.enrKeyPair.compressedPublicKey.toString());
+     this.nodeId = enrKeyPair.derive();
+
+     let peerIdBuf = Buffer.from(sha256(this.keyPairs.get("secp256k1")), "hex");
+     peerIdBuf = multihash.encode(peerIdBuf, "sha2-256");
+     const peerId = new PeerId(peerIdBuf);
+     this.libp2pPeerInfo = new PeerInfo(peerId);
+  }
+
+  /**
+   * Returns a RLP encoding of an ENR
+   */
+  public encode(): Buffer {
+    this.content = [
+      RLP.encode(this.sequence),
+      "id", this.keyPairs.get("id"),
+    ];
+    if (this.keyPairs.get("secp256k1")) {
+       content.push("secp256k1", RLP.encode(this.keyPairs.get("secp256k1")));
+    }
+
+    if (this.keyPairs.get("ip")) {
+      content.push("ip", RLP.encode(this.keyPairs.get("ip")));
+    }
+
+    if (this.keyPairs.get("tcp")) {
+      content.push("tcp", RLP.encode(this.keyPairs.get("tcp")));
+    }
+
+    if (this.keyPairs.get("udp")) {
+      content.push("udp", RLP.encode(this.keyPairs.get("udp")));
+    }
+
+    if (this.keyPairs.get("ip6")) {
+      content.push("ip6", RLP.encode(this.keyPairs.get("ip6")));
+    }
+
+    if (this.keyPairs.get("tcp6")) {
+      content.push("tcp6", RLP.encode(this.keyPairs.get("tcp6")));
+    }
+
+    if (this.keyPairs.get("udp6")) {
+      content.push("udp6", RLP.encode(this.keyPairs.get("udp6")));
+    }
+
+    this.signature = enrKeyPair.sign(content);
+    const totalSize = content.length + this.signature.length;
+    if (totalSize > constants.MAX_RECORD_SIZE) {
+      // reject record
+      throw new RangeError("Size of the record is larger than 300 bytes. It's size is " + totalSize);
+    }
+
+    const record = RLP.encode([RLP.encode(this.signature)].concat(this.content));
+    return record;
+  }
+
+  /**
+   * Returns a text encoding of an RLP-encoded ENR
+   */
+  public encodeTxt(): string {
+    const record = this.encode();
+    return "enr:" + Buffer.from(record).toString("base64");
+  }
+
+
   // Getters
 
   public set sequenceNumber(seq: bigint): void {
@@ -153,82 +231,5 @@ export class EthereumNodeRecord {
     }
 
     return enr;
-  }
-
-  public signature: Buffer;
-  public sequence: bigint;
-  public keyPairs: Map<string, any>;
-  public nodeId: NodeId;
-  public libp2pPeerInfo: PeerInfo;
-
-  private enrKeyPair: ENRKeyPair;
-
-  /**
-   * constructor
-   */
-  constructor(enrKeyPair?: ENRKeyPair) {
-     this.enrKeyPair = ENRKeyPair;
-     this.keyPairs.set("secp256k1", this.enrKeyPair.compressedPublicKey.toString());
-     this.nodeId = enrKeyPair.derive();
-
-     let peerIdBuf = Buffer.from(sha256(this.keyPairs.get("secp256k1")), "hex");
-     peerIdBuf = multihash.encode(peerIdBuf, "sha2-256");
-     const peerId = new PeerId(peerIdBuf);
-     this.libp2pPeerInfo = new PeerInfo(peerId);
-  }
-
-  /**
-   * Returns a RLP encoding of an ENR
-   */
-  public encode(): Buffer {
-    this.content = [
-      RLP.encode(this.sequence),
-      "id", this.keyPairs.get("id"),
-    ];
-    if (this.keyPairs.get("secp256k1")) {
-       content.push("secp256k1", RLP.encode(this.keyPairs.get("secp256k1")));
-    }
-
-    if (this.keyPairs.get("ip")) {
-      content.push("ip", RLP.encode(this.keyPairs.get("ip")));
-    }
-
-    if (this.keyPairs.get("tcp")) {
-      content.push("tcp", RLP.encode(this.keyPairs.get("tcp")));
-    }
-
-    if (this.keyPairs.get("udp")) {
-      content.push("udp", RLP.encode(this.keyPairs.get("udp")));
-    }
-
-    if (this.keyPairs.get("ip6")) {
-      content.push("ip6", RLP.encode(this.keyPairs.get("ip6")));
-    }
-
-    if (this.keyPairs.get("tcp6")) {
-      content.push("tcp6", RLP.encode(this.keyPairs.get("tcp6")));
-    }
-
-    if (this.keyPairs.get("udp6")) {
-      content.push("udp6", RLP.encode(this.keyPairs.get("udp6")));
-    }
-
-    this.signature = enrKeyPair.sign(content);
-    const totalSize = content.length + this.signature.length;
-    if (totalSize > constants.MAX_RECORD_SIZE) {
-      // reject record
-      throw new RangeError("Size of the record is larger than 300 bytes. It's size is " + totalSize);
-    }
-
-    const record = RLP.encode([RLP.encode(this.signature)].concat(this.content));
-    return record;
-  }
-
-  /**
-   * Returns a text encoding of an RLP-encoded ENR
-   */
-  public encodeTxt(): string {
-    const record = this.encode();
-    return "enr:" + Buffer.from(record).toString("base64");
   }
 }

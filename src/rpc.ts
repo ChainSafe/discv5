@@ -1,10 +1,10 @@
 import RLP = require("rlp");
 import { Input } from "rlp";
-import * as constants from "./constants";
-import { ISocketAddr } from "./discv5_session";
 import { EthereumNodeRecord } from "./enr/enr";
 import { packet } from "./packets";
+import { ISocketAddr } from "./discv5_session";
 import * as utils from "./utils";
+import * as constants from "./constants";
 
 export enum MsgType {
   Ping = 1,
@@ -357,11 +357,11 @@ export function decodeTopicQuery(data: Buffer): ITopicQuery {
 }
 
 export function newRequest(dst: ISocketAddr, p: packet, msg?: IMessage): IRequest {
-  return IRequest; {
+  return IRequest {
     dst,
     p,
     msg,
     delay(Date.now() + constants.REQUEST_TIMEOUT),
-    1;
-  }
+    1
+  };
 }

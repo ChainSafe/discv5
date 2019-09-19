@@ -117,7 +117,7 @@ export async function decryptMsg(
     key: Buffer,
     nonce: Buffer,
     msg: Buffer,
-    aad: Buffer): Promise<Buffer> {
+aad: Buffer): Promise<Buffer> {
   const aesCipherObj = await crypto.aes.create(key, nonce);
   aesCipherObj.setAAD(add);
 
@@ -152,7 +152,7 @@ export async function encryptMsg(
     key: Buffer,
     nonce: cryptoTypes.Nonce,
     msg: Buffer,
-    aad: Buffer,
+    aad: Buffer
 ): Promise<Buffer> {
   const aesCipherObj = await crypto.aes.create(key, nonce);
   aesCipherObj.setAAD(add);
