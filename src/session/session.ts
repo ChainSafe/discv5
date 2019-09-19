@@ -1,29 +1,29 @@
-import {
-  AuthHeader,
-  IAuthMessagePacket,
-  IMessagePacket,  
-  IRandomPacket,
-  IRegularPacket,
-  IWhoAreYouPacket 
-} from "../packets";
+import * as crypto from "chainsafe/libp2p-crypto";
+import * as dgram from "dgram";
+import { Secp256k1PrivateKey, Secp256k1PublicKey } from "libp2p-crypto-secp256k1";
+import { sha256 } from "js-sha256";
 
+import * as constants from "../constants";
 import * as cryptoTypes from "../crypto/misc_crypto_types";
 import { EthereumNodeRecord } from "../enr/enr";
 import { NodeId } from "../enr/enr_types";
-import { Secp256k1PrivateKey, Secp256k1PublicKey } from "libp2p-crypto-secp256k1";
-import { sha256 } from "js-sha256";
-import * as constants from "../constants";
+import {
+  IAuthHeader,
+  IAuthMessagePacket,
+  IMessagePacket,
+  IRandomPacket,
+  IRegularPacket,
+  IWhoAreYouPacket,
+} from "../packet";
 import * as sessionCrypto from "./session_crypto";
-import * as dgram from "dgram";
-import * as crypto from "chainsafe/libp2p-crypto";
+import { ISocketAddr } from "../transport";
 import * as utils from "../utils";
-import { ISocketAddr } from "../discv5_service";
 
 export enum SessionStatus {
   WhoAreYouSent,
   RandomSent,
   Untrusted,
-  Established
+  Established,
 }
 
 export interface Keys {
@@ -40,10 +40,10 @@ export class Session {
   public timeout: Promise<void>;
   public lastSeenSocket: ISocketAddr;
 
-  static newRandomSession(tag: Buffer, remoteEnr: EthereumNodeRecord): { session: Session, randomPacket: packet } {
-    let randomPacket = IRandomPacket {auth_tag: tag, random_data: crypto.randomBytes(44)};
+  public static newRandomSession(tag: Buffer, remoteEnr: EthereumNodeRecord): { session: Session, randomPacket: packet } {
+    const randomPacket: IRandomPacket = {auth_tag: tag, random_data: crypto.randomBytes(44)};
 
-    let session: Session = new Session();
+    const session: Session = new Session();
     session.status = SessionStatus.RandomSent;
     session.remoteENR = remoteEnr;
     session.ephemPubKey = null;
@@ -54,11 +54,11 @@ export class Session {
     return { session, randomPacket };
   }
 
-  static newWhoAreYou(tag: Buffer, nodeId: NodeId, enrSeq: bigint, remoteEnr: EthereumNodeRecord, authTag: Buffer): {session: Session, whoAreYouPacket: packet} {
+  public static newWhoAreYou(tag: Buffer, nodeId: NodeId, enrSeq: bigint, remoteEnr: EthereumNodeRecord, authTag: Buffer): {session: Session, whoAreYouPacket: packet} {
     let magic: Buffer = sha256(Buffer.concat([nodeId, constants.WHOAREYOU_STR]));
     let idNonce: Nonce = crypto.randomBytes(constants.ID_NONCE_LENGTH);
 
-    let whoareyouPacket = IWhoAreYouPacket {
+    let whoareyouPacket: IWhoAreYouPacket = {
       tag: tag,
       magic: magic,
       token: authTag,
@@ -77,11 +77,11 @@ export class Session {
     return { session, whoareyouPacket };
   }
 
-  async generateKeys(localNodeId: NodeId, idNonce: Nonce): Promise<void> {
-    let { encKey, decKey, authRepKey, ephemKey } = await sessionCrypto.generateSessionKeys();
+  public async generateKeys(localNodeId: NodeId, idNonce: Nonce): Promise<void> {
+    const { encKey, decKey, authRepKey, ephemKey } = await sessionCrypto.generateSessionKeys();
 
     this.ephemPubKey = ephemKey;  
-    this.keys = Keys {
+    this.keys = {
       encKey,
       decKey,
       authRepKey,
@@ -92,23 +92,23 @@ export class Session {
     this.status = SessionStatus.Established;
   }
 
-  async encryptMsg(tag: Buffer, msg: Buffer): Promise<packet> {
-    let authTag: Buffer = crypto.randomBytes(constants.AUTH_TAG_LENGTH);
+  public async encryptMsg(tag: Buffer, msg: Buffer): Promise<Packet> {
+    const authTag: Buffer = crypto.randomBytes(constants.AUTH_TAG_LENGTH);
 
-    let ciphertext: Buffer = await sessionCrypto.encryptMsg(this.sessionKeys.encryptionKey, authTag, msg);
+    const ciphertext = await sessionCrypto.encryptMsg(this.sessionKeys.encryptionKey, authTag, msg);
 
-    let msgPacket = IMessagePacket {
+    let msgPacket: IMessagePacket = {
       tag: tag,
       message: msg,
-      auth_tag: authTag
-    }
+      auth_tag: authTag,
+    };
 
     return msgPacket;
   }
 
-  async encryptWithHeader(tag: Buffer, localNodeId: NodeId, idNonce: Nonce, authPt: Buffer, msg: Buffer): Promise<packet> {
+  public async encryptWithHeader(tag: Buffer, localNodeId: NodeId, idNonce: Nonce, authPt: Buffer, msg: Buffer): Promise<Packet> {
     await this.generateKeys(localNodeId, idNonce);
-    { authHeader, ciphertext } = await sessionCrypto.encryptWithHeader(
+    const { authHeader, ciphertext } = await sessionCrypto.encryptWithHeader(
         this.keys.authResponseKey,
         this.keys.encryptionKey,
         authPt,
@@ -117,7 +117,7 @@ export class Session {
         tag
     );
 
-    let authMsg = IAuthMessagePacket {
+    const authMsg: IAuthMessagePacket = {
       tag: tag,
       auth_header: authHeader,
       message: msg
@@ -126,11 +126,11 @@ export class Session {
     return authMsg;
   }
 
-  static generateNonce(idNonce: Nonce): Nonce {
-   return Buffer.concat([Buffer.from(constants.NONCE_STR), idNonce]);     
+  public static generateNonce(idNonce: Nonce): Nonce {
+   return Buffer.concat([Buffer.from(constants.NONCE_STR), idNonce]);
   }
 
-  async establishFromHeader(
+  public async establishFromHeader(
     tag: Buffer,
     localKeyPair: ENRKeyPair,
     localId: NodeId,
@@ -183,39 +183,38 @@ export class Session {
       return this.updateTrusted();
   }
 
-  async decryptMsg(nonce: Buffer, msg: Buffer, aad: Buffer): Promise<Buffer> {
-      return await sessionCrypto.decryptMsg(this.keys.decryptionKey, nonce, msg, aad);
+  public async decryptMsg(nonce: Buffer, msg: Buffer, aad: Buffer): Promise<Buffer> {
+    return await sessionCrypto.decryptMsg(this.keys.decryptionKey, nonce, msg, aad);
   }
 
-  updateEnr(enr: EthereumNodeRecord): boolean {
-      if (this.remoteENR.sequenceNumber < enr.sequenceNumber) {
-        this.remoteENR = enr;
-        return this.updateTrusted();
-      }
-      return false;
+  public updateEnr(enr: EthereumNodeRecord): boolean {
+    if (this.remoteENR.sequenceNumber < enr.sequenceNumber) {
+      this.remoteENR = enr;
+      return this.updateTrusted();
+    }
+    return false;
   }
 
-  updateTrusted(): boolean {
-      if (self.status === SessionStatus.Untrusted) {
-          if (self.lastSeenSocket === this.remoteENR.udp) {
-             self.status = SessionStatus.Established;
-             return true;
-          }
-      } else if (this.status === SessionStatus.Established) {
-          if (self.lastSeenSocket !== this.remoteENR.udp) {
-             self.status = SessionStatus.Untrusted;
-          }
-          
+  public updateTrusted(): boolean {
+    if (this.status === SessionStatus.Untrusted) {
+      if (this.lastSeenSocket === this.remoteENR.udp) {
+        this.status = SessionStatus.Established;
+        return true;
       }
+    } else if (this.status === SessionStatus.Established) {
+      if (this.lastSeenSocket !== this.remoteENR.udp) {
+        this.status = SessionStatus.Untrusted;
+      }
+    }
 
-      return false;
+    return false;
   }
 
   set lastSeenSocket(socket: ISocketAddr): void {
       this.lastSeenSocket = socket;
   }
 
-  incrementTimeout(millisecs: number): void {
+  public incrementTimeout(millisecs: number): void {
       self.timeout = utils.delay(Date.now() + millisecs);
   }
 
@@ -231,15 +230,11 @@ export class Session {
     return this.remoteENR;
   }
 
-  isTrusted(): boolean {
-    if (status.Established) {
-      return true;
-    } else {
-      return false;
-    }
+  public isTrusted(): boolean {
+    return(this.status === SessionStatus.Established;
   }
 
-  established(): boolean {
+  public established(): boolean {
     switch(this.status) {
       case this.status.WhoAreYouSent:
         return false;
