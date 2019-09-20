@@ -1,6 +1,6 @@
 import * as dgram from "dgram";
-import {EventEmitter} from "events";
 import { promisify } from "es6-promisify";
+import {EventEmitter} from "events";
 
 import * as constants from "./constants";
 import {

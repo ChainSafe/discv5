@@ -4,15 +4,15 @@
  */
 
 import {
-    AuthHeader,
+    IAuthHeader,
     IAuthMessagePacket,
-    IAuthResponsePacket,
+    Packet,
     PacketType,
 } from "../packets";
 
-import { encodeAuthHeader } from "../encode";
+import { encodeAuthHeader } from "../packet";
 
-import { decodeAuthHeader, decodeAuthResponsePacket } from "../decode";
+import { decode } from "../packet";
 
 import * as constants from "../constants";
 
@@ -26,7 +26,7 @@ import * as cryptoTypes from "../crypto/misc_crypto_types";
 
 import { Secp256k1PublicKey } from "libp2p-crypto-secp256k1";
 
-import crypto from "@chainsafe/libp2p-crypto";
+import * as crypto from "libp2p-crypto";
 
 export interface ISessionKeys {
   initiatorKey: Buffer;
@@ -35,7 +35,7 @@ export interface ISessionKeys {
   ephemKey?: Buffer;
 }
 
-export interface AuthenticatedCiphertext {
+export interface IAuthenticatedCiphertext {
   authHeader: AuthHeader;
   ciphertext: Buffer;
 }
@@ -93,16 +93,19 @@ export async function deriveKeysFromPubkey(
 
 export async function decryptAuthHeader(
     authRespKey: Buffer,
-    header: AuthHeader,
+    header: IAuthHeader,
     tag: Buffer,
-): Promise<IAuthResponsePacket> {
+): Promise<IAuthMessagePacket> {
   if (header.auth_scheme_name !== constants.KNOWN_SCHEME) {
     throw new Error("Invalid authentication scheme");
   }
 
-  const rlpEncodedAuthResp: Buffer = await decryptMsg(authRespKey, Buffer.alloc(constants.KEY_LENGTH), header.auth_response, tag);
-  const authResponse = decodeAuthResponsePacket(rlpEncodedAuthResp);
-  return authResponse;
+  const rlpEncodedAuthResp: Buffer = await decryptMsg(
+    authRespKey,
+    Buffer.alloc(constants.KEY_LENGTH),
+    header.authResponse,
+    tag,
+  );
 }
 
 export async function verifyAuthNonce(
@@ -117,9 +120,9 @@ export async function decryptMsg(
     key: Buffer,
     nonce: Buffer,
     msg: Buffer,
-aad: Buffer): Promise<Buffer> {
+    aad: Buffer): Promise<Buffer> {
   const aesCipherObj = await crypto.aes.create(key, nonce);
-  aesCipherObj.setAAD(add);
+  aesCipherObj.setAAD(aad);
 
   return await aesCipherObj.decrypt(msg);
 }
@@ -131,18 +134,18 @@ export async function encryptWithHeader(
     msg: Buffer,
     ephemPubKey: Buffer,
     tag: Buffer,
-): Promise<AuthenticatedCiphertext> {
-  let ciphertext: Buffer = await encryptMsg(authRespKey, Buffer.alloc(constants.AUTH_TAG_LENGTH), authPart);
+): Promise<IAuthenticatedCiphertext> {
+  let ciphertext: Buffer = await encryptMsg(authRespKey, Buffer.alloc(constants.AUTH_TAG_LENGTH), authPart, tag);
 
   const authTag: cryptoTypes.Nonce = crypto.randomBytes(constants.AUTH_TAG_LENGTH);
-  const authHeader: AuthHeader = {
+  const authHeader: IAuthHeader = {
     auth_response: ciphertext,
     auth_scheme_name: "gcm",
     auth_tag: authTag,
     ephemeral_pubkey: ephemPubKey,
   };
 
-  const authData = Buffer.concat([tag, encodeAuthHeader]);
+  const authData = Buffer.concat([tag, encodeAuthHeader(authHeader)]);
 
   ciphertext = await encryptMsg(encryptionKey, authTag, msg, authData);
   return { authHeader, ciphertext };
@@ -152,9 +155,9 @@ export async function encryptMsg(
     key: Buffer,
     nonce: cryptoTypes.Nonce,
     msg: Buffer,
-    aad: Buffer
+    aad: Buffer,
 ): Promise<Buffer> {
   const aesCipherObj = await crypto.aes.create(key, nonce);
-  aesCipherObj.setAAD(add);
+  aesCipherObj.setAAD(aad);
   return await aesCipherObj.encrypt(msg);
 }

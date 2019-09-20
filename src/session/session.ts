@@ -1,8 +1,7 @@
-import * as crypto from "chainsafe/libp2p-crypto";
 import * as dgram from "dgram";
 import { sha256 } from "js-sha256";
+import * as crypto from "libp2p-crypto";
 import { Secp256k1PrivateKey, Secp256k1PublicKey } from "libp2p-crypto-secp256k1";
-
 import * as constants from "../constants";
 import * as cryptoTypes from "../crypto/misc_crypto_types";
 import { EthereumNodeRecord } from "../enr/enr";
@@ -49,11 +48,27 @@ export interface IKeys {
 
 export class Session {
 
+  set lastSeenSocket(socket: ISocketAddr): void {
+      this.lastSeenSocket = socket;
+  }
+
+  get timeout(): Promise<void> {
+     return this.timeout;
+  }
+
+  get status(): SessionStatus {
+     return this.status;
+  }
+
+  get remoteEnr(): EthereumNodeRecord {
+    return this.remoteENR;
+  }
+
   public static newRandomSession(
     tag: Buffer,
     remoteEnr: EthereumNodeRecord,
-  ): { session: Session, randomPacket: Packet } {
-    const randomPacket: IRandomPacket = {tag, randomData: crypto.randomBytes(44)};
+  ): { session: Session, randomPacket: packet } {
+    const randomPacket: IRandomPacket = {auth_tag: tag, random_data: crypto.randomBytes(44)};
 
     const session: Session = new Session();
     session.status = SessionStatus.RandomSent;
@@ -66,7 +81,13 @@ export class Session {
     return { session, randomPacket };
   }
 
-  public static newWhoAreYou(tag: Buffer, nodeId: NodeId, enrSeq: bigint, remoteEnr: EthereumNodeRecord, authTag: Buffer): {session: Session, whoAreYouPacket: Packet} {
+  public static newWhoAreYou(
+    tag: Buffer,
+    nodeId: NodeId,
+    enrSeq: bigint,
+    remoteEnr: EthereumNodeRecord,
+    authTag: Buffer,
+  ): {session: Session, whoAreYouPacket: packet} {
     const magic: Buffer = sha256(Buffer.concat([nodeId, constants.WHOAREYOU_STR]));
     const idNonce: Nonce = crypto.randomBytes(constants.ID_NONCE_LENGTH);
 
@@ -74,11 +95,11 @@ export class Session {
       tag,
       magic,
       token: authTag,
-      idNonce,
-      enrSeq,
+      id_nonce: idNonce,
+      enr_seq: enrSeq,
     };
 
-    const session = new Session();
+    const session: Session = new Session();
     session.status = SessionStatus.WhoAreYouSent;
     session.remoteENR = remoteEnr;
     session.ephemPubKey = null;
@@ -92,7 +113,6 @@ export class Session {
   public static generateNonce(idNonce: Nonce): Nonce {
    return Buffer.concat([Buffer.from(constants.NONCE_STR), idNonce]);
   }
-
   public status: SessionStatus;
   public remoteENR: EthereumNodeRecord;
   public ephemPubKey: Buffer;
@@ -103,11 +123,11 @@ export class Session {
   public async generateKeys(localNodeId: NodeId, idNonce: Nonce): Promise<void> {
     const { encKey, decKey, authRepKey, ephemKey } = await sessionCrypto.generateSessionKeys();
 
-    this.ephemPubKey = ephemKey;  
+    this.ephemPubKey = ephemKey;
     this.keys = {
       encryptionKey: encKey,
       decryptionKey: decKey,
-      authRespKey: authRepKey,
+      authResponseKey: eauthRepKey,
     };
 
     this.timeout = utils.delay(Date.now() + constants.SESSION_TIMEOUT);
@@ -122,7 +142,6 @@ export class Session {
 
     const msgPacket: IMessagePacket = {
       tag,
-      authTag,
       message: msg,
     };
 
@@ -138,17 +157,17 @@ export class Session {
   ): Promise<Packet> {
     await this.generateKeys(localNodeId, idNonce);
     const { authHeader, ciphertext } = await sessionCrypto.encryptWithHeader(
-      this.keys.authRespKey,
-      this.keys.encryptionKey,
-      authPt,
-      msg,
-      this.ephemPubKey,
-      tag,
+        this.keys.authResponseKey,
+        this.keys.encryptionKey,
+        authPt,
+        msg,
+        this.ephemPubKey,
+        tag,
     );
 
     const authMsg: IAuthMessagePacket = {
       tag,
-      authHeader,
+      auth_header: authHeader,
       message: msg,
     };
 
@@ -161,17 +180,17 @@ export class Session {
     localId: NodeId,
     remoteId: NodeId,
     idNonce: Nonce,
-    authHeader: IAuthHeader,
+    authHeader: AuthHeader,
   ): Promise<boolean> {
       const {decKey, encKey, authRespKey } = sessionCrypto.deriveKeysFromPubKey(
         localKeyPair,
         localId,
         remoteId,
         idNonce,
-        authHeader.ephemeralPubkey,
+        auth_header.ephemeral_pubkey,
       );
 
-      const authResp = await sessionCrypto.decryptAuthHeader(authRespKey, authHeader, tag);
+      const authResp = sessionCrypto.decryptAuthHeader(authRespKey, authHeader, tag);
 
       if (authResp) {
         if (this.remoteENR.sequenceNumber < authResp.node_record.sequenceNumber) {
@@ -186,9 +205,9 @@ export class Session {
       this.remoteENR.compressedPubKey.copy(remotePubKey);
 
       const verificationBool = await sessionCrypto.verifyAuthNonce(
-        remotePubKey,
-        this.generateNonce(idNonce),
-        authResp.id_nonce_sig,
+          remotePubKey,
+          this.generateNonce(idNonce),
+          authResp.id_nonce_sig,
       );
 
       if (!verificationBool) {
@@ -200,8 +219,8 @@ export class Session {
 
       this.keys = {
         encryptionKey: encKey,
+        authResponseKey: authRespKey,
         decryptionKey: decKey,
-        authRespKey,
       };
 
       this.timeout = utils.delay(Date.now() + constants.SESSION_TIMEOUT);
@@ -238,24 +257,8 @@ export class Session {
     return false;
   }
 
-  set lastSeenSocket(socket: ISocketAddr): void {
-      this.lastSeenSocket = socket;
-  }
-
   public incrementTimeout(millisecs: number): void {
       self.timeout = utils.delay(Date.now() + millisecs);
-  }
-
-  get timeout(): Promise<void> {
-     return this.timeout;
-  }
-
-  get status(): SessionStatus {
-     return this.status;
-  }
-
-  get remoteEnr(): EthereumNodeRecord {
-    return this.remoteENR;
   }
 
   public isTrusted(): boolean {
@@ -264,7 +267,7 @@ export class Session {
 
   public established(): boolean {
     switch (this.status) {
-      case SessionStatus.WhoAreYouSent:
+      case this.status.WhoAreYouSent:
         return false;
       case SessionStatus.RandomSent:
         return false;

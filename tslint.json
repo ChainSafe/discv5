@@ -7,7 +7,9 @@
     "rules": {
       "object-literal-sort-keys": false,
       "no-console": false,
-      "no-empty": false
+      "no-empty": false,
+      "no-bitwise": false,
+      "trailing-comma": false
     },
     "rulesDirectory": []
 }

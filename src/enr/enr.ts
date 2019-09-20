@@ -38,16 +38,16 @@ export class EthereumNodeRecord {
    * Returns a RLP encoding of an ENR
    */
   public encode(): Buffer {
-    let rlpArray = [
+    const rlpArray = [
       RLP.encode(this.sequence),
-      "id", this.content.get("id")
+      "id", this.content.get("id"),
     ];
-    
-    ["secp256k1", "ip", "tcp", "udp", "tcp6", "udp6"].forEach(key => {
+
+    ["secp256k1", "ip", "tcp", "udp", "tcp6", "udp6"].forEach((key) => {
       if (this.content.get(key)) {
-        rlpArray.push(key, RLP.encode(this.content.get(key)));  
+        rlpArray.push(key, RLP.encode(this.content.get(key)));
       }
-    })
+    });
 
     this.signature = this.enrKeyPair.sign(Buffer.from(rlpArray));
     const totalSize = rlpArray.length + this.signature.length;
@@ -68,6 +68,22 @@ export class EthereumNodeRecord {
     return "enr:" + Buffer.from(record).toString("base64");
   }
 
+  public decode(record: Buffer): EthereumNodeRecord {
+    const decodedRecord = RLP.decode(record);
+    const enr = new EthereumNodeRecord();
+    enr.signature = RLP.decode(decodedRecord[0]);
+    enr.sequence = RLP.decode(decodedRecord[1]);
+    enr.id = decodedRecord[2];
+
+    ["secp256k1", "ip", "tcp", "udp", "tcp6", "udp6"].forEach((key) => {
+      const indexOfKey = decodedRecord.indexOf(key);
+      if (indexOfKey !== -1) {
+        enr.content.set(key, RLP.decode(decodedRecord[indexOfKey + 1]));
+      }
+    });
+
+    return enr;
+  }
 
   // Getters and Setters
 
@@ -165,22 +181,5 @@ export class EthereumNodeRecord {
 
   public set enrKeyPair(newEnrKeyPair: ENRKeyPair): void {
      this.enrKeyPair = newEnrKeyPair;
-  }
-
-  public static decode(record: Buffer): EthereumNodeRecord {
-    const decodedRecord = RLP.decode(record);
-    const enr = new EthereumNodeRecord();
-    enr.signature = RLP.decode(decodedRecord[0]);
-    enr.sequence = RLP.decode(decodedRecord[1]);
-    enr.id = decodedRecord[2];
-
-    ["secp256k1", "ip", "tcp", "udp", "tcp6", "udp6"].forEach(key => {
-      let indexOfKey = decodedRecord.indexOf(key);
-      if (indexOfKey !== -1) {
-        enr.content.set(key, RLP.decode(decodedRecord[indexOfKey + 1]));
-      }
-    });
-
-    return enr;
   }
 }
