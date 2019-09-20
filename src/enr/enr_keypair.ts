@@ -12,11 +12,11 @@ export class ENRKeyPair {
     this.publicKey = this.privateKey.public;
   }
 
-  public get CompressedPublicKey(): Buffer {
+  public get compressedPublicKey(): Buffer {
     return crypto.compressPublicKey(this.publicKey);
   }
 
-  public get UncompressedPublicKey(): Buffer {
+  public get uncompressedPublicKey(): Buffer {
     return crypto.decompressPublicKey(this.publicKey);
   }
 
@@ -33,6 +33,6 @@ export class ENRKeyPair {
   }
 
   public derive(): NodeId {
-     return keccak256(this.UncompressedPublicKey);
+     return keccak256(this.uncompressedPublicKey);
   }
 }
