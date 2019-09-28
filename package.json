@@ -19,9 +19,7 @@
     "test:browser": "aegir test --target browser --target webworker",
     "tsc": "tsc"
   },
-  "pre-push": [
-    "lint"
-  ],
+  
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ChainSafe/libp2p-discv5.git"
