@@ -11,7 +11,7 @@
     "test": "test"
   },
   "scripts": {
-    "lint": "tslint --project tsconfig.json",
+    "lint": "eslint --ext .ts",
     "release": "aegir release",
     "build": "aegir build",
     "test": "mocha -r ts-node/register test/**/*.test.ts",
@@ -19,7 +19,6 @@
     "test:browser": "aegir test --target browser --target webworker",
     "tsc": "tsc"
   },
-  
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ChainSafe/libp2p-discv5.git"
@@ -45,6 +44,7 @@
     "aegir": "^19.0.3",
     "assert": "^2.0.0",
     "chai": "^4.2.0",
+    "eslint": "^6.5.1",
     "ethereumjs-utils": "^5.2.5",
     "karma": "^4.3.0",
     "mocha": "^6.2.0",
