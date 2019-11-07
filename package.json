@@ -57,13 +57,17 @@
   },
   "dependencies": {
     "@chainsafe/milagro-crypto-js": "^0.1.3",
+    "@types/randombytes": "^2.0.0",
+    "@types/secp256k1": "^3.5.0",
     "bcrypto": "^4.1.0",
+    "bigint-buffer": "^1.1.5",
     "crypto": "^1.0.1",
     "debug": "^4.1.1",
     "dgram": "^1.0.1",
     "es6-promisify": "^6.0.2",
     "js-sha256": "^0.9.0",
     "k-bucket": "^5.0.0",
+    "keccakjs": "^0.2.3",
     "libp2p-bootstrap": "^0.9.7",
     "libp2p-crypto-secp256k1": "^0.4.0",
     "libp2p-kad-dht": "^0.15.0",
@@ -73,6 +77,8 @@
     "promisify-es6": "^1.0.3",
     "pull-length-prefixed": "^1.3.3",
     "pull-stream": "^3.6.11",
-    "rlp": "^2.2.3"
+    "randombytes": "^2.1.0",
+    "rlp": "^2.2.3",
+    "secp256k1": "^3.7.1"
   }
 }
