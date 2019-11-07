@@ -1,7 +1,5 @@
 // DISCV5 message packet types
 
-import { EthereumNodeRecord } from "../enr/enr";
-
 export type Tag = Buffer; // TAG_LENGTH
 export type Nonce = Buffer; // ID_NONCE_LENGTH
 export type AuthTag = Buffer; // AUTH_TAG_LENGTH

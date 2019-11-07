@@ -1,6 +1,7 @@
 import * as dgram from "dgram";
-import {EventEmitter} from "events";
+// @ts-ignore
 import { promisify } from "es6-promisify";
+import { EventEmitter } from "events";
 
 import * as constants from "./constants";
 import {
@@ -56,7 +57,7 @@ export class TransportService extends EventEmitter {
     return promisify(this.socket.send.bind(this.socket))(encode(type, packet), to.port, to.address);
   }
 
-  public handleIncoming(data: Buffer, rinfo: IRemoteInfo): void {
+  public handleIncoming = (data: Buffer, rinfo: IRemoteInfo): void => {
     const sender = {
       address: rinfo.address,
       port: rinfo.port,
