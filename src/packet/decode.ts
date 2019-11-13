@@ -30,49 +30,34 @@ export function decode(data: Buffer, magic: Magic): Packet {
     throw new Error(ERR_TOO_SMALL);
   }
   const tag = data.slice(0, TAG_LENGTH);
-
-  // initially look for a WHOAREYOU packet
-  if (
-    data.length >= TAG_LENGTH + MAGIC_LENGTH &&
-    data.slice(TAG_LENGTH, TAG_LENGTH + MAGIC_LENGTH).equals(magic)
-  ) {
-    return decodeWhoAreYou(tag, data);
-  } else if (data[TAG_LENGTH] === 140) { // check for RLP(bytes) or RLP(list)
-    return decodeStandardMessage(tag, data);
+  data = data.slice(TAG_LENGTH);
+  const decoded = RLP.decode(data, true) as unknown as RLP.Decoded;
+  // data looks like either:
+  //   magic ++ rlp_list(...)
+  //   tag   ++ rlp_bytes(...) ++ message
+  //   tag   ++ rlp_list(...)  ++ message
+  if (tag.equals(magic)) {
+    return decodeWhoAreYou(tag, decoded.data as Buffer[], decoded.remainder);
+  } else if (!Array.isArray(decoded.data)) {
+    return decodeStandardMessage(tag, decoded.data, decoded.remainder);
+  } else {
+    return decodeAuthHeader(tag, decoded.data, decoded.remainder);
   }
-  // not a Random Packet or standard message, may be a message with authentication header
-  const rlp = RLP.decode(data.slice(TAG_LENGTH));
-  if (Array.isArray(rlp)) {
-    // potentially authentication header
-    const rlpLength = rlp.length;
-    return decodeAuthHeader(tag, data, rlpLength);
-  }
-  throw new Error(ERR_UNKNOWN_PACKET);
 }
 
-export function decodeWhoAreYou(tag: Tag, data: Buffer): IWhoAreYouPacket {
-  // 32 tag + 32 magic + 32 token + 12 id + 2 enr + 1 rlp
-  const magic = data.slice(TAG_LENGTH, TAG_LENGTH + MAGIC_LENGTH);
-  // decode the rlp list
-  let rlp: Buffer[];
-  try {
-    rlp = RLP.decode(data.slice(TAG_LENGTH + MAGIC_LENGTH) as RLP.Input) as Buffer[];
-  } catch (e) {
+export function decodeWhoAreYou(magic: Magic, data: Buffer[], remainder: Buffer): IWhoAreYouPacket {
+  if (!Array.isArray(data) || data.length !== 3 || remainder.length > 0) {
     throw new Error(ERR_UNKNOWN_FORMAT);
   }
-  if (!Array.isArray(rlp) || rlp.length !== 3) {
-    throw new Error(ERR_UNKNOWN_FORMAT);
-  }
-  const [token, idNonce, enrSeqBytes] = rlp;
+  const [token, idNonce, enrSeqBytes] = data;
   if (
     idNonce.length !== ID_NONCE_LENGTH ||
     token.length !== AUTH_TAG_LENGTH
   ) {
     throw new Error(ERR_INVALID_BYTE_SIZE);
   }
-  const enrSeq = BigInt(`0x${enrSeqBytes.toString("hex")}`);
+  const enrSeq = Number(`0x${enrSeqBytes.toString("hex")}`);
   return {
-    tag,
     token,
     magic,
     idNonce,
@@ -80,45 +65,35 @@ export function decodeWhoAreYou(tag: Tag, data: Buffer): IWhoAreYouPacket {
   };
 }
 
-export function decodeStandardMessage(tag: Tag, data: Buffer): IMessagePacket {
-  let authTag: Buffer;
-  try {
-    authTag = RLP.decode(data.slice(TAG_LENGTH, TAG_LENGTH + AUTH_TAG_LENGTH + 1));
-  } catch (e) {
-    throw new Error(ERR_UNKNOWN_FORMAT);
-  }
+export function decodeStandardMessage(tag: Tag, data: Buffer, remainder: Buffer): IMessagePacket {
   return {
     tag,
-    authTag,
-    message: data.slice(TAG_LENGTH + AUTH_TAG_LENGTH + 1),
+    authTag: data,
+    message: remainder,
   };
 }
 
 // Decode a message that contains an authentication header
-export function decodeAuthHeader(tag: Tag, data: Buffer, rlpLength: number): IAuthMessagePacket {
-  let authHeaderRlp: Buffer[];
-  try {
-    authHeaderRlp = RLP.decode(data.slice(TAG_LENGTH, TAG_LENGTH + rlpLength) as RLP.Input) as Buffer[];
-  } catch (e) {
-    throw new Error(ERR_UNKNOWN_FORMAT);
-  }
-  if (!Array.isArray(authHeaderRlp) || authHeaderRlp.length !== 4) {
+export function decodeAuthHeader(tag: Tag, data: Buffer[], remainder: Buffer): IAuthMessagePacket {
+  if (!Array.isArray(data) || data.length !== 5) {
     throw new Error(ERR_UNKNOWN_FORMAT);
   }
   const [
     authTag,
+    idNonce,
     authSchemeNameBytes,
     ephemeralPubkey,
     authResponse,
-  ] = authHeaderRlp;
+  ] = data;
   return {
     tag,
     authHeader: {
       authTag,
+      idNonce,
       authSchemeName: authSchemeNameBytes.toString("utf8"),
       ephemeralPubkey,
       authResponse,
     },
-    message: data.slice(TAG_LENGTH + rlpLength),
+    message: remainder,
   };
 }

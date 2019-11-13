@@ -16,6 +16,7 @@ export type Packet = IRandomPacket | IWhoAreYouPacket | IAuthMessagePacket | IMe
 
 export interface IAuthHeader {
   authTag: Buffer;
+  idNonce: Buffer;
   authSchemeName: "gcm" | string;
   ephemeralPubkey: Buffer;
   authResponse: Buffer;
@@ -39,7 +40,7 @@ export interface IRandomPacket extends IRegularPacket {
   randomData: Buffer;
 }
 
-export interface IWhoAreYouPacket extends IRegularPacket {
+export interface IWhoAreYouPacket {
   // SHA256(`dest-node-id` || "WHOAREYOU").
   magic: Magic;
   // The auth-tag of the request.
@@ -47,7 +48,7 @@ export interface IWhoAreYouPacket extends IRegularPacket {
   // The `id-nonce` to prevent handshake replays.
   idNonce: Nonce;
   // Highest known ENR sequence number of node.
-  enrSeq: bigint;
+  enrSeq: number;
 }
 
 export interface IAuthMessagePacket extends IRegularPacket {

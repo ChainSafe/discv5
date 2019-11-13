@@ -1,3 +1,4 @@
+import {toBufferBE} from "bigint-buffer";
 import RLP = require("rlp");
 import {
   IAuthHeader,
@@ -25,6 +26,7 @@ export function encode(type: PacketType, packet: Packet): Buffer {
 export function encodeAuthHeader(h: IAuthHeader): Buffer {
   return RLP.encode([
     h.authTag,
+    h.idNonce,
     h.authSchemeName,
     h.ephemeralPubkey,
     h.authResponse,
@@ -41,12 +43,11 @@ function encodeRandomPacket(p: IRandomPacket): Buffer {
 
 function encodeWhoAreYouPacket(p: IWhoAreYouPacket): Buffer {
   return Buffer.concat([
-    p.tag,
     p.magic,
     RLP.encode([
       p.token,
       p.idNonce,
-      Buffer.from(p.enrSeq.toString(16).padStart(8 * 2, "0").slice(0, 8 * 2), "hex"),
+      p.enrSeq,
     ]),
   ]);
 }
