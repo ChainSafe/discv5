@@ -3,7 +3,7 @@ import StrictEventEmitter from "strict-event-emitter-types";
 import debug from "debug";
 import Multiaddr = require("multiaddr");
 
-import { ITransportService } from "../transport";
+import { ITransportService, isCorrectNetworkMultiAddr } from "../transport";
 import {
   PacketType,
   Packet,
@@ -91,6 +91,11 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    */
   public async start(): Promise<void> {
     log(`Starting session service with node id ${this.enr.nodeId}`);
+    if (this.enr.multiaddrUDP && !(await isCorrectNetworkMultiAddr(this.enr.multiaddrUDP))) {
+      log(`The multiaddr of ${this.enr.multiaddrUDP.toString()} does not belong to this network, set to undefined`);
+      this.enr.multiaddrUDP = undefined;
+      this.enr.encodeToValues(this.keypair.privateKey);
+    }
     this.transport.on("packet", this.onPacket);
     await this.transport.start();
   }
