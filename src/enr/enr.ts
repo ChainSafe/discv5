@@ -124,10 +124,10 @@ export class ENR extends Map<ENRKey, ENRValue> {
   }
   set multiaddrUDP(multiaddr: Multiaddr | undefined) {
     if (!multiaddr) {
-      this.set("ip", (undefined as unknown) as Buffer);
-      this.set("udp", (undefined as unknown) as Buffer);
-      this.set("ip6", (undefined as unknown) as Buffer);
-      this.set("udp6", (undefined as unknown) as Buffer);
+      this.delete("ip");
+      this.delete("udp");
+      this.delete("ip6");
+      this.delete("udp6");
       return;
     }
     const protoNames = multiaddr.protoNames();
@@ -168,6 +168,10 @@ export class ENR extends Map<ENRKey, ENRValue> {
   }
   set multiaddrTCP(multiaddr: Multiaddr | undefined) {
     if (!multiaddr) {
+      this.delete("ip");
+      this.delete("tcp");
+      this.delete("ip6");
+      this.delete("tcp6");
       return;
     }
     const protoNames = multiaddr.protoNames();
