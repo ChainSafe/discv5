@@ -115,10 +115,16 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   private addrVotes: AddrVotes;
 
   /**
+   * The configured multiaddr
+   */
+  private multiaddr: Multiaddr;
+
+  /**
    * Default constructor.
    * @param sessionService the service managing sessions underneath.
+   * @param host: host specified in multiaddr
    */
-  constructor(sessionService: SessionService) {
+  constructor(sessionService: SessionService, multiaddr: Multiaddr) {
     super();
     this.sessionService = sessionService;
     this.kbuckets = new KademliaRoutingTable(this.sessionService.enr.nodeId, 16);
@@ -134,6 +140,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     };
     this.nextLookupId = 1;
     this.addrVotes = new AddrVotes();
+    this.multiaddr = multiaddr;
   }
 
   /**
@@ -148,7 +155,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     const magic = createMagic(decodedEnr.nodeId);
     const udpTransport = new UDPTransportService(multiaddr, magic);
     const sessionService = new SessionService(decodedEnr, createKeypairFromPeerId(peerId), udpTransport);
-    return new Discv5(sessionService);
+    return new Discv5(sessionService, multiaddr);
   }
 
   /**
@@ -167,6 +174,10 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.sessionService.on("whoAreYouRequest", this.onWhoAreYouRequest);
     this.sessionService.on("requestFailed", this.onRequestFailed);
     await this.sessionService.start();
+    if (this.multiaddr.toOptions().host !== "0.0.0.0") {
+      log(`Set enr with this ip address: ${this.multiaddr.toOptions().host}`);
+      this.enr.multiaddrUDP = this.multiaddr;
+    }
     this.started = true;
   }
 
@@ -513,7 +524,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   }
 
   private onPong(srcId: NodeId, src: Multiaddr, message: IPongMessage): void {
-    if (!this.retrieveRequest(srcId, message)) {
+    if (!this.retrieveRequest(srcId, message) || this.multiaddr.toOptions().host !== "0.0.0.0") {
       return;
     }
     this.addrVotes.addVote(

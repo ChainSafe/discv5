@@ -14,7 +14,8 @@ export interface IDiscv5DiscoveryInputOptions {
   /**
    * The bind multiaddr for the discv5 UDP server
    *
-   * NOTE: This MUST be a udp multiaddr
+   * NOTE: This MUST be a udp multiaddr, ip should be "0.0.0.0" or public/static ip address.
+   * For example /ip4/0.0.0.0/udp/9000 or /ip4/125.234.115.178/udp/9000 NOT /ip4/192.168.1.1/udp/9000
    */
   bindAddr: string;
   /**
