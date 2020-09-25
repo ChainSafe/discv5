@@ -12,9 +12,9 @@ async function main(): Promise<void> {
   // 9000 for rumor
   const bindAddr = "/ip4/0.0.0.0/udp/9001";
   // const bootEnr = await readEnr("/Users/tuyennguyen/Projects/workshop/lodestar_fresh/lodestar/packages/lodestar-cli/.medalla/enr.json");
-  const bootEnr = await ENR.decodeTxt("enr:-IO4QAYORrTjQl6z6A6XYLpgmXVmawH5LqMkobVTEkOCeNU-Oc9FS5A0GP02xsmlRS4uRZYtngNNZDiagMQnnpllbFYCgmlkgnY0iXNlY3AyNTZrMaECI_HdAJQwUq2cT2qNTjcTqmnmigKAEVUaM_4l2AXjgTiDdGNwgiMog3VkcIIjKA")
+  const bootEnr = await ENR.decodeTxt("enr:-IO4QE-_6sPGVev16Z7z3upgbpG1gOeXUAuy2N9UVr6qW2DIZtPUWd4gbvyXwOojVMtuzf1uy3E3LrpT17lV3S8wx9ICgmlkgnY0iXNlY3AyNTZrMaECrnFB2_27QnaVppdvDTENeTv_Q6ybtNnPXCqHNSMcxT-DdGNwgiMog3VkcIIjKA")
   // bootEnr.setLocationMultiaddr(Multiaddr("/ip4/192.168.100.26/udp/9000"))
-  bootEnr.ip = "192.168.100.26";
+  bootEnr.ip = "161.35.29.249";
   bootEnr.udp = 9000;
   const discv5 = new Discv5Discovery({
     bindAddr,
