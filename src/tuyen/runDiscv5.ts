@@ -1,7 +1,7 @@
 // import PeerId from "peer-id";
 import { readEnr, readPeerId } from "./util";
-import { Discv5Discovery } from "../../src/libp2p/discv5";
-import { ENR } from "../../src/enr";
+import { Discv5Discovery } from "../libp2p/discv5";
+import { ENR } from "../enr";
 import Multiaddr from "multiaddr";
 
 

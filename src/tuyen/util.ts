@@ -1,15 +1,36 @@
 import PeerId from "peer-id";
 import * as fs from "fs";
 import * as path from "path";
-import {ENR} from "../../src/enr/enr";
-import {load, dump, FAILSAFE_SCHEMA, Schema, Type} from "js-yaml"
+import {networkInterfaces} from "os";
+import {ENR} from "../enr/enr";
+// @ts-ignore
+import {load, dump, FAILSAFE_SCHEMA, Schema, Type} from "js-yaml";
+import { createKeypairFromPeerId } from "../keypair";
+
+export async function createPeerId(): Promise<PeerId> {
+  return await PeerId.create({bits: 256, keyType: "secp256k1"});
+}
 
 export async function readPeerId(filename: string): Promise<PeerId> {
   return await PeerId.createFromJSON(await readFile(filename));
 }
 
+export async function createEnr(peerId: PeerId): Promise<ENR> {
+  const keypair = createKeypairFromPeerId(peerId);
+  return ENR.createV4(keypair.publicKey);
+}
+
 export async function readEnr(filename: string): Promise<ENR> {
   return ENR.decodeTxt(await readFile(filename));
+}
+
+export function getAllIpAddresses(): Set<string> {
+  const nets = networkInterfaces();
+  const result: Set<string> = new Set();
+  for (const infos of Object.values(nets)) {
+    infos.forEach((info) => result.add(info.address));
+  }
+  return result;
 }
 
 /**
@@ -45,6 +66,7 @@ export const yamlSchema = new Schema({
   implicit: [
     new Type("tag:yaml.org,2002:str", {
       kind: "scalar",
+      // @ts-ignore
       construct: function (data) {
         return data !== null ? data : "";
       },

@@ -61,6 +61,7 @@
     "dgram": "^1.0.1",
     "ip6addr": "^0.2.3",
     "is-ip": "^3.1.0",
+    "js-yaml": "^3.14.0",
     "libp2p-crypto": "^0.18.0",
     "multiaddr": "^8.0.0",
     "peer-id": "^0.14.1",
