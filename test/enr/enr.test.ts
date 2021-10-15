@@ -13,12 +13,14 @@ describe("ENR", function () {
       const enr = ENR.createFromPeerId(peerId);
       const keypair = createKeypairFromPeerId(peerId);
       enr.setLocationMultiaddr(new Multiaddr("/ip4/18.223.219.100/udp/9000"));
+      enr.multiaddr = new Multiaddr("/dns4/node-01.do-ams3.wakuv2.test.statusim.net/tcp/443/wss/p2p/16Uiu2HAmPLe7Mzm8TsYUubgCAW1aJoeFScxrLj8ppHFivPo97bUZ");
       const txt = enr.encodeTxt(keypair.privateKey);
       expect(txt.slice(0, 4)).to.be.equal("enr:");
       const enr2 = ENR.decodeTxt(txt);
       expect(toHex(enr2.signature as Buffer)).to.be.equal(toHex(enr.signature as Buffer));
       const multiaddr = enr2.getLocationMultiaddr("udp")!;
       expect(multiaddr.toString()).to.be.equal("/ip4/18.223.219.100/udp/9000");
+      expect(enr2.multiaddr!.toString()).to.be.equal("/dns4/node-01.do-ams3.wakuv2.test.statusim.net/tcp/443/wss/p2p/16Uiu2HAmPLe7Mzm8TsYUubgCAW1aJoeFScxrLj8ppHFivPo97bUZ")
     });
 
     it("should decode valid enr successfully", () => {

@@ -214,6 +214,53 @@ export class ENR extends Map<ENRKey, ENRValue> {
     }
   }
 
+  /**
+   * Get the `multiaddr` field from ENR.
+   *
+   * This field is used to a multiaddr that cannot be stored with the current ENR define keys.
+   * This can be a multiaddr that includes encapsulation (e.g. wss)
+   * or uses `dns4`/`dns6`/`dnsaddr` for the host address.
+   *
+   * By design it is unrelated to any to other field.
+   * If the peer information only contains information that can be represented with the ENR define keys (ip, tcp, etc)
+   * then the usage of said keys and the usage of [[getLocationMultiaddr]] should be preferred over this.
+   *
+   * It does **not** check any other field.
+   */
+  get multiaddr(): Multiaddr | undefined {
+    const raw = this.get("multiaddr");
+    if (raw) {
+      try {
+        return new Multiaddr(raw);
+      } catch (e) {
+        throw new Error("Invalid multiaddr");
+      }
+    } else {
+      return undefined;
+    }
+  }
+
+  /**
+   * Set the `multiaddr` field on the ENR.
+   *
+   * This field is used to a multiaddr that cannot be stored with the current ENR define key.
+   * This can be a multiaddr that includes encapsulation (e.g. wss)
+   * or uses `dns4`/`dns6`/`dnsaddr` for the host address.
+   *
+   * By design it is unrelated to any to other field.
+   * If the peer information only contains information that can be represented with the ENR define keys (ip, tcp, etc)
+   * then the usage of said keys and the usage of [[setLocationMultiaddr]] should be preferred over this.
+   *
+   * It does **not** set any other field.
+   */
+  set multiaddr(multiaddr: Multiaddr | undefined) {
+    if (multiaddr === undefined) {
+      this.delete("multiaddr");
+    } else {
+      this.set("multiaddr", multiaddr.bytes);
+    }
+  }
+
   getLocationMultiaddr(protocol: "udp" | "udp4" | "udp6" | "tcp" | "tcp4" | "tcp6"): Multiaddr | undefined {
     if (protocol === "udp") {
       return this.getLocationMultiaddr("udp4") || this.getLocationMultiaddr("udp6");
