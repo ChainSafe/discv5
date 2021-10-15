@@ -30,6 +30,19 @@ describe("ENR", function () {
       expect(toHex(eth2)).to.be.equal("f6775d0700000113ffffffffffff1f00");
     });
 
+    it("should decode valid enr with tcp successfully", async () => {
+      const txt =
+          "enr:-IS4QAmC_o1PMi5DbR4Bh4oHVyQunZblg4bTaottPtBodAhJZvxVlWW-4rXITPNg4mwJ8cW__D9FBDc9N4mdhyMqB-EBgmlkgnY0gmlwhIbRi9KJc2VjcDI1NmsxoQOevTdO6jvv3fRruxguKR-3Ge4bcFsLeAIWEDjrfaigNoN0Y3CCdl8";
+      const enr = ENR.decodeTxt(txt);
+      expect(enr.tcp).to.not.be.undefined;
+      expect(enr.tcp).to.be.equal(30303);
+      expect(enr.ip).to.not.be.undefined;
+      expect(enr.ip).to.be.equal("134.209.139.210");
+      expect(enr.publicKey).to.not.be.undefined;
+      const peerId = await enr.peerId()
+      expect(peerId.toB58String()).to.be.equal("16Uiu2HAmPLe7Mzm8TsYUubgCAW1aJoeFScxrLj8ppHFivPo97bUZ");
+    });
+
     it("should throw error - no id", () => {
       try {
         const txt = Buffer.from(
