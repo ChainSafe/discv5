@@ -292,6 +292,10 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     }
 
     const knownClosestPeers = this.kbuckets.nearest(target, 16).map((enr) => enr.nodeId);
+    if (knownClosestPeers.length === 0) {
+      throw Error("0 knownClosestPeers lookup will stall");
+    }
+
     const lookup = new Lookup(this.config, target, 3, knownClosestPeers);
     this.activeLookups.set(lookupId, lookup);
     return await new Promise((resolve) => {
