@@ -21,8 +21,6 @@ import { TimeoutMap } from "../util";
 import { Message, RequestMessage, encode, decode, ResponseMessage, RequestId, MessageType } from "../message";
 import { IPendingRequest, SessionState, ISessionEvents, ISessionConfig } from "./types";
 
-const log = debug("discv5:sessionService");
-
 /**
  * Session management for the Discv5 Discovery service.
  *
@@ -76,6 +74,8 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    */
   private sessions: TimeoutMap<NodeId, Session>;
 
+  private log: debug.Debugger;
+
   constructor(config: ISessionConfig, enr: ENR, keypair: IKeypair, transport: ITransportService) {
     super();
     // ensure the keypair matches the one that signed the ENR
@@ -89,13 +89,15 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     this.pendingRequests = new Map();
     this.pendingMessages = new Map();
     this.sessions = new TimeoutMap(this.config.sessionTimeout, this.onSessionTimeout);
+
+    this.log = debug(config.logPrefix ? `discv5:sessionService:${config.logPrefix}` : "discv5:sessionService");
   }
 
   /**
    * Starts the session service, starting the underlying UDP transport service.
    */
   public async start(): Promise<void> {
-    log(`Starting session service with node id ${this.enr.nodeId}`);
+    this.log(`Starting session service with node id ${this.enr.nodeId}`);
     this.transport.on("packet", this.onPacket);
     await this.transport.start();
   }
@@ -104,7 +106,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * Stops the session service, stopping the underlying UDP transport service.
    */
   public async stop(): Promise<void> {
-    log("Stopping session service");
+    this.log("Stopping session service");
     this.transport.removeListener("packet", this.onPacket);
     await this.transport.stop();
     for (const requestMap of this.pendingRequests.values()) {
@@ -141,7 +143,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     }
     const session = this.sessions.get(dstId);
     if (!session) {
-      log("No session established, sending a random packet to: %s on %s", dstId, dst.toString());
+      this.log("No session established, sending a random packet to: %s on %s", dstId, dst.toString());
       // cache message
       const msgs = this.pendingMessages.get(dstId);
       if (msgs) {
@@ -162,7 +164,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       throw new Error("Tried to send a request to an untrusted node");
     }
     // encrypt the message and send
-    log("Sending request: %O to %s on %s", message, dstId, dst.toString());
+    this.log("Sending request: %O to %s on %s", message, dstId, dst.toString());
     const packet = session.encryptMessage(this.enr.nodeId, dstId, encode(message));
     this.processRequest(dstId, dst, packet, message);
   }
@@ -178,7 +180,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       throw new Error("Request without an ENR could not be sent, no session exists");
     }
 
-    log("Sending request w/o ENR: %O to %s on %s", message, dstId, dst.toString());
+    this.log("Sending request w/o ENR: %O to %s on %s", message, dstId, dst.toString());
     const packet = session.encryptMessage(this.enr.nodeId, dstId, encode(message));
     this.processRequest(dstId, dst, packet, message);
   }
@@ -194,7 +196,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     if (!session) {
       throw new Error("Response could not be sent, no session exists");
     }
-    log("Sending %s response to %s at %s", MessageType[message.type], dstId, dst.toString());
+    this.log("Sending %s response to %s at %s", MessageType[message.type], dstId, dst.toString());
     const packet = session.encryptMessage(this.enr.nodeId, dstId, encode(message));
     this.transport.send(dst, dstId, packet);
   }
@@ -206,11 +208,11 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       // If a WHOAREYOU is already sent or a session is already established, ignore this request
       if (_session.trustedEstablished() || _session.state.state === SessionState.WhoAreYouSent) {
         // session exists, WhoAreYou packet not sent
-        log("Session exists, WHOAREYOU packet not sent");
+        this.log("Session exists, WHOAREYOU packet not sent");
         return;
       }
     }
-    log("Sending WHOAREYOU to: %s on %s", dstId, dst.toString());
+    this.log("Sending WHOAREYOU to: %s on %s", dstId, dst.toString());
     const [session, packet] = Session.createWithWhoAreYou(nonce, enrSeq, remoteEnr);
     this.sessions.set(dstId, session);
     this.processRequest(dstId, dst, packet);
@@ -221,7 +223,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     try {
       authdata = decodeWhoAreYouAuthdata(packet.header.authdata);
     } catch (e) {
-      log("Cannot decode WHOAREYOU authdata from %s: %s", src, e);
+      this.log("Cannot decode WHOAREYOU authdata from %s: %s", src, e);
       return;
     }
     const nonce = packet.header.nonce;
@@ -229,7 +231,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     const pendingRequests = this.pendingRequests.get(srcStr);
     if (!pendingRequests) {
       // Received a WHOAREYOU packet that references an unknown or expired request.
-      log(
+      this.log(
         "Received a WHOAREYOU packet that references an unknown or expired request. source: %s, token: %s",
         srcStr,
         nonce.toString("hex")
@@ -239,7 +241,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     const request = Array.from(pendingRequests.values()).find((r) => nonce.equals(r.packet.header.nonce));
     if (!request) {
       // Received a WHOAREYOU packet that references an unknown or expired request.
-      log(
+      this.log(
         "Received a WHOAREYOU packet that references an unknown or expired request. source: %s, token: %s",
         srcStr,
         nonce.toString("hex")
@@ -251,7 +253,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     }
     pendingRequests.delete(request.message ? request.message.id : 0n);
 
-    log("Received a WHOAREYOU packet. source: %s", src);
+    this.log("Received a WHOAREYOU packet. source: %s", src);
 
     // This is an assumed NodeId. We sent the packet to this NodeId and can only verify it against the
     // originating IP address. We assume it comes from this NodeId.
@@ -260,7 +262,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     const session = this.sessions.get(srcId);
     if (!session) {
       // Received a WhoAreYou packet without having an established session
-      log("Received a WHOAREYOU packet without having an established session.");
+      this.log("Received a WHOAREYOU packet without having an established session.");
       return;
     }
 
@@ -272,7 +274,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       // get the messages that are waiting for an established session
       const messages = this.pendingMessages.get(srcId);
       if (!messages || !messages.length) {
-        log("No pending messages found for WHOAREYOU request.");
+        this.log("No pending messages found for WHOAREYOU request.");
         return;
       }
       message = messages.shift() as RequestMessage;
@@ -280,7 +282,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     } else {
       // re-send the original message
       if (!request.message) {
-        log("All non-random requests must have an unencrypted message");
+        this.log("All non-random requests must have an unencrypted message");
         return;
       }
       message = request.message as RequestMessage;
@@ -312,11 +314,11 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       }
       messages.unshift(message);
       this.pendingMessages.set(srcId, messages);
-      log("Could not generate a session: error: %O", e);
+      this.log("Could not generate a session: error: %O", e);
       return;
     }
 
-    log("Sending authentication message: %O to node: %s on %s", message, srcId, src);
+    this.log("Sending authentication message: %O to node: %s on %s", message, srcId, src);
 
     // send the response
     this.processRequest(srcId, src, handshakePacket, message);
@@ -334,33 +336,33 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     try {
       authdata = decodeHandshakeAuthdata(packet.header.authdata);
     } catch (e) {
-      log("Unable to decode handkshake authdata: %s", e);
+      this.log("Unable to decode handkshake authdata: %s", e);
       return;
     }
     const srcId = authdata.srcId;
-    log("Received an authentication message from: %s on %s", srcId, src);
+    this.log("Received an authentication message from: %s on %s", srcId, src);
 
     const session = this.sessions.get(srcId);
     if (!session) {
-      log("Received an authenticated header without a known session, dropping.");
+      this.log("Received an authenticated header without a known session, dropping.");
       return;
     }
 
     if (session.state.state !== SessionState.WhoAreYouSent) {
-      log("Received an authenticated header without a known WHOAREYOU session, dropping.");
+      this.log("Received an authenticated header without a known WHOAREYOU session, dropping.");
       return;
     }
 
     const pendingRequests = this.pendingRequests.get(srcStr);
     if (!pendingRequests) {
-      log("Received an authenticated header without a matching WHOAREYOU request, dropping.");
+      this.log("Received an authenticated header without a matching WHOAREYOU request, dropping.");
       return;
     }
     const request = Array.from(pendingRequests.values()).find(
       (r) => r.packet.header.flag === PacketType.WhoAreYou && r.dstId === srcId
     );
     if (!request) {
-      log("Received an authenticated header without a matching WHOAREYOU request, dropping.");
+      this.log("Received an authenticated header without a matching WHOAREYOU request, dropping.");
       return;
     }
     if (pendingRequests.size === 1) {
@@ -375,7 +377,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     try {
       const trusted = session.establishFromHandshake(this.keypair, this.enr.nodeId, srcId, authdata);
       if (trusted) {
-        log("Session established with node from header: %s", srcId);
+        this.log("Session established with node from header: %s", srcId);
         // session is trusted, notify the protocol
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.emit("established", session.remoteEnr!);
@@ -383,7 +385,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
         this.flushMessages(srcId, src);
       }
     } catch (e) {
-      log("Invalid Authentication header. Dropping session. Error: %O", e);
+      this.log("Invalid Authentication header. Dropping session. Error: %O", e);
       this.sessions.delete(srcId);
       this.pendingMessages.delete(srcId);
       return;
@@ -406,7 +408,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     try {
       authdata = decodeMessageAuthdata(packet.header.authdata);
     } catch (e) {
-      log("Cannot decode message authdata: %s", e);
+      this.log("Cannot decode message authdata: %s", e);
       return;
     }
     const srcId = authdata.srcId;
@@ -415,8 +417,8 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     const session = this.sessions.get(srcId);
     if (!session) {
       // Received a message without a session.
-      log("Received a message without a session. from: %s at %s", srcId, src);
-      log("Requesting a WHOAREYOU packet to be sent.");
+      this.log("Received a message without a session. from: %s at %s", srcId, src);
+      this.log("Requesting a WHOAREYOU packet to be sent.");
 
       // spawn a WHOAREYOU event to check for highest known ENR
       this.emit("whoAreYouRequest", srcId, src, packet.header.nonce);
@@ -427,7 +429,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       this.emit("whoAreYouRequest", srcId, src, packet.header.nonce);
     } else if (session.state.state === SessionState.WhoAreYouSent) {
       // Waiting for a session to be generated
-      log("Waiting for a session to be generated. from: %s at %s", srcId, src);
+      this.log("Waiting for a session to be generated. from: %s at %s", srcId, src);
 
       // potentially store and decrypt once we receive the packet
       // drop it for now
@@ -451,7 +453,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       // It is likely the node sending this message has dropped their session.
       // In this case, this message is a random packet and we should reply with a WHOAREYOU.
       // This means we need to drop the current session and re-establish.
-      log("Message from node: %s is not encrypted with known session keys. Requesting a WHOAREYOU packet", srcId);
+      this.log("Message from node: %s is not encrypted with known session keys. Requesting a WHOAREYOU packet", srcId);
       this.sessions.delete(srcId);
       this.emit("whoAreYouRequest", srcId, src, packet.header.nonce);
       return;
@@ -482,14 +484,14 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       (session.trustedEstablished() && sessionWasAwaiting)
     ) {
       // session has been established, notify the protocol
-      log("Session established with node from updated: %s", srcId);
+      this.log("Session established with node from updated: %s", srcId);
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.emit("established", session.remoteEnr!);
       // flush messages
       this.flushMessages(srcId, src);
     }
     // We have received a new message. Notify the protocol
-    log("Message received: %s from: %s on %s", MessageType[message.type], srcId, src);
+    this.log("Message received: %s from: %s on %s", MessageType[message.type], srcId, src);
     this.emit("message", srcId, src, message);
   }
 
@@ -538,7 +540,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     const messages = this.pendingMessages.get(dstId) || [];
     this.pendingMessages.delete(dstId);
     messages.forEach((message) => {
-      log("Sending cached message");
+      this.log("Sending cached message");
       const packet = session.encryptMessage(this.enr.nodeId, dstId, encode(message));
       this.processRequest(dstId, dst, packet, message);
     });
@@ -557,7 +559,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
         session.state.state === SessionState.RandomSent
       ) {
         // no response from peer, flush all pending messages and drop session
-        log("Session couldn't be established with node: %s at %s", dstId, request.dst.toString());
+        this.log("Session couldn't be established with node: %s at %s", dstId, request.dst.toString());
         const pendingMessages = this.pendingMessages.get(dstId);
         if (pendingMessages) {
           this.pendingMessages.delete(dstId);
@@ -569,12 +571,12 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
         request.packet.header.flag === PacketType.Handshake ||
         request.packet.header.flag === PacketType.Message
       ) {
-        log("Message timed out with node: %s", dstId);
+        this.log("Message timed out with node: %s", dstId);
         this.emit("requestFailed", request.dstId, requestId);
       }
     } else {
       // Increment the request retry count and restart the timeout
-      log("Resending message: %O to node: %s", request.message, dstId);
+      this.log("Resending message: %O to node: %s", request.message, dstId);
       this.transport.send(request.dst, request.dstId, request.packet);
       request.retries += 1;
       const dstStr = request.dst.toString();
@@ -602,6 +604,6 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     // Fail all pending messages for this node
     (this.pendingMessages.get(nodeId) || []).forEach((message) => this.emit("requestFailed", nodeId, message.id));
     this.pendingMessages.delete(nodeId);
-    log("Session timed out for node: %s", nodeId);
+    this.log("Session timed out for node: %s", nodeId);
   };
 }

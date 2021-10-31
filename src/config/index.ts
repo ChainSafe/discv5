@@ -12,6 +12,10 @@ export type IDiscv5Config = ISessionConfig &
      * Whether to enable enr auto-updating
      */
     enrUpdate: boolean;
+    /**
+     * instance name for log
+     */
+    logPrefix?: string;
   };
 
 export const defaultConfig: IDiscv5Config = {

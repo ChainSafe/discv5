@@ -24,6 +24,10 @@ export interface ISessionConfig {
    * defined in milliseconds
    */
   sessionEstablishTimeout: number;
+  /**
+   * instance name for log
+   */
+  logPrefix?: string;
 }
 
 export enum SessionState {
