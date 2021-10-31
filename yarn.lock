@@ -1252,11 +1252,6 @@ deprecation@^2.0.0, deprecation@^2.3.1:
   resolved "https://registry.yarnpkg.com/deprecation/-/deprecation-2.3.1.tgz#6368cbdb40abf3373b525ac87e4a260c3a700919"
   integrity sha512-xmHIy4F3scKVwMsQ4WnVaS8bHOx0DmVwRywosKhaILI0ywMDWPtBSku2HNxRvF7jtwDRsoEwYQSfbxj8b7RlJQ==
 
-dgram@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/dgram/-/dgram-1.0.1.tgz#37f3b200f8033a5ff759303089c81ce361b651c3"
-  integrity sha1-N/OyAPgDOl/3WTAwicgc42G2UcM=
-
 di@^0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/di/-/di-0.0.1.tgz#806649326ceaa7caa3306d75d985ea2748ba913c"
