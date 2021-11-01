@@ -66,15 +66,19 @@ export class Session {
    */
   lastSeenMultiaddr: Multiaddr;
   /**
-   * The delay when this session expires
+   * Unix timestamp in ms of this session's creation
    */
-  timeout: number;
+  createdUnixTsMs = Date.now();
+  /**
+   * Unix timestamp in ms of the last message received associated with this session
+   */
+  lastReceivedPacket = Date.now();
+
   constructor({ state, trusted, remoteEnr, lastSeenMultiaddr }: ISessionOpts) {
     this.state = state;
     this.trusted = trusted;
     this.remoteEnr = remoteEnr;
     this.lastSeenMultiaddr = lastSeenMultiaddr;
-    this.timeout = 0;
   }
 
   /**
@@ -120,6 +124,7 @@ export class Session {
     if (this.state.state !== SessionState.WhoAreYouSent) {
       throw new Error("Session must be in WHOAREYOU-sent state");
     }
+
     const challengeData = this.state.challengeData;
     const [decryptionKey, encryptionKey] = deriveKeysFromPubkey(
       kpriv,
@@ -145,6 +150,7 @@ export class Session {
     if (!this.remoteEnr) {
       throw new Error(ERR_NO_ENR);
     }
+
     if (!idVerify(this.remoteEnr.keypair, challengeData, authdata.ephPubkey, localId, authdata.idSignature)) {
       throw new Error(ERR_INVALID_SIG);
     }
@@ -170,6 +176,7 @@ export class Session {
     if (!this.remoteEnr) {
       throw new Error(ERR_NO_ENR);
     }
+
     // generate session keys
     const [encryptionKey, decryptionKey, ephPubkey] = generateSessionKeys(srcId, this.remoteEnr as ENR, challengeData);
     const keys = { encryptionKey, decryptionKey };
@@ -191,8 +198,6 @@ export class Session {
     const maskingIv = randomBytes(MASKING_IV_SIZE);
     const aad = encodeChallengeData(maskingIv, header);
 
-    // encrypt the message
-    const messageCiphertext = encryptMessage(keys.encryptionKey, header.nonce, message, aad);
     // update session state
     switch (this.state.state) {
       case SessionState.Established:
@@ -210,10 +215,11 @@ export class Session {
           currentKeys: keys,
         };
     }
+
     return {
       maskingIv,
       header,
-      message: messageCiphertext,
+      message: encryptMessage(keys.encryptionKey, header.nonce, message, aad),
     };
   }
 
@@ -227,20 +233,18 @@ export class Session {
     const header = createHeader(PacketType.Message, authdata);
     const maskingIv = randomBytes(MASKING_IV_SIZE);
     const aad = encodeChallengeData(maskingIv, header);
-    let ciphertext: Buffer;
+
     switch (this.state.state) {
       case SessionState.Established:
       case SessionState.EstablishedAwaitingResponse:
-        ciphertext = encryptMessage(this.state.currentKeys.encryptionKey, header.nonce, message, aad);
-        break;
+        return {
+          maskingIv,
+          header,
+          message: encryptMessage(this.state.currentKeys.encryptionKey, header.nonce, message, aad),
+        };
       default:
         throw new Error("Session not established");
     }
-    return {
-      maskingIv,
-      header,
-      message: ciphertext,
-    };
   }
 
   /**
@@ -253,6 +257,7 @@ export class Session {
     if (!this.remoteEnr) {
       throw new Error(ERR_NO_ENR);
     }
+
     let result: Buffer;
     let keys: IKeys;
     switch (this.state.state) {
@@ -261,6 +266,7 @@ export class Session {
         result = decryptMessage(this.state.currentKeys.decryptionKey, nonce, message, aad);
         keys = this.state.currentKeys;
         break;
+
       case SessionState.EstablishedAwaitingResponse:
         // first try current keys, then new keys
         try {
@@ -271,16 +277,20 @@ export class Session {
           keys = this.state.newKeys;
         }
         break;
+
       case SessionState.RandomSent:
       case SessionState.WhoAreYouSent:
         throw new Error("Session not established");
+
       default:
         throw new Error("Unreachable");
     }
+
     this.state = {
       state: SessionState.Established,
       currentKeys: keys,
     };
+
     return result;
   }
 
@@ -303,24 +313,27 @@ export class Session {
    * This value returns true if the Session has been promoted.
    */
   updateTrusted(): boolean {
-    if (this.remoteEnr) {
-      const hasSameMultiaddr = (multiaddr: Multiaddr, enr: ENR): boolean => {
-        const enrMultiaddr = enr.getLocationMultiaddr("udp");
-        return enrMultiaddr ? enrMultiaddr.equals(multiaddr) : false;
-      };
-      switch (this.trusted) {
-        case TrustedState.Untrusted:
-          if (hasSameMultiaddr(this.lastSeenMultiaddr, this.remoteEnr)) {
-            this.trusted = TrustedState.Trusted;
-            return true;
-          }
-          break;
-        case TrustedState.Trusted:
-          if (!hasSameMultiaddr(this.lastSeenMultiaddr, this.remoteEnr)) {
-            this.trusted = TrustedState.Untrusted;
-          }
-      }
+    if (!this.remoteEnr) {
+      return false;
     }
+
+    const enrMultiaddr = this.remoteEnr.getLocationMultiaddr("udp");
+    const hasSameMultiaddr = enrMultiaddr ? enrMultiaddr.equals(this.lastSeenMultiaddr) : false;
+
+    switch (this.trusted) {
+      case TrustedState.Untrusted:
+        if (hasSameMultiaddr) {
+          this.trusted = TrustedState.Trusted;
+          return true;
+        }
+        break;
+
+      case TrustedState.Trusted:
+        if (!hasSameMultiaddr) {
+          this.trusted = TrustedState.Untrusted;
+        }
+    }
+
     return false;
   }
 

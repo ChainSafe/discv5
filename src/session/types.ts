@@ -6,8 +6,7 @@ import { Message, RequestMessage } from "../message";
 
 export interface ISessionConfig {
   /**
-   * The timeout for each UDP request
-   * defined in milliseconds
+   * The timeout for each UDP request defined in milliseconds
    */
   requestTimeout: number;
   /**
@@ -15,13 +14,15 @@ export interface ISessionConfig {
    */
   requestRetries: number;
   /**
-   * The session timeout for each node
-   * defined in milliseconds
+   * The session timeout for each node defined in milliseconds
    */
   sessionTimeout: number;
   /**
-   * The timeout for session establishment
-   * defined in milliseconds
+   * The maximum number of established sessions to maintain
+   */
+  sessionCacheCapacity: number;
+  /**
+   * The timeout for session establishment defined in milliseconds
    */
   sessionEstablishTimeout: number;
   /**

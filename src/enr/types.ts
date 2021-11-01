@@ -6,6 +6,7 @@
  */
 export type NodeId = string;
 export type SequenceNumber = bigint;
+export type UdpMultiaddrStr = string;
 
 export type ENRKey = string;
 export type ENRValue = Uint8Array;

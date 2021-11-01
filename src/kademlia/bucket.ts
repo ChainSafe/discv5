@@ -259,4 +259,13 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
   values(): ENR[] {
     return this.bucket.map((entry) => entry.value);
   }
+
+  /**
+   * Return the bucket values as an array
+   */
+  *valuesIter(): Iterable<ENR> {
+    for (const entry of this.bucket) {
+      yield entry.value;
+    }
+  }
 }

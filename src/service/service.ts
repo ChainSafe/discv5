@@ -2,7 +2,6 @@ import { EventEmitter } from "events";
 import debug from "debug";
 import { randomBytes } from "libp2p-crypto";
 import { Multiaddr } from "multiaddr";
-import isIp = require("is-ip");
 import PeerId from "peer-id";
 
 import { UDPTransportService } from "../transport";
@@ -43,6 +42,18 @@ import { AddrVotes } from "./addrVotes";
 import { TimeoutMap, toBuffer } from "../util";
 import { IDiscv5Config, defaultConfig } from "../config";
 
+const MAX_NODES_PER_REQUEST = 16;
+
+/**
+ * Repsonses assume that a session is established.
+ * Thus, on top of the encoded ENRs the packet should be a regular message.
+ * A regular message has a tag (32 bytes), an authTag (12 bytes)
+ * and the NODES response has an ID (8 bytes) and a total (8 bytes).
+ * The encryption adds the HMAC (16 bytes) and can be at most 16 bytes larger
+ * So, the total empty packet size can be at most 92
+ */
+const NODES_PER_PACKET = Math.floor((MAX_PACKET_SIZE - 92) / MAX_RECORD_SIZE);
+
 /**
  * Discovery v5 is a protocol designed for encrypted peer discovery and topic advertisement. Each peer/node
  * on the network is identified via its ENR (Ethereum Name Record) which is essentially a signed key-value
@@ -65,6 +76,8 @@ export interface IDiscv5CreateOptions {
   config?: Partial<IDiscv5Config>;
   metrics?: IDiscv5Metrics;
 }
+
+type UnixTsMs = number;
 
 /**
  * User-facing service one can use to set up, start and use Discv5.
@@ -94,7 +107,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * All the iterative lookups we are currently performing with their ID
    */
-  private activeLookups: Map<number, Lookup>;
+  private activeLookups = new Map<number, Lookup>();
 
   /**
    * RPC requests that have been sent and are awaiting a response.
@@ -105,18 +118,19 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Tracks responses received across NODES responses.
    */
-  private activeNodesResponses: Map<bigint, INodesResponse>;
+  private activeNodesResponses = new Map<bigint, INodesResponse>();
 
   /**
    * List of peers we have established sessions with and an interval id
    * the interval handler pings the associated node
    */
-  private connectedPeers: Map<NodeId, NodeJS.Timer>;
+  private connectedPeers = new Map<NodeId, NodeJS.Timer>();
+  private lastRcvMsgByPeer = new Map<NodeId, UnixTsMs>();
 
   /**
    * Id for the next lookup that we start
    */
-  private nextLookupId: number;
+  private nextLookupId = 1;
   /**
    * A map of votes that nodes have made about our external IP address
    */
@@ -139,10 +153,6 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.activeRequests = new TimeoutMap(this.config.requestTimeout, (requestId, activeRequest) =>
       this.onActiveRequestFailed(activeRequest)
     );
-    this.activeNodesResponses = new Map();
-    this.connectedPeers = new Map();
-    this.nextLookupId = 1;
-    this.addrVotes = new AddrVotes();
     if (metrics) {
       this.metrics = metrics;
       // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -350,18 +360,27 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     }
   }
 
+  private heartbeat(): void {
+    const now = Date.now();
+    const { sessionTimeout, pingInterval } = this.config;
+
+    for (const [nodeId, session] of this.sessionService.sessions.entries()) {
+      if (now > session.createdUnixTsMs + sessionTimeout) {
+        // Expire old session
+        this.sessionService.expireSession(nodeId);
+      } else if (now > session.lastReceivedPacket + pingInterval) {
+        // Send pings to peers that have not received messages for a while
+        this.sendPing(nodeId);
+      }
+    }
+  }
+
   /**
    * Sends a PING request to a node
    */
   private sendPing(nodeId: NodeId): void {
     this.log("Sending PING to %s", nodeId);
     this.sendRequest(nodeId, createPingMessage(this.enr.seq));
-  }
-
-  private pingConnectedPeers(): void {
-    for (const id of this.connectedPeers.keys()) {
-      this.sendPing(id);
-    }
   }
 
   /**
@@ -542,7 +561,10 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   };
 
   private onMessage = (srcId: NodeId, src: Multiaddr, message: Message): void => {
-    this.metrics?.rcvdMessageCount.inc({ type: MessageType[message.type] });
+    // Register last seen message to known when to trigger a PING
+    this.lastRcvMsgByPeer.set(srcId, Date.now());
+    this.metrics?.rcvdMessageCount.inc({ type: MessageType[message.type] ?? "unknown" });
+
     switch (message.type) {
       case MessageType.PING:
         return this.onPing(srcId, src, message as IPingMessage);
@@ -620,17 +642,35 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    */
   private onFindNode(srcId: NodeId, src: Multiaddr, message: IFindNodeMessage): void {
     const { id, distances } = message;
-    let nodes: ENR[] = [];
-    distances.forEach((distance) => {
+
+    const nodes: ENR[] = [];
+
+    distance: for (const distance of distances) {
       // if the distance is 0, send our local ENR
       if (distance === 0) {
+        // Check if nodes is full to prevent having to slice the nodes array latter.
+        // distances must include distance 0 duplicated so this guards against that.
+        if (nodes.length >= MAX_NODES_PER_REQUEST) {
+          break;
+        }
+
+        // TODO: Why does this has to happen on every FINDNODE request?
         this.enr.encodeToValues(this.keypair.privateKey);
         nodes.push(this.enr);
       } else {
-        nodes.push(...this.kbuckets.valuesOfDistance(distance));
+        const enrs = this.kbuckets.valuesOfDistance(distance);
+        if (!enrs) continue;
+        // Use iterator to prevent processing the entire bucket if not necessary. Generally most buckets are full,
+        // So if multiple distances are requested it will only grab a few ENRs from the non-first distance.
+        for (const enr of enrs) {
+          nodes.push(enr);
+          if (nodes.length >= MAX_NODES_PER_REQUEST) {
+            break distance;
+          }
+        }
       }
-    });
-    nodes = nodes.slice(0, 15);
+    }
+
     if (nodes.length === 0) {
       this.log("Sending empty NODES response to %s", srcId);
       try {
@@ -641,19 +681,13 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       }
       return;
     }
-    // Repsonses assume that a session is established.
-    // Thus, on top of the encoded ENRs the packet should be a regular message.
-    // A regular message has a tag (32 bytes), an authTag (12 bytes)
-    // and the NODES response has an ID (8 bytes) and a total (8 bytes).
-    // The encryption adds the HMAC (16 bytes) and can be at most 16 bytes larger
-    // So, the total empty packet size can be at most 92
-    const nodesPerPacket = Math.floor((MAX_PACKET_SIZE - 92) / MAX_RECORD_SIZE);
-    const total = Math.ceil(nodes.length / nodesPerPacket);
+
+    const total = Math.ceil(nodes.length / NODES_PER_PACKET);
     this.log("Sending %d NODES responses to %s", total, srcId);
-    for (let i = 0; i < nodes.length; i += nodesPerPacket) {
-      const _nodes = nodes.slice(i, i + nodesPerPacket);
+    for (let i = 0; i < nodes.length; i += NODES_PER_PACKET) {
+      const nodesInMsg = nodes.slice(i, i + NODES_PER_PACKET);
       try {
-        this.sessionService.sendResponse(src, srcId, createNodesMessage(id, total, _nodes));
+        this.sessionService.sendResponse(src, srcId, createNodesMessage(id, total, nodesInMsg));
         this.metrics?.sentMessageCount.inc({ type: MessageType[MessageType.NODES] });
       } catch (e) {
         this.log("Failed to send a NODES response. Error: %s", (e as Error).message);
