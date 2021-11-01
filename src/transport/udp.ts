@@ -54,7 +54,7 @@ export class UDPTransportService
       const packet = decodePacket(this.srcId, data);
       this.emit("packet", multiaddr, packet);
     } catch (e) {
-      this.emit("decodeError", e, multiaddr);
+      this.emit("decodeError", e as Error, multiaddr);
     }
   };
 }
