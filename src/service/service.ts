@@ -135,7 +135,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.config = config;
     this.sessionService = sessionService;
     this.kbuckets = new KademliaRoutingTable(this.sessionService.enr.nodeId, 16);
-    this.activeLookups = new Map();
+    this.addrVotes = new AddrVotes(config.addrVotesToUpdateEnr);
     this.activeRequests = new TimeoutMap(this.config.requestTimeout, (requestId, activeRequest) =>
       this.onActiveRequestFailed(activeRequest)
     );
@@ -592,16 +592,11 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       return;
     }
     if (this.config.enrUpdate) {
-      this.addrVotes.addVote(
-        srcId,
-        new Multiaddr(
-          `/${isIp.v4(message.recipientIp) ? "ip4" : "ip6"}/${message.recipientIp}/udp/${message.recipientPort}`
-        )
-      );
+      const winningVote = this.addrVotes.addVote(srcId, message);
       const currentAddr = this.enr.getLocationMultiaddr("udp");
-      const votedAddr = this.addrVotes.best(currentAddr);
-      if ((currentAddr && votedAddr && !votedAddr.equals(currentAddr)) || (!currentAddr && votedAddr)) {
-        this.log("Local ENR (IP & UDP) updated: %s", votedAddr);
+      if (winningVote && (!currentAddr || winningVote.multiaddrStr !== currentAddr.toString())) {
+        this.log("Local ENR (IP & UDP) updated: %s", winningVote.multiaddrStr);
+        const votedAddr = new Multiaddr(winningVote.multiaddrStr);
         this.enr.setLocationMultiaddr(votedAddr);
         this.emit("multiaddrUpdated", votedAddr);
       }
