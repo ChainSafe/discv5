@@ -9,6 +9,8 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
    * Entries ordered from least-recently connected to most-recently connected
    */
   private bucket: IEntry<ENR>[];
+  /** Index the bucket to find ENR by node id faster */
+  private bucketIndices: Map<NodeId, number>;
   private pending: IEntry<ENR> | undefined;
   private pendingTimeout: number;
   private pendingTimeoutId: NodeJS.Timeout | undefined;
@@ -17,6 +19,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
     super();
     this.k = k;
     this.bucket = [];
+    this.bucketIndices = new Map<NodeId, number>();
     this.pendingTimeout = pendingTimeout;
   }
 
@@ -25,6 +28,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
    */
   clear(): void {
     this.bucket = [];
+    this.bucketIndices = new Map<NodeId, number>();
     this.pending = undefined;
     clearTimeout((this.pendingTimeoutId as unknown) as NodeJS.Timeout);
   }
@@ -66,8 +70,10 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
   }
 
   addConnected(value: ENR): boolean {
-    if (this.bucket.length < this.k) {
+    const length = this.bucket.length;
+    if (length < this.k) {
       this.bucket.push({ value, status: EntryStatus.Connected });
+      this.bucketIndices.set(value.nodeId, length);
       return true;
     }
     // attempt to add a pending node
@@ -77,13 +83,21 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
 
   addDisconnected(value: ENR): boolean {
     const firstConnected = this.firstConnectedIndex();
-    if (this.bucket.length < this.k) {
+    const length = this.bucket.length;
+    if (length < this.k) {
       if (firstConnected === -1) {
         // No connected nodes, add to the end
         this.bucket.push({ value, status: EntryStatus.Disconnected });
+        this.bucketIndices.set(value.nodeId, length);
       } else {
         // add before the first connected node
         this.bucket.splice(firstConnected, 0, { value, status: EntryStatus.Disconnected });
+        for (const [nodeId, i] of this.bucketIndices.entries()) {
+          if (i >= firstConnected) {
+            this.bucketIndices.set(nodeId, i + 1);
+          }
+        }
+        this.bucketIndices.set(value.nodeId, firstConnected);
       }
       return true;
     }
@@ -94,8 +108,8 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
    * Update an existing entry (ENR)
    */
   updateValue(value: ENR): boolean {
-    const index = this.bucket.findIndex((entry) => entry.value.nodeId === value.nodeId);
-    if (index === -1) {
+    const index = this.bucketIndices.get(value.nodeId);
+    if (index === undefined) {
       if (this.pending && this.pending.value.nodeId === value.nodeId) {
         this.pending.value = value;
         return true;
@@ -110,8 +124,8 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
    * Update the status of an existing entry
    */
   updateStatus(id: NodeId, status: EntryStatus): boolean {
-    const index = this.bucket.findIndex((entry) => entry.value.nodeId === id);
-    if (index === -1) {
+    const index = this.bucketIndices.get(id);
+    if (index === undefined) {
       if (this.pending && this.pending.value.nodeId === id) {
         this.pending.status = status;
         return true;
@@ -121,6 +135,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
     if (this.bucket[index].status === status) {
       return true;
     }
+    // should not update bucket directly due to disconnected > connected sort
     const value = this.removeByIndex(index);
     return this.add(value, status);
   }
@@ -129,8 +144,8 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
    * Update both the value and status of an existing entry
    */
   update(value: ENR, status: EntryStatus): boolean {
-    const index = this.bucket.findIndex((entry) => entry.value.nodeId === value.nodeId);
-    if (index === -1) {
+    const index = this.bucketIndices.get(value.nodeId);
+    if (index === undefined) {
       if (this.pending && this.pending.value.nodeId === value.nodeId) {
         this.pending = { value, status };
         return true;
@@ -140,6 +155,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
     if (this.bucket[index].status === status) {
       return true;
     }
+    // should not update bucket directly due to disconnected > connected sort
     this.removeByIndex(index);
     return this.add(value, status);
   }
@@ -160,6 +176,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
     }
     return false;
   }
+
   applyPending = (): void => {
     if (this.pending) {
       // If the bucket is full with connected nodes, drop the pending node
@@ -180,9 +197,9 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
    * Get an entry from the bucket, if it exists
    */
   get(id: NodeId): IEntry<ENR> | undefined {
-    const entry = this.bucket.find((entry) => entry.value.nodeId === id);
-    if (entry) {
-      return entry;
+    const index = this.bucketIndices.get(id);
+    if (index !== undefined) {
+      return this.bucket[index];
     }
     return undefined;
   }
@@ -232,6 +249,16 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
     if (index >= this.bucket.length) {
       throw new Error(`Invalid index in bucket: ${index}`);
     }
+
+    // TODO: cache node id in ENR, get enrs from bucket > index
+    for (const [nodeId, i] of this.bucketIndices.entries()) {
+      if (i === index) {
+        this.bucketIndices.delete(nodeId);
+      } else if (i > index) {
+        this.bucketIndices.set(nodeId, i - 1);
+      }
+    }
+
     return this.bucket.splice(index, 1)[0].value;
   }
 
@@ -239,8 +266,8 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
    * Remove a value from the bucket by NodeId
    */
   removeById(id: NodeId): ENR | undefined {
-    const index = this.bucket.findIndex((entry) => entry.value.nodeId === id);
-    if (index === -1) {
+    const index = this.bucketIndices.get(id);
+    if (index === undefined) {
       return undefined;
     }
     return this.removeByIndex(index);
