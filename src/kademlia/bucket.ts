@@ -243,6 +243,16 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
   }
 
   /**
+   * Get an entry by index
+   */
+  getByIndex(index: number): IEntry<ENR> {
+    if (index >= this.bucket.length) {
+      throw new Error(`Invalid index in bucket: ${index}`);
+    }
+    return this.bucket[index];
+  }
+
+  /**
    * Remove a value from the bucket by index
    */
   removeByIndex(index: number): ENR {
