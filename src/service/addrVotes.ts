@@ -19,12 +19,12 @@ export class AddrVotes {
     this.addTally(addrStr);
   }
 
-  removeVote(voter: NodeId): void {
+  removeVote = (voter: NodeId): void => {
     if (this.votes.delete(voter)) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.removeTally(this.votes.get(voter)!);
     }
-  }
+  };
 
   addTally(addrStr: string): void {
     if (!this.tallies[addrStr]) {
