@@ -37,7 +37,8 @@ describe("Discv5", async () => {
     expect(service0.kadValues().length).eq(1);
   });
 
-  it("should complete a lookup to another node", async () => {
+  it("should complete a lookup to another node", async function () {
+    this.timeout(10000);
     const kp1 = generateKeypair(KeypairType.secp256k1);
     const peerId1 = await createPeerIdFromKeypair(kp1);
     const enr1 = ENR.createV4(kp1.publicKey);
