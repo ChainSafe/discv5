@@ -435,7 +435,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.activeRequests.set(activeRequest.request.id, activeRequest);
 
     const nodeAddr = getNodeAddress(activeRequest.contact);
-    log("Sending RPC to node: %o", nodeAddr);
+    log("Sending %s to node: %o", MessageType[activeRequest.request.type], nodeAddr);
     try {
       this.sessionService.sendRequest(activeRequest.contact, activeRequest.request);
       this.metrics?.sentMessageCount.inc({ type: MessageType[activeRequest.request.type] });
