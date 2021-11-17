@@ -24,14 +24,17 @@ describe("discv5 integration test", function () {
 
       const bindAddrUdp = `/ip4/0.0.0.0/udp/${port++}`;
       const multiAddrUdp = new Multiaddr(bindAddrUdp);
-      enr.setLocationMultiaddr(multiAddrUdp);
 
       const discv5 = Discv5.create({
         enr,
         peerId,
         multiaddr: multiAddrUdp,
-        config: {},
+        config: {
+          lookupTimeout: 2000
+        },
       });
+
+      await discv5.start();
 
       for (let i = 0; i < bootCount; i++) {
         const bootEnr = ENR.decodeTxt(bootnodesENRText[i]);
