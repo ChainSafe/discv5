@@ -147,7 +147,9 @@ export class Lookup extends (EventEmitter as { new (): LookupEventEmitter }) {
       const numClosest = this.closestPeers.size;
       let progress = false;
 
-      let closestDist = this.closestPeers.size ? Array.from(this.closestPeers.keys()).reduce((acc, d) => d < acc ? d : acc) : undefined;
+      let closestDist = this.closestPeers.size
+        ? Array.from(this.closestPeers.keys()).reduce((acc, d) => (d < acc ? d : acc))
+        : undefined;
       // incorporate the reported closer peers into the query
       for (const cNodeId of closerPeers) {
         const cDist = distance(this.target, cNodeId);
