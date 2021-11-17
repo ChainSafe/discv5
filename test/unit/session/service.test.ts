@@ -2,14 +2,14 @@
 import { expect } from "chai";
 import { Multiaddr } from "multiaddr";
 
-import { createKeypair, KeypairType } from "../../src/keypair";
-import { ENR } from "../../src/enr";
-import { createWhoAreYouPacket, IPacket, PacketType } from "../../src/packet";
-import { UDPTransportService } from "../../src/transport";
-import { SessionService } from "../../src/session";
-import { createFindNodeMessage } from "../../src/message";
-import { defaultConfig } from "../../src/config";
-import { createNodeContact } from "../../src/session/nodeInfo";
+import { createKeypair, KeypairType } from "../../../src/keypair";
+import { ENR } from "../../../src/enr";
+import { createWhoAreYouPacket, IPacket, PacketType } from "../../../src/packet";
+import { UDPTransportService } from "../../../src/transport";
+import { SessionService } from "../../../src/session";
+import { createFindNodeMessage } from "../../../src/message";
+import { defaultConfig } from "../../../src/config";
+import { createNodeContact } from "../../../src/session/nodeInfo";
 
 describe("session service", () => {
   const kp0 = createKeypair(

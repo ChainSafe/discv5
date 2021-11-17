@@ -3,9 +3,9 @@
 import { expect } from "chai";
 import { Multiaddr } from "multiaddr";
 
-import { Discv5 } from "../../src/service/service";
-import { ENR } from "../../src/enr";
-import { generateKeypair, KeypairType, createPeerIdFromKeypair } from "../../src/keypair";
+import { Discv5 } from "../../../src/service/service";
+import { ENR } from "../../../src/enr";
+import { generateKeypair, KeypairType, createPeerIdFromKeypair } from "../../../src/keypair";
 
 describe("Discv5", async () => {
   const kp0 = generateKeypair(KeypairType.secp256k1);

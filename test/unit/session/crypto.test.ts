@@ -11,10 +11,10 @@ import {
   idVerify,
   encryptMessage,
   decryptMessage,
-} from "../../src/session";
-import { v4, ENR } from "../../src/enr";
-import { KeypairType, createKeypair } from "../../src/keypair";
-import { createNodeContact } from "../../src/session/nodeInfo";
+} from "../../../src/session";
+import { v4, ENR } from "../../../src/enr";
+import { KeypairType, createKeypair } from "../../../src/keypair";
+import { createNodeContact } from "../../../src/session/nodeInfo";
 
 describe("session crypto", () => {
   it("ecdh should produce expected secret", () => {

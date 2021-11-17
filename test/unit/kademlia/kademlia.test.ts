@@ -1,10 +1,10 @@
 /* eslint-env mocha */
-import { KademliaRoutingTable } from "../../src/kademlia/kademlia";
+import { KademliaRoutingTable } from "../../../src/kademlia/kademlia";
 import { expect } from "chai";
-import { ENR, v4, createNodeId } from "../../src/enr";
-import { distance, EntryStatus, log2Distance } from "../../src/kademlia";
+import { ENR, v4, createNodeId } from "../../../src/enr";
+import { distance, EntryStatus, log2Distance } from "../../../src/kademlia";
 import { randomBytes } from "libp2p-crypto";
-import { toBuffer } from "../../src/util";
+import { toBuffer } from "../../../src/util";
 
 describe("Kademlia routing table", () => {
   const nodeId = createNodeId(Buffer.alloc(32));
