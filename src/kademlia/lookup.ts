@@ -147,17 +147,22 @@ export class Lookup extends (EventEmitter as { new (): LookupEventEmitter }) {
       const numClosest = this.closestPeers.size;
       let progress = false;
 
+      let closestDist = this.closestPeers.size ? Array.from(this.closestPeers.keys()).reduce((acc, d) => d < acc ? d : acc) : undefined;
       // incorporate the reported closer peers into the query
-      closerPeers.forEach((cNodeId) => {
+      for (const cNodeId of closerPeers) {
         const cDist = distance(this.target, cNodeId);
         if (!this.closestPeers.has(cDist)) {
           this.closestPeers.set(cDist, createLookupPeer(cNodeId, LookupPeerState.NotContacted));
+
+          // Set the closest distance if cDist is closer
+          if (closestDist === undefined || cDist < closestDist) {
+            closestDist = cDist;
+          }
         }
         // The lookup makes progress if the new peer is either closer to the target than any peer seen so far
         // or the lookup did not yet accumulate enough closest peers
-        const closest = Array.from(this.closestPeers.keys()).sort((a, b) => (b > a ? -1 : 1))[0];
-        progress = progress || closest === cDist || numClosest < this.config.lookupNumResults;
-      });
+        progress = progress || closestDist === cDist || numClosest < this.config.lookupNumResults;
+      }
 
       // update the lookup state
       if (this.state === LookupState.Iterating) {
