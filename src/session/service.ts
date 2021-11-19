@@ -230,7 +230,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     try {
       packet = session.encryptMessage(this.enr.nodeId, nodeAddr.nodeId, encode(response));
     } catch (e) {
-      log("Could not encrypt response: %s", (e as Error).message);
+      log("Could not encrypt response: %s", e);
       return;
     }
 
@@ -312,7 +312,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
         // eslint-disable-next-line max-len
         "Received a WHOAREYOU packet for a message with a non-expected source. Source %s, expected_source: %s message_nonce %s",
         src.toString(),
-        nodeAddr.toString(),
+        nodeAddr.socketAddr.toString(),
         nonce
       );
       return;

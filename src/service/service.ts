@@ -34,7 +34,7 @@ import { AddrVotes } from "./addrVotes";
 import { toBuffer } from "../util";
 import { IDiscv5Config, defaultConfig } from "../config";
 import { createNodeContact, getNodeAddress, getNodeId, INodeAddress, NodeContact } from "../session/nodeInfo";
-import { ConnectionStatus, ConnectionStatusType } from ".";
+import { BufferCallback, ConnectionStatus, ConnectionStatusType } from ".";
 
 const log = debug("discv5:service");
 
@@ -234,6 +234,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     let decodedEnr: ENR;
     try {
       decodedEnr = typeof enr === "string" ? ENR.decodeTxt(enr) : enr;
+      decodedEnr.encode();
     } catch (e) {
       log("Unable to add enr: %o", enr);
       return;
@@ -347,12 +348,11 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
         contact: createNodeContact(enr),
         request: createTalkRequestMessage(payload, protocol),
         callback: (err: RequestErrorType | null, res: Buffer | null): void => {
-          if (err) {
-            return reject(err);
+          if (err !== null) {
+            reject(err);
+            return;
           }
-          if (res) {
-            resolve(res);
-          }
+          resolve(res as Buffer);
         },
       });
     });
@@ -643,8 +643,10 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   private handleWhoAreYouRequest = (nodeAddr: INodeAddress, nonce: Buffer): void => {
     // Check what our latest known ENR is for this node
     const enr = this.findEnr(nodeAddr.nodeId) ?? null;
-    if (!enr) {
-      log("Node unknown, requesting ENR. Node: %o", nodeAddr);
+    if (enr) {
+      log("Received WHOAREYOU, Node known, Node: %o", nodeAddr);
+    } else {
+      log("Received WHOAREYOU, Node unknown, requesting ENR. Node: %o", nodeAddr);
     }
     this.sessionService.sendChallenge(nodeAddr, nonce, enr);
   };
@@ -789,7 +791,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       case MessageType.NODES:
         return this.handleNodes(nodeAddr, activeRequest, response as INodesMessage);
       case MessageType.TALKRESP:
-        return this.handleTalkResp(nodeAddr, activeRequest, response as ITalkRespMessage);
+        return this.handleTalkResp(nodeAddr, activeRequest as IActiveRequest<ITalkReqMessage, BufferCallback>, response as ITalkRespMessage);
       default:
         // TODO Implement all RPC methods
         return;
@@ -871,16 +873,19 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.discovered(nodeAddr.nodeId, message.enrs, lookupId);
   }
 
-  private handleTalkResp = (nodeAddr: INodeAddress, activeRequest: IActiveRequest, message: ITalkRespMessage): void => {
-    log("Received TALK response from Node: %o", nodeAddr);
+  private handleTalkResp = (nodeAddr: INodeAddress, activeRequest: IActiveRequest<ITalkReqMessage, BufferCallback>, message: ITalkRespMessage): void => {
+    log("Received TALKRESP message from Node: %o", nodeAddr);
     this.emit("talkRespReceived", nodeAddr, this.findEnr(nodeAddr.nodeId) ?? null, message);
+    if (activeRequest.callback) {
+      activeRequest.callback(null, message.response);
+    }
   };
 
   /**
    * A session could not be established or an RPC request timed out
    */
   private rpcFailure = (rpcId: bigint, error: RequestErrorType): void => {
-    log("RPC Error, removing request. Reason: %s, id %s", RequestErrorType[error], rpcId);
+    log("RPC error, removing request. Reason: %s, id %s", RequestErrorType[error], rpcId);
     const req = this.activeRequests.get(rpcId);
     if (!req) {
       return;
@@ -912,7 +917,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
         if (lookup) {
           lookup.onFailure(nodeId);
         } else {
-          log("Failed RPC request: %O for node: %s", request, nodeId);
+          log("Failed %s request: %O for node: %s", MessageType[request.type], request, nodeId);
         }
       }
     } else {
@@ -921,7 +926,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       if (lookup) {
         lookup.onFailure(nodeId);
       } else {
-        log("Failed RPC request: %O for node: %s", request, nodeId);
+        log("Failed %s request: %O for node: %s", MessageType[request.type], request, nodeId);
       }
     }
 
