@@ -12,11 +12,26 @@ export function distance(a: NodeId, b: NodeId): bigint {
 }
 
 export function log2Distance(a: NodeId, b: NodeId): number {
-  const d = distance(a, b);
-  if (!d) {
-    return 0;
+  let firstMatch = 0;
+  for (let i = 0; i < a.length; i++) {
+    const xoredNibble = Number.parseInt(a[i], 16) ^ Number.parseInt(b[i], 16);
+    if (xoredNibble) {
+      if (xoredNibble & 0b1000) {
+        firstMatch += 0;
+      } else if (xoredNibble & 0b0100) {
+        firstMatch += 1;
+      } else if (xoredNibble & 0b0010) {
+        firstMatch += 2;
+      } else if (xoredNibble & 0b0001) {
+        firstMatch += 3;
+      }
+      break;
+    } else {
+      firstMatch += 4;
+    }
   }
-  return NUM_BUCKETS - d.toString(2).padStart(NUM_BUCKETS, "0").indexOf("1");
+
+  return NUM_BUCKETS - firstMatch;
 }
 
 /**
