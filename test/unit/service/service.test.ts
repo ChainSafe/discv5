@@ -33,6 +33,7 @@ describe("Discv5", async () => {
   it("should add new enrs", async () => {
     const kp1 = generateKeypair(KeypairType.secp256k1);
     const enr1 = ENR.createV4(kp1.publicKey);
+    enr1.encode(kp1.privateKey);
     service0.addEnr(enr1);
     expect(service0.kadValues().length).eq(1);
   });
