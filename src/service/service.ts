@@ -459,9 +459,18 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
           case InsertResult.Inserted: {
             // We added this peer to the table
             log("New connected node added to routing table: %s", nodeId);
+            clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout)
             this.connectedPeers.set(
               nodeId,
-              setInterval(() => this.sendPing(newStatus.enr), this.config.pingInterval)
+              setInterval(() => {
+                // If the node is in the routing table, keep pinging
+                if (this.kbuckets.getValue(nodeId)) {
+                  this.sendPing(newStatus.enr);
+                } else {
+                  clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout)
+                  this.connectedPeers.delete(nodeId);
+                }
+              }, this.config.pingInterval)
             );
             this.emit("enrAdded", newStatus.enr);
             break;
@@ -471,9 +480,18 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
           case InsertResult.StatusUpdatedAndPromoted: {
             // The node was promoted
             log("Node promoted to connected: %s", nodeId);
+            clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout)
             this.connectedPeers.set(
               nodeId,
-              setInterval(() => this.sendPing(newStatus.enr), this.config.pingInterval)
+              setInterval(() => {
+                // If the node is in the routing table, keep pinging
+                if (this.kbuckets.getValue(nodeId)) {
+                  this.sendPing(newStatus.enr);
+                } else {
+                  clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout)
+                  this.connectedPeers.delete(nodeId);
+                }
+              }, this.config.pingInterval)
             );
             break;
           }
@@ -481,6 +499,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
           case InsertResult.FailedBucketFull:
           case InsertResult.FailedInvalidSelfUpdate:
             log("Could not insert node: %s", nodeId);
+            clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout)
             this.connectedPeers.delete(nodeId);
             break;
         }
@@ -492,6 +511,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
           case UpdateResult.FailedBucketFull:
           case UpdateResult.FailedKeyNonExistant: {
             log("Could not update ENR from pong. Node: %s", nodeId);
+            clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout)
             this.connectedPeers.delete(nodeId);
             break;
           }
@@ -512,6 +532,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
             break;
           }
         }
+        clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout)
         this.connectedPeers.delete(nodeId);
         break;
       }
@@ -562,10 +583,14 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       const entry = this.kbuckets.getWithPending(enr.nodeId);
       if (entry) {
         if (entry.value.seq < enr.seq) {
-          if (!this.kbuckets.update(enr)) {
-            this.connectedPeers.delete(enr.nodeId);
-            log("Failed to update discovered ENR. Node: %s", enr.nodeId);
-            continue;
+          switch (this.kbuckets.update(enr)) {
+            case UpdateResult.FailedBucketFull:
+            case UpdateResult.FailedKeyNonExistant: {
+              clearInterval(this.connectedPeers.get(enr.nodeId) as NodeJS.Timeout)
+              this.connectedPeers.delete(enr.nodeId);
+              log("Failed to update discovered ENR. Node: %s", enr.nodeId);
+              continue;
+            }
           }
         }
       }
@@ -782,6 +807,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
         const votedAddr = new Multiaddr(winningVote.multiaddrStr);
         this.enr.setLocationMultiaddr(votedAddr);
         this.emit("multiaddrUpdated", votedAddr);
+
+        // publish update to all connected peers
+        this.pingConnectedPeers();
       }
     }
 
