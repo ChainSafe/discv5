@@ -459,7 +459,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
           case InsertResult.Inserted: {
             // We added this peer to the table
             log("New connected node added to routing table: %s", nodeId);
-            clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout)
+            clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout);
             this.connectedPeers.set(
               nodeId,
               setInterval(() => {
@@ -467,7 +467,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
                 if (this.kbuckets.getValue(nodeId)) {
                   this.sendPing(newStatus.enr);
                 } else {
-                  clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout)
+                  clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout);
                   this.connectedPeers.delete(nodeId);
                 }
               }, this.config.pingInterval)
@@ -480,7 +480,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
           case InsertResult.StatusUpdatedAndPromoted: {
             // The node was promoted
             log("Node promoted to connected: %s", nodeId);
-            clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout)
+            clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout);
             this.connectedPeers.set(
               nodeId,
               setInterval(() => {
@@ -488,7 +488,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
                 if (this.kbuckets.getValue(nodeId)) {
                   this.sendPing(newStatus.enr);
                 } else {
-                  clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout)
+                  clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout);
                   this.connectedPeers.delete(nodeId);
                 }
               }, this.config.pingInterval)
@@ -499,7 +499,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
           case InsertResult.FailedBucketFull:
           case InsertResult.FailedInvalidSelfUpdate:
             log("Could not insert node: %s", nodeId);
-            clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout)
+            clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout);
             this.connectedPeers.delete(nodeId);
             break;
         }
@@ -511,7 +511,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
           case UpdateResult.FailedBucketFull:
           case UpdateResult.FailedKeyNonExistant: {
             log("Could not update ENR from pong. Node: %s", nodeId);
-            clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout)
+            clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout);
             this.connectedPeers.delete(nodeId);
             break;
           }
@@ -532,7 +532,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
             break;
           }
         }
-        clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout)
+        clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout);
         this.connectedPeers.delete(nodeId);
         break;
       }
@@ -586,7 +586,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
           switch (this.kbuckets.update(enr)) {
             case UpdateResult.FailedBucketFull:
             case UpdateResult.FailedKeyNonExistant: {
-              clearInterval(this.connectedPeers.get(enr.nodeId) as NodeJS.Timeout)
+              clearInterval(this.connectedPeers.get(enr.nodeId) as NodeJS.Timeout);
               this.connectedPeers.delete(enr.nodeId);
               log("Failed to update discovered ENR. Node: %s", enr.nodeId);
               continue;
@@ -791,7 +791,11 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       case MessageType.NODES:
         return this.handleNodes(nodeAddr, activeRequest, response as INodesMessage);
       case MessageType.TALKRESP:
-        return this.handleTalkResp(nodeAddr, activeRequest as IActiveRequest<ITalkReqMessage, BufferCallback>, response as ITalkRespMessage);
+        return this.handleTalkResp(
+          nodeAddr,
+          activeRequest as IActiveRequest<ITalkReqMessage, BufferCallback>,
+          response as ITalkRespMessage
+        );
       default:
         // TODO Implement all RPC methods
         return;
@@ -873,7 +877,11 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.discovered(nodeAddr.nodeId, message.enrs, lookupId);
   }
 
-  private handleTalkResp = (nodeAddr: INodeAddress, activeRequest: IActiveRequest<ITalkReqMessage, BufferCallback>, message: ITalkRespMessage): void => {
+  private handleTalkResp = (
+    nodeAddr: INodeAddress,
+    activeRequest: IActiveRequest<ITalkReqMessage, BufferCallback>,
+    message: ITalkRespMessage
+  ): void => {
     log("Received TALKRESP message from Node: %o", nodeAddr);
     this.emit("talkRespReceived", nodeAddr, this.findEnr(nodeAddr.nodeId) ?? null, message);
     if (activeRequest.callback) {
