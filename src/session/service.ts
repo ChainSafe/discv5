@@ -32,7 +32,7 @@ import {
 import { IRequestCall, ISessionEvents, ISessionConfig, IChallenge, RequestErrorType } from "./types";
 import { getNodeAddress, INodeAddress, INodeContactType, nodeAddressToString, NodeContact } from "./nodeInfo";
 import LRUCache from "lru-cache";
-import { ConnectionDirection, ERR_INVALID_SIG } from ".";
+import { ConnectionDirection, ERR_INVALID_SIG, NodeAddressString } from ".";
 import { TimeoutMap } from "../util";
 
 const log = debug("discv5:sessionService");
@@ -76,38 +76,48 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   /**
    * Pending raw requests. A list of raw messages we are awaiting a response from the remote.
    *
+   * UNBOUNDED: consumer data, responsibility of the app layer to bound
+   *
    * Keyed by NodeAddressString
    */
-  private activeRequests: TimeoutMap<string, IRequestCall>;
+  private activeRequests: TimeoutMap<NodeAddressString, IRequestCall>;
 
   // WHOAREYOU messages do not include the source node id. We therefore maintain another
   // mapping of active_requests via message_nonce. This allows us to match WHOAREYOU
   // requests with active requests sent.
   /**
    * A mapping of all pending active raw requests message nonces to their NodeAddress.
+   *
+   * UNBOUNDED: consumer data, responsibility of the app layer to bound
    */
   private activeRequestsNonceMapping: Map<string, INodeAddress>;
 
   /**
    * Requests awaiting a handshake completion.
    *
+   * UNBOUNDED: consumer data, responsibility of the app layer to bound
+   *
    * Keyed by NodeAddressString
    */
-  private pendingRequests: Map<string, [NodeContact, RequestMessage][]>;
+  private pendingRequests: Map<NodeAddressString, [NodeContact, RequestMessage][]>;
 
   /**
    * Currently in-progress handshakes with peers.
    *
+   * BOUNDED: bounded by expiry and IP rate limiter
+   *
    * Keyed by NodeAddressString
    */
-  private activeChallenges: LRUCache<string, IChallenge>;
+  private activeChallenges: LRUCache<NodeAddressString, IChallenge>;
 
   /**
    * Established sessions with peers.
    *
+   * BOUNDED: bounded by expiry and max items
+   *
    * Keyed by NodeAddressString
    */
-  private sessions: LRUCache<string, Session>;
+  private sessions: LRUCache<NodeAddressString, Session>;
 
   constructor(config: ISessionConfig, enr: ENR, keypair: IKeypair, transport: ITransportService) {
     super();

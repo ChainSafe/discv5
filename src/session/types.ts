@@ -5,6 +5,8 @@ import { IPacket } from "../packet";
 import { RequestMessage, ResponseMessage } from "../message";
 import { INodeAddress, NodeContact } from "./nodeInfo";
 
+export type NodeAddressString = string;
+
 export interface ISessionConfig {
   /**
    * The timeout for each UDP request

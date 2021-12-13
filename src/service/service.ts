@@ -86,28 +86,38 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
 
   /**
    * Storage of the ENR record for each node
+   *
+   * BOUNDED: bounded by bucket count + size
    */
   private kbuckets: KademliaRoutingTable;
 
   /**
    * All the iterative lookups we are currently performing with their ID
+   *
+   * UNBOUNDED: consumer data, responsibility of the app layer to bound
    */
   private activeLookups: Map<number, Lookup>;
 
   /**
    * RPC requests that have been sent and are awaiting a response.
    * Some requests are linked to a lookup (spanning multiple req/resp trips)
+   *
+   * UNBOUNDED: consumer data, responsibility of the app layer to bound
    */
   private activeRequests: Map<bigint, IActiveRequest>;
 
   /**
    * Tracks responses received across NODES responses.
+   *
+   * UNBOUNDED: consumer data, responsibility of the app layer to bound
    */
   private activeNodesResponses: Map<bigint, INodesResponse>;
 
   /**
    * List of peers we have established sessions with and an interval id
    * the interval handler pings the associated node
+   *
+   * BOUNDED: bounded by kad table size
    */
   private connectedPeers: Map<NodeId, NodeJS.Timer>;
 
@@ -118,16 +128,13 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
 
   /**
    * A map of votes that nodes have made about our external IP address
+   *
+   * BOUNDED
    */
   private addrVotes: AddrVotes;
 
   private metrics?: IDiscv5Metrics;
 
-  /**
-   * A map of open listeners for TALKREQ messages that have been set.  Used to ensure event listeners
-   * are cleared when the expected response is returned or the timeout period expires
-   */
-  private talkReqListeners: Map<bigint, (...args: [string, ENR, ITalkRespMessage, null]) => void>;
   /**
    * Default constructor.
    * @param sessionService the service managing sessions underneath.
@@ -152,7 +159,6 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       metrics.activeSessionCount.collect = () => metrics.activeSessionCount.set(discv5.sessionService.sessionsSize());
       metrics.lookupCount.collect = () => metrics.lookupCount.set(this.nextLookupId - 1);
     }
-    this.talkReqListeners = new Map();
   }
 
   /**
