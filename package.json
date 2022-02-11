@@ -51,7 +51,7 @@
     "chai": "^4.2.0",
     "eslint": "^6.6.0",
     "eslint-plugin-prettier": "^3.1.4",
-    "karma": "^4.3.0",
+    "karma": "^6.3.14",
     "lru-cache": "^6.0.0",
     "mocha": "^8.3.0",
     "nyc": "^14.1.1",
