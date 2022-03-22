@@ -30,6 +30,16 @@ describe("ENR", function () {
       expect(toHex(eth2)).to.be.equal("f6775d0700000113ffffffffffff1f00");
     });
 
+    it("should encodeTxt and decodeTxt ipv6 enr successfully", async () => {
+      const peerId = await PeerId.create({ keyType: "secp256k1" });
+      const enr = ENR.createFromPeerId(peerId);
+      enr.setLocationMultiaddr(new Multiaddr("/ip6/aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa/udp/9000"));
+      const keypair = createKeypairFromPeerId(peerId);
+      const enr2 = ENR.decodeTxt(enr.encodeTxt(keypair.privateKey));
+      expect(enr2.udp6).to.equal(9000);
+      expect(enr2.ip6).to.equal('aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa');
+    });
+
     it("should throw error - no id", () => {
       try {
         const txt = Buffer.from(

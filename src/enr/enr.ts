@@ -128,7 +128,7 @@ export class ENR extends Map<ENRKey, ENRValue> {
   get ip(): string | undefined {
     const raw = this.get("ip");
     if (raw) {
-      return muConvert.toString(protocols.names.ip4.code, raw) as string;
+      return muConvert.toString(protocols.names.ip4.code, toNewUint8Array(raw)) as string;
     } else {
       return undefined;
     }
@@ -179,7 +179,7 @@ export class ENR extends Map<ENRKey, ENRValue> {
   get ip6(): string | undefined {
     const raw = this.get("ip6");
     if (raw) {
-      return muConvert.toString(protocols.names.ip6.code, raw) as string;
+      return muConvert.toString(protocols.names.ip6.code, toNewUint8Array(raw)) as string;
     } else {
       return undefined;
     }
@@ -196,7 +196,7 @@ export class ENR extends Map<ENRKey, ENRValue> {
   get tcp6(): number | undefined {
     const raw = this.get("tcp6");
     if (raw) {
-      return Number(muConvert.toString(protocols.names.tcp.code, raw));
+      return Number(muConvert.toString(protocols.names.tcp.code, toNewUint8Array(raw)));
     } else {
       return undefined;
     }
@@ -213,7 +213,7 @@ export class ENR extends Map<ENRKey, ENRValue> {
   get udp6(): number | undefined {
     const raw = this.get("udp6");
     if (raw) {
-      return Number(muConvert.toString(protocols.names.udp.code, raw));
+      return Number(muConvert.toString(protocols.names.udp.code, toNewUint8Array(raw)));
     } else {
       return undefined;
     }

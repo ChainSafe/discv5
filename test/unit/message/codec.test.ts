@@ -35,6 +35,16 @@ describe("message", () => {
     },
     {
       message: {
+        type: MessageType.PONG,
+        id: 1n,
+        enrSeq: 1n,
+        recipientIp: "aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa",
+        recipientPort: 5000,
+      },
+      expected: Buffer.from("02d6010190aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa821388", "hex"),
+    },
+    {
+      message: {
         type: MessageType.FINDNODE,
         id: 1n,
         distances: [250],
