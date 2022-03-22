@@ -17,6 +17,7 @@ import {
   ITalkRespMessage,
 } from "./types";
 import { ENR } from "../enr";
+import { toNewUint8Array } from "../util";
 
 const ERR_INVALID_MESSAGE = "invalid message";
 
@@ -65,7 +66,8 @@ function decodePong(data: Buffer): IPongMessage {
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 4) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
-  let stringIpAddr = ipBufferToString(rlpRaw[2]);
+  let stringIpAddr = ipBufferToString(toNewUint8Array(rlpRaw[2]));
+  // let stringIpAddr = ipBufferToString(rlpRaw[2]);
   const parsedIp = ip6addr.parse(stringIpAddr);
   if (parsedIp.kind() === "ipv4") {
     stringIpAddr = parsedIp.toString({ format: "v4" });
