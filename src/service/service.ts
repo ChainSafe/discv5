@@ -4,7 +4,7 @@ import { randomBytes } from "libp2p-crypto";
 import { Multiaddr } from "multiaddr";
 import PeerId from "peer-id";
 
-import { UDPTransportService } from "../transport";
+import { ITransportService, UDPTransportService } from "../transport";
 import { MAX_PACKET_SIZE } from "../packet";
 import { ConnectionDirection, RequestErrorType, SessionService } from "../session";
 import { ENR, NodeId, MAX_RECORD_SIZE, createNodeId } from "../enr";
@@ -59,6 +59,7 @@ export interface IDiscv5CreateOptions {
   multiaddr: Multiaddr;
   config?: Partial<IDiscv5Config>;
   metrics?: IDiscv5Metrics;
+  transport?: ITransportService;
 }
 
 /**
@@ -168,11 +169,15 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * @param peerId the PeerId with the keypair that identifies the enr
    * @param multiaddr The multiaddr which contains the the network interface and port to which the UDP server binds
    */
-  public static create({ enr, peerId, multiaddr, config = {}, metrics }: IDiscv5CreateOptions): Discv5 {
+  public static create({ enr, peerId, multiaddr, config = {}, metrics, transport }: IDiscv5CreateOptions): Discv5 {
     const fullConfig = { ...defaultConfig, ...config };
     const decodedEnr = typeof enr === "string" ? ENR.decodeTxt(enr) : enr;
-    const udpTransport = new UDPTransportService(multiaddr, decodedEnr.nodeId);
-    const sessionService = new SessionService(fullConfig, decodedEnr, createKeypairFromPeerId(peerId), udpTransport);
+    const sessionService = new SessionService(
+      fullConfig,
+      decodedEnr,
+      createKeypairFromPeerId(peerId),
+      transport ?? new UDPTransportService(multiaddr, decodedEnr.nodeId)
+    );
     return new Discv5(fullConfig, sessionService, metrics);
   }
 
@@ -338,13 +343,17 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       }
     });
   }
-
   /**
    * Send TALKREQ message to dstId and returns response
    */
-  public async sendTalkReq(dstId: string, payload: Buffer, protocol: string | Uint8Array): Promise<Buffer> {
+  public async sendTalkReq(
+    dstId: string,
+    payload: Buffer,
+    protocol: string | Uint8Array,
+    remoteEnr?: ENR
+  ): Promise<Buffer> {
     return await new Promise((resolve, reject) => {
-      const enr = this.findEnr(dstId);
+      const enr = remoteEnr ?? this.findEnr(dstId);
       if (!enr) {
         log("Talkreq requested an unknown ENR, node: %s", dstId);
         return;
@@ -367,9 +376,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Send TALKRESP message to requesting node
    */
-  public async sendTalkResp(srcId: NodeId, requestId: RequestId, payload: Uint8Array): Promise<void> {
+  public async sendTalkResp(srcId: NodeId, requestId: RequestId, payload: Uint8Array, remoteEnr?: ENR): Promise<void> {
     const msg = createTalkResponseMessage(requestId, payload);
-    const enr = this.findEnr(srcId);
+    const enr = remoteEnr ?? this.findEnr(srcId);
     const addr = enr?.getLocationMultiaddr("udp");
     if (enr && addr) {
       log(`Sending TALKRESP message to node ${enr.id}`);
@@ -386,6 +395,13 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
         log(`Node ${srcId} not found`);
       }
     }
+  }
+
+  /**
+   * Hack to get debug logs to work in browser
+   */
+  public enableLogs(): void {
+    debug.enable("discv5*");
   }
 
   /**
