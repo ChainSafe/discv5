@@ -1,0 +1,7 @@
+version: 2
+updates:
+  - package-ecosystem: "yarn"
+    allow:
+      - dependency-type: "production"
+    commit-message:
+      prefix: "chore: "
