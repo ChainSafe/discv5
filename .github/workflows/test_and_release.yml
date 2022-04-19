@@ -4,8 +4,7 @@ on: [pull_request, push]
 
 jobs:
   tests:
-    name: Tests
-    if: tests
+    name: tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
