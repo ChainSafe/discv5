@@ -69,7 +69,7 @@ export class ENR extends Map<ENRKey, ENRValue> {
     return enr;
   }
   static decode(encoded: Buffer): ENR {
-    const decoded = (RLP.decode(encoded) as unknown) as Buffer[];
+    const decoded = RLP.decode(encoded) as unknown as Buffer[];
     return ENR.decodeFromValues(decoded);
   }
   static decodeTxt(encoded: string): ENR {

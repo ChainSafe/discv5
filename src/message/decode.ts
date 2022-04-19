@@ -50,7 +50,7 @@ export function decode(data: Buffer): Message {
 }
 
 function decodePing(data: Buffer): IPingMessage {
-  const rlpRaw = (RLP.decode(data.slice(1)) as unknown) as Buffer[];
+  const rlpRaw = RLP.decode(data.slice(1)) as unknown as Buffer[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -62,7 +62,7 @@ function decodePing(data: Buffer): IPingMessage {
 }
 
 function decodePong(data: Buffer): IPongMessage {
-  const rlpRaw = (RLP.decode(data.slice(1)) as unknown) as Buffer[];
+  const rlpRaw = RLP.decode(data.slice(1)) as unknown as Buffer[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 4) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -82,14 +82,14 @@ function decodePong(data: Buffer): IPongMessage {
 }
 
 function decodeFindNode(data: Buffer): IFindNodeMessage {
-  const rlpRaw = (RLP.decode(data.slice(1)) as unknown) as Buffer[];
+  const rlpRaw = RLP.decode(data.slice(1)) as unknown as Buffer[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
   if (!Array.isArray(rlpRaw[1])) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
-  const distances = ((rlpRaw[1] as unknown) as Buffer[]).map((x) => (x.length ? x.readUIntBE(0, x.length) : 0));
+  const distances = (rlpRaw[1] as unknown as Buffer[]).map((x) => (x.length ? x.readUIntBE(0, x.length) : 0));
   return {
     type: MessageType.FINDNODE,
     id: toBigIntBE(rlpRaw[0]),
@@ -98,7 +98,7 @@ function decodeFindNode(data: Buffer): IFindNodeMessage {
 }
 
 function decodeNodes(data: Buffer): INodesMessage {
-  const rlpRaw = (RLP.decode(data.slice(1)) as unknown) as RLP.Decoded;
+  const rlpRaw = RLP.decode(data.slice(1)) as unknown as RLP.Decoded;
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 3 || !Array.isArray(rlpRaw[2])) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -111,7 +111,7 @@ function decodeNodes(data: Buffer): INodesMessage {
 }
 
 function decodeTalkReq(data: Buffer): ITalkReqMessage {
-  const rlpRaw = (RLP.decode(data.slice(1)) as unknown) as RLP.Decoded;
+  const rlpRaw = RLP.decode(data.slice(1)) as unknown as RLP.Decoded;
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 3) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -124,7 +124,7 @@ function decodeTalkReq(data: Buffer): ITalkReqMessage {
 }
 
 function decodeTalkResp(data: Buffer): ITalkRespMessage {
-  const rlpRaw = (RLP.decode(data.slice(1)) as unknown) as RLP.Decoded;
+  const rlpRaw = RLP.decode(data.slice(1)) as unknown as RLP.Decoded;
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -136,7 +136,7 @@ function decodeTalkResp(data: Buffer): ITalkRespMessage {
 }
 
 function decodeRegTopic(data: Buffer): IRegTopicMessage {
-  const rlpRaw = (RLP.decode(data.slice(1)) as unknown) as Buffer[];
+  const rlpRaw = RLP.decode(data.slice(1)) as unknown as Buffer[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 4 || !Array.isArray(rlpRaw[2])) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -144,13 +144,13 @@ function decodeRegTopic(data: Buffer): IRegTopicMessage {
     type: MessageType.REGTOPIC,
     id: toBigIntBE(rlpRaw[0]),
     topic: rlpRaw[1],
-    enr: ENR.decodeFromValues((rlpRaw[2] as unknown) as Buffer[]),
+    enr: ENR.decodeFromValues(rlpRaw[2] as unknown as Buffer[]),
     ticket: rlpRaw[3],
   };
 }
 
 function decodeTicket(data: Buffer): ITicketMessage {
-  const rlpRaw = (RLP.decode(data.slice(1)) as unknown) as Buffer[];
+  const rlpRaw = RLP.decode(data.slice(1)) as unknown as Buffer[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 3) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -163,7 +163,7 @@ function decodeTicket(data: Buffer): ITicketMessage {
 }
 
 function decodeRegConfirmation(data: Buffer): IRegConfirmationMessage {
-  const rlpRaw = (RLP.decode(data.slice(1)) as unknown) as Buffer[];
+  const rlpRaw = RLP.decode(data.slice(1)) as unknown as Buffer[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -175,7 +175,7 @@ function decodeRegConfirmation(data: Buffer): IRegConfirmationMessage {
 }
 
 function decodeTopicQuery(data: Buffer): ITopicQueryMessage {
-  const rlpRaw = (RLP.decode(data.slice(1)) as unknown) as Buffer[];
+  const rlpRaw = RLP.decode(data.slice(1)) as unknown as Buffer[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }

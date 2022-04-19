@@ -53,7 +53,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
   clear(): void {
     this.nodes = [];
     this.pending = undefined;
-    clearTimeout((this.pendingTimeoutId as unknown) as NodeJS.Timeout);
+    clearTimeout(this.pendingTimeoutId as unknown as NodeJS.Timeout);
   }
 
   /**
