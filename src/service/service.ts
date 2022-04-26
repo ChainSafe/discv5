@@ -319,6 +319,27 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   }
 
   /**
+   * Returns an ENR if one is known for the given NodeId
+   *
+   * This includes ENRs from any ongoing lookups not yet in the kad table
+   */
+  public findEnr(nodeId: NodeId): ENR | undefined {
+    // check if we know this node id in our routing table
+    const enr = this.kbuckets.getValue(nodeId);
+    if (enr) {
+      return enr;
+    }
+    // Check the untrusted addresses for ongoing lookups
+    for (const lookup of this.activeLookups.values()) {
+      const enr = lookup.untrustedEnrs[nodeId];
+      if (enr) {
+        return enr;
+      }
+    }
+    return undefined;
+  }
+
+  /**
    * Broadcast TALKREQ message to all nodes in routing table and returns response
    */
   public async broadcastTalkReq(payload: Buffer, protocol: string | Uint8Array): Promise<Buffer> {
@@ -346,21 +367,10 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Send TALKREQ message to dstId and returns response
    */
-  public async sendTalkReq(
-    dstId: string,
-    payload: Buffer,
-    protocol: string | Uint8Array,
-    remoteEnr?: ENR
-  ): Promise<Buffer> {
+  public async sendTalkReq(remote: ENR | Multiaddr, payload: Buffer, protocol: string | Uint8Array): Promise<Buffer> {
     return await new Promise((resolve, reject) => {
-      const enr = remoteEnr ?? this.findEnr(dstId);
-      if (!enr) {
-        log("Talkreq requested an unknown ENR, node: %s", dstId);
-        return;
-      }
-
       this.sendRpcRequest({
-        contact: createNodeContact(enr),
+        contact: createNodeContact(remote),
         request: createTalkRequestMessage(payload, protocol),
         callback: (err: RequestErrorType | null, res: Buffer | null): void => {
           if (err !== null) {
@@ -376,25 +386,10 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Send TALKRESP message to requesting node
    */
-  public async sendTalkResp(srcId: NodeId, requestId: RequestId, payload: Uint8Array, remoteEnr?: ENR): Promise<void> {
+  public async sendTalkResp(remote: ENR | Multiaddr, requestId: RequestId, payload: Uint8Array): Promise<void> {
     const msg = createTalkResponseMessage(requestId, payload);
-    const enr = remoteEnr ?? this.findEnr(srcId);
-    const addr = enr?.getLocationMultiaddr("udp");
-    if (enr && addr) {
-      log(`Sending TALKRESP message to node ${enr.id}`);
-      try {
-        this.sessionService.sendResponse({ nodeId: srcId, socketAddr: addr }, msg);
-        this.metrics?.sentMessageCount.inc({ type: MessageType[MessageType.TALKRESP] });
-      } catch (e) {
-        log("Failed to send a TALKRESP response. Error: %s", (e as Error).message);
-      }
-    } else {
-      if (!addr && enr) {
-        log(`No ip + udp port found for node ${srcId}`);
-      } else {
-        log(`Node ${srcId} not found`);
-      }
-    }
+    const nodeAddr = getNodeAddress(createNodeContact(remote));
+    this.sendRpcResponse(nodeAddr, msg);
   }
 
   /**
@@ -463,6 +458,19 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       this.metrics?.sentMessageCount.inc({ type: MessageType[activeRequest.request.type] });
     } catch (e) {
       this.activeRequests.delete(activeRequest.request.id);
+      log("Error sending RPC to node: %o, :Error: %s", nodeAddr, (e as Error).message);
+    }
+  }
+
+  /**
+   * Sends generic RPC responses.
+   */
+  private sendRpcResponse(nodeAddr: INodeAddress, response: ResponseMessage): void {
+    log("Sending %s to node: %o", MessageType[response.type], nodeAddr);
+    try {
+      this.sessionService.sendResponse(nodeAddr, response);
+      this.metrics?.sentMessageCount.inc({ type: MessageType[response.type] });
+    } catch (e) {
       log("Error sending RPC to node: %o, :Error: %s", nodeAddr, (e as Error).message);
     }
   }
@@ -559,27 +567,6 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
         break;
       }
     }
-  }
-
-  /**
-   * Returns an ENR if one is known for the given NodeId
-   *
-   * This includes ENRs from any ongoing lookups not yet in the kad table
-   */
-  private findEnr(nodeId: NodeId): ENR | undefined {
-    // check if we know this node id in our routing table
-    const enr = this.kbuckets.getValue(nodeId);
-    if (enr) {
-      return enr;
-    }
-    // Check the untrusted addresses for ongoing lookups
-    for (const lookup of this.activeLookups.values()) {
-      const enr = lookup.untrustedEnrs[nodeId];
-      if (enr) {
-        return enr;
-      }
-    }
-    return undefined;
   }
 
   /**
