@@ -152,6 +152,40 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [0.7.0](https://github.com/ChainSafe/discv5/compare/v0.7.0...v0.7.0) (2022-04-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* * Transport interface, debug log enabler, enr in talkreq/talkresp
+* new multiaddr used with different API
+* emitted peer event now emits a peer data object with id and multiaddrs instead of a peer-info
+
+### Features
+
+* configurable transport service and remote enr ([#169](https://github.com/ChainSafe/discv5/issues/169)) ([72aaa0b](https://github.com/ChainSafe/discv5/commit/72aaa0b46967cfa8cea1d4d76bebf96116440934))
+
+
+### Bug Fixes
+
+* add toNewUint8Array when decoding enr values ([65a1828](https://github.com/ChainSafe/discv5/commit/65a1828b3ad65255a4f7881ef6ae56630cd1830b))
+* AddrVotes.best ([a3f2769](https://github.com/ChainSafe/discv5/commit/a3f2769d2c1bdad430a16a75b99ec02a96484290))
+* decode message and add a test ([d64cee4](https://github.com/ChainSafe/discv5/commit/d64cee42001205340c8fa761a03cf12b8071cd86))
+* decodeFindNode ([ac6c707](https://github.com/ChainSafe/discv5/commit/ac6c7070c6257d02f62f5a27028787b27ac06bd9))
+
+
+### Miscellaneous
+
+* add github actions and remove travis ([f03c9c0](https://github.com/ChainSafe/discv5/commit/f03c9c004ec4999333b2fff73700dcd169bf7b30))
+* address review ([2efdecf](https://github.com/ChainSafe/discv5/commit/2efdecf68680db3d15af10d4ebadd9a4eae37515))
+* automatic release ([#170](https://github.com/ChainSafe/discv5/issues/170)) ([88c1f7c](https://github.com/ChainSafe/discv5/commit/88c1f7cc1aca60a3ba4ddbabba5b743d8dbe29a6))
+* lint and actions ([3702111](https://github.com/ChainSafe/discv5/commit/37021116767f23f972c44b4c6ace7512becab46a))
+* **master:** release 0.7.0 ([#171](https://github.com/ChainSafe/discv5/issues/171)) ([84428d3](https://github.com/ChainSafe/discv5/commit/84428d3a9e34905ace61e9629bcea9d3c34bdff3))
+* release 0.7.0 ([ba942e3](https://github.com/ChainSafe/discv5/commit/ba942e351cc00ed622bc3f45f0bc3bd760a94644))
+* update dependencies ([d8d8a0a](https://github.com/ChainSafe/discv5/commit/d8d8a0a419b59496fa6b50357d19cc68a4beacc0))
+* use ?? instead of || ([87e13d1](https://github.com/ChainSafe/discv5/commit/87e13d1488b2585cc3b092a5a0cc6608b6cf68d8))
+* use new peer-discovery interface ([b04c1c6](https://github.com/ChainSafe/discv5/commit/b04c1c6b53471497c7611abfe132fcb63160b612))
+
 ## [0.7.0](https://github.com/ChainSafe/discv5/compare/v0.6.7...v0.7.0) (2022-04-27)
 
 
