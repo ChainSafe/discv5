@@ -52,12 +52,11 @@ jobs:
         
       - uses: actions/setup-node@v3
         with:
-          cache: 'yarn'
           node-version: 16
           registry-url: 'https://registry.npmjs.org'
         if: ${{ steps.release.outputs.release_created }}
       
-      - run: yarn install --ignore-scripts
+      - run: yarn install
         if: ${{ steps.release.outputs.release_created }}
       
       - run: yarn build
