@@ -152,6 +152,28 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [0.7.0](https://github.com/ChainSafe/discv5/compare/v0.6.7...v0.7.0) (2022-04-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* * Transport interface, debug log enabler, enr in talkreq/talkresp
+
+### Features
+
+* configurable transport service and remote enr ([#169](https://github.com/ChainSafe/discv5/issues/169)) ([72aaa0b](https://github.com/ChainSafe/discv5/commit/72aaa0b46967cfa8cea1d4d76bebf96116440934))
+
+
+### Bug Fixes
+
+* add toNewUint8Array when decoding enr values ([65a1828](https://github.com/ChainSafe/discv5/commit/65a1828b3ad65255a4f7881ef6ae56630cd1830b))
+* decode message and add a test ([d64cee4](https://github.com/ChainSafe/discv5/commit/d64cee42001205340c8fa761a03cf12b8071cd86))
+
+
+### Miscellaneous
+
+* automatic release ([#170](https://github.com/ChainSafe/discv5/issues/170)) ([88c1f7c](https://github.com/ChainSafe/discv5/commit/88c1f7cc1aca60a3ba4ddbabba5b743d8dbe29a6))
+
 ## 0.2.2 - (2020-05-21)
 
 ### Bugfixes
