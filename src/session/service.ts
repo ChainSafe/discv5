@@ -460,13 +460,10 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   }
 
   /**
-   * Verifies a Node ENR to its observed address.
-   * If it fails, any associated session is also considered failed.
-   * If it succeeds, we notify the application
+   * Compares the ENR multiaddr to its observed address.
+   * Returns true if they match
    */
   private verifyEnr(enr: ENR, nodeAddr: INodeAddress): boolean {
-    // If the ENR does not match the observed IP addresses,
-    // we consider the session failed.
     const enrMultiaddr = enr.getLocationMultiaddr("udp");
     return enr.nodeId === nodeAddr.nodeId && (enrMultiaddr?.equals(nodeAddr.socketAddr) ?? true);
   }
@@ -510,28 +507,35 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       );
 
       // Receiving an AuthResponse must give us an up-to-date view of the node ENR.
-      // Verify the ENR is valid
-      if (this.verifyEnr(enr, nodeAddr)) {
-        // Session is valid
-        // Notify the application
+      // Verify the ENR endpoint matches observed node address
+      const verified = this.verifyEnr(enr, nodeAddr);
+
+      // Drop session if invalid ENR and session service not configured to allow unverified sessions
+      if (!verified && !this.config.allowUnverifiedSessions) {
+        log("ENR contains invalid socket address. Dropping session with %o", nodeAddr);
+        return;
+      }
+
+      if (verified) {
+        // If ENR is valid, notify application in order to add to routing table
         // The session established here are from WHOAREYOU packets that we sent.
         // This occurs when a node established a connection with us.
         this.emit("established", enr, ConnectionDirection.Incoming);
-
-        this.newSession(nodeAddr, session);
-
-        // decrypt the message
-        this.handleMessage(src, {
-          maskingIv: packet.maskingIv,
-          header: createHeader(
-            PacketType.Message,
-            encodeMessageAuthdata({ srcId: nodeAddr.nodeId }),
-            packet.header.nonce
-          ),
-          message: packet.message,
-          messageAd: encodeChallengeData(packet.maskingIv, packet.header),
-        });
       }
+
+      this.newSession(nodeAddr, session);
+
+      // decrypt the message
+      this.handleMessage(src, {
+        maskingIv: packet.maskingIv,
+        header: createHeader(
+          PacketType.Message,
+          encodeMessageAuthdata({ srcId: nodeAddr.nodeId }),
+          packet.header.nonce
+        ),
+        message: packet.message,
+        messageAd: encodeChallengeData(packet.maskingIv, packet.header),
+      });
     } catch (e) {
       if ((e as Error).name === ERR_INVALID_SIG) {
         log("Authentication header contained invalid signature. Ignoring packet from: %o", nodeAddr);

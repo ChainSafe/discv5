@@ -386,7 +386,11 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Send TALKRESP message to requesting node
    */
-  public async sendTalkResp(remote: ENR | Multiaddr, requestId: RequestId, payload: Uint8Array): Promise<void> {
+  public async sendTalkResp(
+    remote: ENR | Multiaddr | INodeAddress,
+    requestId: RequestId,
+    payload: Uint8Array
+  ): Promise<void> {
     const msg = createTalkResponseMessage(requestId, payload);
     const nodeAddr = getNodeAddress(createNodeContact(remote));
     this.sendRpcResponse(nodeAddr, msg);
@@ -402,7 +406,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Sends a PING request to a node
    */
-  private sendPing(enr: ENR): void {
+  public sendPing(enr: ENR): void {
     this.sendRpcRequest({ contact: createNodeContact(enr), request: createPingMessage(this.enr.seq) });
   }
 
