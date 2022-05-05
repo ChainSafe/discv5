@@ -9,6 +9,7 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "build": "tsc --declaration --outDir lib",
+    "prepare": "npm run build",
     "prepublishOnly": "yarn build",
     "lint": "eslint --color --ext .ts src/",
     "test": "yarn test:unit && yarn test:e2e",
