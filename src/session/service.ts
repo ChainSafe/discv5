@@ -623,15 +623,24 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
           if (message.type === MessageType.NODES) {
             // Received the requested ENR
             const enr = message.enrs.pop();
+
             if (enr) {
-              if (this.verifyEnr(enr, nodeAddr)) {
+              // Verify the ENR endpoint matches observed node address
+              const verified = this.verifyEnr(enr, nodeAddr);
+
+              // Drop session if invalid ENR and session service not configured to allow unverified sessions
+              if (!verified && !this.config.allowUnverifiedSessions) {
+                log("ENR contains invalid socket address. Dropping session with %o", nodeAddr);
+                return;
+              }
+              if (verified) {
                 // Notify the application
                 // This can occur when we try to dial a node without an
                 // ENR. In this case we have attempted to establish the
                 // connection, so this is an outgoing connection.
                 this.emit("established", enr, ConnectionDirection.Outgoing);
-                return;
               }
+              return;
             }
           }
 
