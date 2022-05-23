@@ -152,6 +152,18 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+### [0.7.1](https://github.com/ChainSafe/discv5/compare/v0.7.0...v0.7.1) (2022-05-12)
+
+
+### Bug Fixes
+
+* A more robust check for rinfo.family  ([#178](https://github.com/ChainSafe/discv5/issues/178)) ([7331fbc](https://github.com/ChainSafe/discv5/commit/7331fbcb81c998cdebe4e540b64d6a8c9f3c7ef3))
+
+
+### Miscellaneous
+
+* Bump peer-id dep to latest ([#174](https://github.com/ChainSafe/discv5/issues/174)) ([27bdd26](https://github.com/ChainSafe/discv5/commit/27bdd26b371d3d8c8e7e7bc442f53a27db20ba8e))
+
 ## [0.7.0](https://github.com/ChainSafe/discv5/compare/v0.7.0...v0.7.0) (2022-04-27)
 
 
