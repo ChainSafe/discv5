@@ -637,9 +637,14 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
 
   // process events from the session service
 
-  private onEstablished = (enr: ENR, direction: ConnectionDirection): void => {
-    // Ignore sessions with non-contactable ENRs
-    if (!enr.getLocationMultiaddr("udp")) {
+  private onEstablished = (
+    nodeAddr: INodeAddress,
+    enr: ENR,
+    direction: ConnectionDirection,
+    verified: boolean
+  ): void => {
+    // Ignore sessions with unverified or non-contactable ENRs
+    if (!verified || !enr.getLocationMultiaddr("udp")) {
       return;
     }
 

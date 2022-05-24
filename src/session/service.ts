@@ -430,7 +430,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
         this.send(nodeAddr, authPacket);
 
         // Notify the application that the session has been established
-        this.emit("established", requestCall.contact.enr, connectionDirection);
+        this.emit("established", nodeAddr, requestCall.contact.enr, connectionDirection, true);
         break;
       }
       case INodeContactType.Raw: {
@@ -513,15 +513,14 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       // Drop session if invalid ENR and session service not configured to allow unverified sessions
       if (!verified && !this.config.allowUnverifiedSessions) {
         log("ENR contains invalid socket address. Dropping session with %o", nodeAddr);
+        this.failSession(nodeAddr, RequestErrorType.InvalidRemoteENR, true);
         return;
       }
 
-      if (verified) {
-        // If ENR is valid, notify application in order to add to routing table
-        // The session established here are from WHOAREYOU packets that we sent.
-        // This occurs when a node established a connection with us.
-        this.emit("established", enr, ConnectionDirection.Incoming);
-      }
+      // Notify application
+      // The session established here are from WHOAREYOU packets that we sent.
+      // This occurs when a node established a connection with us.
+      this.emit("established", nodeAddr, enr, ConnectionDirection.Outgoing, verified);
 
       this.newSession(nodeAddr, session);
 
@@ -631,15 +630,15 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
               // Drop session if invalid ENR and session service not configured to allow unverified sessions
               if (!verified && !this.config.allowUnverifiedSessions) {
                 log("ENR contains invalid socket address. Dropping session with %o", nodeAddr);
+                this.failSession(nodeAddr, RequestErrorType.InvalidRemoteENR, true);
                 return;
               }
-              if (verified) {
-                // Notify the application
-                // This can occur when we try to dial a node without an
-                // ENR. In this case we have attempted to establish the
-                // connection, so this is an outgoing connection.
-                this.emit("established", enr, ConnectionDirection.Outgoing);
-              }
+              // Notify the application
+              // This can occur when we try to dial a node without an
+              // ENR. In this case we have attempted to establish the
+              // connection, so this is an outgoing connection.
+              this.emit("established", nodeAddr, enr, ConnectionDirection.Outgoing, verified);
+
               return;
             }
           }

@@ -127,7 +127,7 @@ export interface ISessionEvents {
   /**
    * A session has been established with a node
    */
-  established: (enr: ENR, connectionDirection: ConnectionDirection) => void;
+  established: (nodeAddr: INodeAddress, enr: ENR, connectionDirection: ConnectionDirection, verified: boolean) => void;
   /**
    * A Request was received
    */
