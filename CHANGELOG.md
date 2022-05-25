@@ -152,6 +152,13 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [0.8.0](https://github.com/ChainSafe/discv5/compare/v0.7.1...v0.8.0) (2022-05-25)
+
+
+### Features
+
+* all unverified inbound sessions ([#180](https://github.com/ChainSafe/discv5/issues/180)) ([f2cc802](https://github.com/ChainSafe/discv5/commit/f2cc802fd7fb65c5fddfa4d375f9ac58b2af13f9))
+
 ### [0.7.1](https://github.com/ChainSafe/discv5/compare/v0.7.0...v0.7.1) (2022-05-12)
 
 
