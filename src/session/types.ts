@@ -31,6 +31,11 @@ export interface ISessionConfig {
    * The maximum number of established sessions to maintain
    */
   sessionCacheCapacity: number;
+  /**
+   * Allow sessions with unverified ENRs (i.e. either have no UDP endpoint specified or else reported
+   * UDP endpoint does not match observed socket address)
+   */
+  allowUnverifiedSessions: boolean;
 }
 
 export enum RequestErrorType {
@@ -122,7 +127,7 @@ export interface ISessionEvents {
   /**
    * A session has been established with a node
    */
-  established: (enr: ENR, connectionDirection: ConnectionDirection) => void;
+  established: (nodeAddr: INodeAddress, enr: ENR, connectionDirection: ConnectionDirection, verified: boolean) => void;
   /**
    * A Request was received
    */

@@ -37,6 +37,7 @@ describe("session service", () => {
 
   let service0: SessionService;
   let service1: SessionService;
+  let service2: SessionService;
 
   beforeEach(async () => {
     transport0 = new UDPTransportService(addr0, enr0.nodeId);
@@ -74,7 +75,7 @@ describe("session service", () => {
       service1.sendChallenge(nodeAddr, authTag, enr0);
     });
     const establishedSession = new Promise<void>((resolve) =>
-      service1.once("established", (enr) => {
+      service1.once("established", (_, enr) => {
         expect(enr).to.deep.equal(enr0);
         resolve();
       })

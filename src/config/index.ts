@@ -31,4 +31,5 @@ export const defaultConfig: IDiscv5Config = {
   lookupTimeout: 60 * 1000,
   pingInterval: 300 * 1000,
   enrUpdate: true,
+  allowUnverifiedSessions: false,
 };

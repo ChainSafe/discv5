@@ -74,16 +74,16 @@ export interface IDiscv5CreateOptions {
  */
 export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
+   * Session service that establishes sessions with peers
+   */
+  public sessionService: SessionService;
+
+  /**
    * Configuration
    */
   private config: IDiscv5Config;
 
   private started = false;
-
-  /**
-   * Session service that establishes sessions with peers
-   */
-  private sessionService: SessionService;
 
   /**
    * Storage of the ENR record for each node
@@ -386,10 +386,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Send TALKRESP message to requesting node
    */
-  public async sendTalkResp(remote: ENR | Multiaddr, requestId: RequestId, payload: Uint8Array): Promise<void> {
+  public async sendTalkResp(remote: INodeAddress, requestId: RequestId, payload: Uint8Array): Promise<void> {
     const msg = createTalkResponseMessage(requestId, payload);
-    const nodeAddr = getNodeAddress(createNodeContact(remote));
-    this.sendRpcResponse(nodeAddr, msg);
+    this.sendRpcResponse(remote, msg);
   }
 
   /**
@@ -402,8 +401,8 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Sends a PING request to a node
    */
-  private sendPing(enr: ENR): void {
-    this.sendRpcRequest({ contact: createNodeContact(enr), request: createPingMessage(this.enr.seq) });
+  public sendPing(nodeAddr: ENR | Multiaddr): void {
+    this.sendRpcRequest({ contact: createNodeContact(nodeAddr), request: createPingMessage(this.enr.seq) });
   }
 
   /**
@@ -638,9 +637,14 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
 
   // process events from the session service
 
-  private onEstablished = (enr: ENR, direction: ConnectionDirection): void => {
-    // Ignore sessions with non-contactable ENRs
-    if (!enr.getLocationMultiaddr("udp")) {
+  private onEstablished = (
+    nodeAddr: INodeAddress,
+    enr: ENR,
+    direction: ConnectionDirection,
+    verified: boolean
+  ): void => {
+    // Ignore sessions with unverified or non-contactable ENRs
+    if (!verified || !enr.getLocationMultiaddr("udp")) {
       return;
     }
 

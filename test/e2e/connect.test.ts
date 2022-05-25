@@ -66,7 +66,7 @@ describe("discv5 integration test", function () {
 
     // test a TALKRESP with no response
     try {
-      await node0.discv5.sendTalkReq(node1.enr.nodeId, Buffer.from([0, 1, 2, 3]), "foo");
+      await node0.discv5.sendTalkReq(node1.enr, Buffer.from([0, 1, 2, 3]), "foo");
       expect.fail("TALKREQ response should throw when no response is given");
     } catch (e) {
     }
@@ -74,9 +74,9 @@ describe("discv5 integration test", function () {
     // test a TALKRESP with a response
     const expectedResp = Buffer.from([4, 5, 6, 7]);
     node1.discv5.on("talkReqReceived", (nodeAddr, enr, request) => {
-      node1.discv5.sendTalkResp(nodeAddr.nodeId, request.id, expectedResp);
+      node1.discv5.sendTalkResp(nodeAddr, request.id, expectedResp);
     });
-    const resp = await node0.discv5.sendTalkReq(node1.enr.nodeId, Buffer.from([0, 1, 2, 3]), "foo");
+    const resp = await node0.discv5.sendTalkReq(node1.enr, Buffer.from([0, 1, 2, 3]), "foo");
     expect(resp).to.deep.equal(expectedResp);
 
   });
