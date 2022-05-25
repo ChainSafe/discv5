@@ -74,16 +74,16 @@ export interface IDiscv5CreateOptions {
  */
 export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
+   * Session service that establishes sessions with peers
+   */
+  public sessionService: SessionService;
+
+  /**
    * Configuration
    */
   private config: IDiscv5Config;
 
   private started = false;
-
-  /**
-   * Session service that establishes sessions with peers
-   */
-  private sessionService: SessionService;
 
   /**
    * Storage of the ENR record for each node
