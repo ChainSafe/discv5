@@ -152,6 +152,13 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+### [0.8.1](https://github.com/ChainSafe/discv5/compare/v0.8.0...v0.8.1) (2022-05-31)
+
+
+### Bug Fixes
+
+* Remove p2p portions of multiaddr in `nodeAddressToString` ([#182](https://github.com/ChainSafe/discv5/issues/182)) ([72cd0f5](https://github.com/ChainSafe/discv5/commit/72cd0f5372f2a49599783b495e43fec8fe0e6ade))
+
 ## [0.8.0](https://github.com/ChainSafe/discv5/compare/v0.7.1...v0.8.0) (2022-05-25)
 
 
