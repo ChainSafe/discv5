@@ -11,7 +11,11 @@ export interface INodeAddress {
 }
 
 export function nodeAddressToString(nodeAddr: INodeAddress): string {
-  return nodeAddr.nodeId + ":" + Buffer.from(nodeAddr.socketAddr.bytes).toString("hex");
+  // Since `sendRPCMessage` takes an ENR or Multiaddr, remove any p2p portions of the
+  // multiaddr since only the UDP socket addr is included in the session cache
+  // key (e.g. /ip4/127.0.0.1/udp/9000/p2p/Qm...)
+  const normalizedAddr = nodeAddr.socketAddr.decapsulateCode(421);
+  return nodeAddr.nodeId + ":" + Buffer.from(normalizedAddr.bytes).toString("hex");
 }
 
 /**
