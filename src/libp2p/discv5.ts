@@ -131,7 +131,8 @@ export class Discv5Discovery extends EventEmitter<PeerDiscoveryEvents> implement
           id: await enr.peerId(),
           multiaddrs: [
             // TODO fix whatever type issue is happening here :(
-            multiaddrTCP as unknown as import("@libp2p/interfaces/node_modules/@multiformats/multiaddr/dist/src/index").Multiaddr,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            multiaddrTCP as any,
           ],
           protocols: [],
         },
