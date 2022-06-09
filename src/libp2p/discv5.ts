@@ -1,11 +1,12 @@
-import { EventEmitter } from "events";
-import PeerId from "peer-id";
-import { Multiaddr } from "multiaddr";
-import { AbortController } from "@chainsafe/abort-controller";
+import { PeerId } from "@libp2p/interfaces/peer-id";
+import { PeerDiscovery, PeerDiscoveryEvents, symbol as peerDiscoverySymbol } from "@libp2p/interfaces/peer-discovery";
+import { CustomEvent, EventEmitter } from "@libp2p/interfaces/events";
+import { Multiaddr } from "@multiformats/multiaddr";
+import { PeerInfo } from "@libp2p/interfaces/peer-info";
 
-import { Discv5, ENRInput, IDiscv5Metrics } from "../service";
-import { ENR } from "../enr";
-import { IDiscv5Config } from "../config";
+import { Discv5, ENRInput, IDiscv5Metrics } from "../service/index.js";
+import { ENR } from "../enr/index.js";
+import { IDiscv5Config } from "../config/index.js";
 
 // Default to 0ms between automatic searches
 // 0ms is 'backwards compatible' with the prior behavior (always be searching)
@@ -53,8 +54,9 @@ export interface IDiscv5DiscoveryOptions extends IDiscv5DiscoveryInputOptions {
 /**
  * Discv5Discovery is a libp2p peer-discovery compatable module
  */
-export class Discv5Discovery extends EventEmitter {
-  static tag = "discv5";
+export class Discv5Discovery extends EventEmitter<PeerDiscoveryEvents> implements PeerDiscovery {
+  [Symbol.toStringTag] = "discv5";
+  [peerDiscoverySymbol] = true as const;
 
   public discv5: Discv5;
   public searchInterval: number;
@@ -123,10 +125,19 @@ export class Discv5Discovery extends EventEmitter {
     if (!multiaddrTCP) {
       return;
     }
-    this.emit("peer", {
-      id: await enr.peerId(),
-      multiaddrs: [multiaddrTCP],
-    });
+    this.dispatchEvent(
+      new CustomEvent<PeerInfo>("peer", {
+        detail: {
+          id: await enr.peerId(),
+          multiaddrs: [
+            // TODO fix whatever type issue is happening here :(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            multiaddrTCP as any,
+          ],
+          protocols: [],
+        },
+      })
+    );
   };
 }
 

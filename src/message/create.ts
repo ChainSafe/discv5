@@ -1,4 +1,4 @@
-import { randomBytes } from "bcrypto/lib/random";
+import { randomBytes } from "bcrypto/lib/random.js";
 import { toBigIntBE } from "bigint-buffer";
 
 import {
@@ -10,8 +10,8 @@ import {
   INodesMessage,
   ITalkReqMessage,
   ITalkRespMessage,
-} from "./types";
-import { SequenceNumber, ENR } from "../enr";
+} from "./types.js";
+import { SequenceNumber, ENR } from "../enr/index.js";
 
 export function createRequestId(): RequestId {
   return toBigIntBE(randomBytes(8));

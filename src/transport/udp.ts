@@ -1,9 +1,9 @@
 import * as dgram from "dgram";
 import { EventEmitter } from "events";
-import { Multiaddr } from "multiaddr";
+import { Multiaddr } from "@multiformats/multiaddr";
 
-import { decodePacket, encodePacket, IPacket, MAX_PACKET_SIZE } from "../packet";
-import { IRemoteInfo, ITransportService, TransportEventEmitter } from "./types";
+import { decodePacket, encodePacket, IPacket, MAX_PACKET_SIZE } from "../packet/index.js";
+import { IRemoteInfo, ITransportService, TransportEventEmitter } from "./types.js";
 
 /**
  * This class is responsible for encoding outgoing Packets and decoding incoming Packets over UDP
@@ -56,8 +56,8 @@ export class UDPTransportService
     try {
       const packet = decodePacket(this.srcId, data);
       this.emit("packet", multiaddr, packet);
-    } catch (e) {
-      this.emit("decodeError", e, multiaddr);
+    } catch (e: unknown) {
+      this.emit("decodeError", e as Error, multiaddr);
     }
   };
 }

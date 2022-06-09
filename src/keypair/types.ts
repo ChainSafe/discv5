@@ -1,7 +1,7 @@
 export enum KeypairType {
-  rsa = 0,
-  ed25519 = 1,
-  secp256k1 = 2,
+  RSA = 0,
+  Ed25519 = 1,
+  Secp256k1 = 2,
 }
 
 export interface IKeypair {

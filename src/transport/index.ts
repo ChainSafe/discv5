@@ -1,2 +1,2 @@
-export * from "./types";
-export * from "./udp";
+export * from "./types.js";
+export * from "./udp.js";

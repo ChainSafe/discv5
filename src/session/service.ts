@@ -1,9 +1,9 @@
 import { EventEmitter } from "events";
 import StrictEventEmitter from "strict-event-emitter-types";
 import debug from "debug";
-import { Multiaddr } from "multiaddr";
+import { Multiaddr } from "@multiformats/multiaddr";
 
-import { ITransportService } from "../transport";
+import { ITransportService } from "../transport/index.js";
 import {
   PacketType,
   IPacket,
@@ -15,10 +15,10 @@ import {
   encodeMessageAuthdata,
   createRandomPacket,
   createWhoAreYouPacket,
-} from "../packet";
-import { ENR } from "../enr";
-import { Session } from "./session";
-import { IKeypair } from "../keypair";
+} from "../packet/index.js";
+import { ENR } from "../enr/index.js";
+import { ERR_INVALID_SIG, Session } from "./session.js";
+import { IKeypair } from "../keypair/index.js";
 import {
   Message,
   RequestMessage,
@@ -28,12 +28,19 @@ import {
   MessageType,
   createFindNodeMessage,
   isRequestType,
-} from "../message";
-import { IRequestCall, ISessionEvents, ISessionConfig, IChallenge, RequestErrorType } from "./types";
-import { getNodeAddress, INodeAddress, INodeContactType, nodeAddressToString, NodeContact } from "./nodeInfo";
+} from "../message/index.js";
+import {
+  IRequestCall,
+  ISessionEvents,
+  ISessionConfig,
+  IChallenge,
+  RequestErrorType,
+  ConnectionDirection,
+  NodeAddressString,
+} from "./types.js";
+import { getNodeAddress, INodeAddress, INodeContactType, nodeAddressToString, NodeContact } from "./nodeInfo.js";
 import LRUCache from "lru-cache";
-import { ConnectionDirection, ERR_INVALID_SIG, NodeAddressString } from ".";
-import { TimeoutMap } from "../util";
+import { TimeoutMap } from "../util/index.js";
 
 const log = debug("discv5:sessionService");
 

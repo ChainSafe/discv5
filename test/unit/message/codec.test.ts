@@ -1,6 +1,6 @@
 import { expect } from "chai";
-import { Message, MessageType, decode, encode } from "../../../src/message";
-import { ENR } from "../../../src/enr";
+import { Message, MessageType, decode, encode } from "../../../src/message/index.js";
+import { ENR } from "../../../src/enr/index.js";
 
 describe("message", () => {
   const testCases: {
@@ -21,7 +21,7 @@ describe("message", () => {
         id: 1n,
         enrSeq: 0n, // < test 0 enrSeq
       },
-      expected: Buffer.from("01c20101", "hex"),
+      expected: Buffer.from("01c20100", "hex"),
     },
     {
       message: {
@@ -83,7 +83,7 @@ describe("message", () => {
   for (const { message, expected } of testCases) {
     it(`should encode/decode message type ${MessageType[message.type]}`, () => {
       const actual = encode(message);
-      // expect(actual).to.deep.equal(expected);
+      expect(actual).to.deep.equal(expected);
       expect(decode(actual)).to.deep.equal(message);
     });
   }

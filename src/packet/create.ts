@@ -1,8 +1,8 @@
-import { randomBytes } from "bcrypto/lib/random";
-import { NodeId, SequenceNumber } from "../enr";
-import { ID_NONCE_SIZE, MASKING_IV_SIZE, NONCE_SIZE } from "./constants";
-import { encodeMessageAuthdata, encodeWhoAreYouAuthdata } from "./encode";
-import { IHeader, IPacket, PacketType } from "./types";
+import { randomBytes } from "bcrypto/lib/random.js";
+import { NodeId, SequenceNumber } from "../enr/index.js";
+import { ID_NONCE_SIZE, MASKING_IV_SIZE, NONCE_SIZE } from "./constants.js";
+import { encodeMessageAuthdata, encodeWhoAreYouAuthdata } from "./encode.js";
+import { IHeader, IPacket, PacketType } from "./types.js";
 
 export function createHeader(flag: PacketType, authdata: Buffer, nonce = randomBytes(NONCE_SIZE)): IHeader {
   return {

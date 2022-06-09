@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import { expect } from "chai";
-import secp256k1 = require("bcrypto/lib/secp256k1");
-import { randomBytes } from "bcrypto/lib/random";
+import secp256k1 from "bcrypto/lib/secp256k1.js";
+import { randomBytes } from "bcrypto/lib/random.js";
 
 import {
   deriveKey,
@@ -11,19 +11,19 @@ import {
   idVerify,
   encryptMessage,
   decryptMessage,
-} from "../../../src/session";
-import { v4, ENR } from "../../../src/enr";
-import { KeypairType, createKeypair } from "../../../src/keypair";
-import { createNodeContact } from "../../../src/session/nodeInfo";
+} from "../../../src/session/index.js";
+import { v4, ENR } from "../../../src/enr/index.js";
+import { KeypairType, createKeypair } from "../../../src/keypair/index.js";
+import { createNodeContact } from "../../../src/session/nodeInfo.js";
 
 describe("session crypto", () => {
   it("ecdh should produce expected secret", () => {
     const expected = Buffer.from("033b11a2a1f214567e1537ce5e509ffd9b21373247f2a3ff6841f4976f53165e7e", "hex");
 
-    const remotePK = Buffer.from(
-      "039961e4c2356d61bedb83052c115d311acb3a96f5777296dcf297351130266231",
-      "hex"
-    ).slice(0, 65);
+    const remotePK = Buffer.from("039961e4c2356d61bedb83052c115d311acb3a96f5777296dcf297351130266231", "hex").slice(
+      0,
+      65
+    );
     const localSK = Buffer.from("fb757dc581730490a1d7a00deea65e9b1936924caaea8f44d476014856b68736", "hex");
 
     expect(secp256k1.derive(remotePK, localSK)).to.deep.equal(expected);
@@ -41,7 +41,10 @@ describe("session crypto", () => {
     const secret = secp256k1.derive(destPubkey, ephemKey);
     const firstNodeId = "aaaa8419e9f49d0083561b48287df592939a8d19947d8c0ef88f2a4856a69fbb";
     const secondNodeId = "bbbb9d047f0488c0b5a93c1c3f2d8bafc7c8ff337024a55434a0d0555de64db9";
-    const challengeData = Buffer.from("000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000000", "hex");
+    const challengeData = Buffer.from(
+      "000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000000",
+      "hex"
+    );
 
     expect(deriveKey(secret, firstNodeId, secondNodeId, challengeData)).to.deep.equal(expected);
   });
@@ -54,7 +57,7 @@ describe("session crypto", () => {
     const nonce = randomBytes(32);
     const [a1, b1, pk] = generateSessionKeys(enr1.nodeId, createNodeContact(enr2), nonce);
     const [a2, b2] = deriveKeysFromPubkey(
-      createKeypair(KeypairType.secp256k1, sk2),
+      createKeypair(KeypairType.Secp256k1, sk2),
       enr2.nodeId,
       enr1.nodeId,
       pk,
@@ -72,17 +75,24 @@ describe("session crypto", () => {
     );
 
     const localSK = Buffer.from("fb757dc581730490a1d7a00deea65e9b1936924caaea8f44d476014856b68736", "hex");
-    const challengeData = Buffer.from("000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000000", "hex");
-    const ephemPK = Buffer.from(
-      "039961e4c2356d61bedb83052c115d311acb3a96f5777296dcf297351130266231",
+    const challengeData = Buffer.from(
+      "000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000000",
       "hex"
     );
+    const ephemPK = Buffer.from("039961e4c2356d61bedb83052c115d311acb3a96f5777296dcf297351130266231", "hex");
     const nodeIdB = "bbbb9d047f0488c0b5a93c1c3f2d8bafc7c8ff337024a55434a0d0555de64db9";
 
-    const actual = idSign(createKeypair(KeypairType.secp256k1, localSK), challengeData, ephemPK, nodeIdB);
+    const actual = idSign(createKeypair(KeypairType.Secp256k1, localSK), challengeData, ephemPK, nodeIdB);
     expect(actual).to.deep.equal(expected);
-    expect(idVerify(createKeypair(KeypairType.secp256k1, undefined, v4.publicKey(localSK)), challengeData, ephemPK, nodeIdB, actual))
-      .to.be.true;
+    expect(
+      idVerify(
+        createKeypair(KeypairType.Secp256k1, undefined, v4.publicKey(localSK)),
+        challengeData,
+        ephemPK,
+        nodeIdB,
+        actual
+      )
+    ).to.be.true;
   });
 
   it("encrypted data should match expected", () => {

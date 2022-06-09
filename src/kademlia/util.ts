@@ -1,8 +1,8 @@
 import { toBigIntBE } from "bigint-buffer";
 
-import { NodeId } from "../enr";
-import { fromHex } from "../util";
-import { NUM_BUCKETS } from "./constants";
+import { NodeId } from "../enr/index.js";
+import { fromHex } from "../util/index.js";
+import { NUM_BUCKETS } from "./constants.js";
 
 /**
  * Computes the xor distance between two NodeIds

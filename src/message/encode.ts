@@ -1,6 +1,6 @@
 import * as RLP from "rlp";
-import { Multiaddr } from "multiaddr";
-import isIp = require("is-ip");
+import { Multiaddr } from "@multiformats/multiaddr";
+import isIp from "is-ip";
 
 import {
   IPingMessage,
@@ -15,7 +15,7 @@ import {
   MessageType,
   ITalkReqMessage,
   ITalkRespMessage,
-} from "./types";
+} from "./types.js";
 
 export function encode(message: Message): Buffer {
   switch (message.type) {

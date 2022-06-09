@@ -1,11 +1,11 @@
-import hkdf = require("bcrypto/lib/hkdf");
-import sha256 = require("bcrypto/lib/sha256");
-import cipher = require("bcrypto/lib/cipher");
+import hkdf from "bcrypto/lib/hkdf.js";
+import sha256 from "bcrypto/lib/sha256.js";
+import cipher from "bcrypto/lib/cipher.js";
 
-import { NodeId } from "../enr";
-import { generateKeypair, IKeypair, createKeypair } from "../keypair";
-import { fromHex } from "../util";
-import { getNodeId, getPublicKey, NodeContact } from "./nodeInfo";
+import { NodeId } from "../enr/index.js";
+import { generateKeypair, IKeypair, createKeypair } from "../keypair/index.js";
+import { fromHex } from "../util/index.js";
+import { getNodeId, getPublicKey, NodeContact } from "./nodeInfo.js";
 
 // Implementation for generating session keys in the Discv5 protocol.
 // Currently, Diffie-Hellman key agreement is performed with known public key types. Session keys

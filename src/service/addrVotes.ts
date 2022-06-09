@@ -1,5 +1,5 @@
 import isIp from "is-ip";
-import { NodeId } from "../enr";
+import { NodeId } from "../enr/index.js";
 
 type MultiaddrStr = string;
 

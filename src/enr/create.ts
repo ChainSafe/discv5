@@ -1,5 +1,5 @@
-import { toHex } from "../util";
-import { NodeId } from "./types";
+import { toHex } from "../util/index.js";
+import { NodeId } from "./types.js";
 
 export function createNodeId(buffer: Buffer): NodeId {
   if (buffer.length !== 32) {
