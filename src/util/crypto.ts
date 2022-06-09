@@ -1,4 +1,4 @@
-import cipher = require("bcrypto/lib/cipher");
+import cipher from "bcrypto/lib/cipher.js";
 
 export function aesCtrEncrypt(key: Buffer, iv: Buffer, pt: Buffer): Buffer {
   const ctx = new cipher.Cipher("AES-128-CTR");

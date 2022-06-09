@@ -1,11 +1,11 @@
 import { EventEmitter } from "events";
 import StrictEventEmitter from "strict-event-emitter-types";
-import { Multiaddr } from "multiaddr";
+import { Multiaddr } from "@multiformats/multiaddr";
 
-import { ENR } from "../enr";
-import { ITalkReqMessage, ITalkRespMessage, RequestMessage } from "../message";
-import { INodeAddress, NodeContact } from "../session/nodeInfo";
-import { ConnectionDirection, RequestErrorType } from "../session";
+import { ENR } from "../enr/index.js";
+import { ITalkReqMessage, ITalkRespMessage, RequestMessage } from "../message/index.js";
+import { INodeAddress, NodeContact } from "../session/nodeInfo.js";
+import { ConnectionDirection, RequestErrorType } from "../session/index.js";
 
 export interface IDiscv5Events {
   /**

@@ -1,5 +1,5 @@
-import { NodeId, ENR } from "../enr";
-import { IKeys } from "./types";
+import { NodeId, ENR } from "../enr/index.js";
+import { IKeys } from "./types.js";
 import {
   IPacket,
   PacketType,
@@ -8,13 +8,20 @@ import {
   MASKING_IV_SIZE,
   encodeChallengeData,
   encodeMessageAuthdata,
-} from "../packet";
-import { generateSessionKeys, deriveKeysFromPubkey, decryptMessage, encryptMessage, idSign, idVerify } from "./crypto";
-import { IKeypair } from "../keypair";
+} from "../packet/index.js";
+import {
+  generateSessionKeys,
+  deriveKeysFromPubkey,
+  decryptMessage,
+  encryptMessage,
+  idSign,
+  idVerify,
+} from "./crypto.js";
+import { IKeypair } from "../keypair/index.js";
 import { randomBytes } from "crypto";
-import { RequestId } from "../message";
+import { RequestId } from "../message/index.js";
 import { IChallenge } from ".";
-import { getNodeId, NodeContact } from "./nodeInfo";
+import { getNodeId, NodeContact } from "./nodeInfo.js";
 
 // The `Session` struct handles the stages of creating and establishing a handshake with a
 // peer.

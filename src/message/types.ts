@@ -1,4 +1,4 @@
-import { SequenceNumber, ENR } from "../enr";
+import { SequenceNumber, ENR } from "../enr/index.js";
 
 export type RequestId = bigint;
 

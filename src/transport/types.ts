@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
 import StrictEventEmitter from "strict-event-emitter-types";
-import { Multiaddr } from "multiaddr";
+import { Multiaddr } from "@multiformats/multiaddr";
 
-import { IPacket } from "../packet";
+import { IPacket } from "../packet/index.js";
 
 export interface ISocketAddr {
   port: number;

@@ -1,24 +1,24 @@
 /* eslint-env mocha */
 import { expect } from "chai";
-import { Multiaddr } from "multiaddr";
+import { Multiaddr } from "@multiformats/multiaddr";
 
-import { createKeypair, KeypairType } from "../../../src/keypair";
-import { ENR } from "../../../src/enr";
-import { createWhoAreYouPacket, IPacket, PacketType } from "../../../src/packet";
-import { UDPTransportService } from "../../../src/transport";
-import { SessionService } from "../../../src/session";
-import { createFindNodeMessage } from "../../../src/message";
-import { defaultConfig } from "../../../src/config";
-import { createNodeContact } from "../../../src/session/nodeInfo";
+import { createKeypair, KeypairType } from "../../../src/keypair/index.js";
+import { ENR } from "../../../src/enr/index.js";
+import { createWhoAreYouPacket, IPacket, PacketType } from "../../../src/packet/index.js";
+import { UDPTransportService } from "../../../src/transport/index.js";
+import { SessionService } from "../../../src/session/index.js";
+import { createFindNodeMessage } from "../../../src/message/index.js";
+import { defaultConfig } from "../../../src/config/index.js";
+import { createNodeContact } from "../../../src/session/nodeInfo.js";
 
 describe("session service", () => {
   const kp0 = createKeypair(
-    KeypairType.secp256k1,
+    KeypairType.Secp256k1,
     Buffer.from("a93bedf04784c937059557c9dcb328f5f59fdb6e89295c30e918579250b7b01f", "hex"),
     Buffer.from("022663242e1092ea19e6bb41d67aa69850541a623b94bbea840ddceaab39789894", "hex")
   );
   const kp1 = createKeypair(
-    KeypairType.secp256k1,
+    KeypairType.Secp256k1,
     Buffer.from("bd04e55f2a1424a4e69e96aad41cf763d2468d4358472e9f851569bdf47fb24c", "hex"),
     Buffer.from("03eae9945b354e9212566bc3f2740f3a62b3e1eb227dbed809f6dc2d3ea848c82e", "hex")
   );
@@ -37,7 +37,6 @@ describe("session service", () => {
 
   let service0: SessionService;
   let service1: SessionService;
-  let service2: SessionService;
 
   beforeEach(async () => {
     transport0 = new UDPTransportService(addr0, enr0.nodeId);
@@ -81,7 +80,7 @@ describe("session service", () => {
       })
     );
     const receivedMsg = new Promise<void>((resolve) =>
-      service1.once("request", (nodeAddr, request) => {
+      service1.once("request", () => {
         resolve();
       })
     );
@@ -92,5 +91,7 @@ describe("session service", () => {
     transport0.send(addr1, enr1.nodeId, createWhoAreYouPacket(Buffer.alloc(12), BigInt(0)));
     transport0.on("packet", () => expect.fail("transport0 should not receive any packets"));
   });
-  it("should only accept WhoAreYou packets from destinations with existing pending requests", async () => {});
+  it("should only accept WhoAreYou packets from destinations with existing pending requests", async () => {
+    // TODO implement or delete this
+  });
 });

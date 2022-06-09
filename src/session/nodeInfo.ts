@@ -1,6 +1,7 @@
-import { Multiaddr } from "multiaddr";
-import PeerId from "peer-id";
-import { createKeypairFromPeerId, ENR, IKeypair, NodeId, v4 } from "..";
+import { Multiaddr } from "@multiformats/multiaddr";
+import { peerIdFromString } from "@libp2p/peer-id";
+import { createKeypairFromPeerId, IKeypair } from "../keypair/index.js";
+import { ENR, NodeId, v4 } from "../enr/index.js";
 
 /** A representation of an unsigned contactable node. */
 export interface INodeAddress {
@@ -59,7 +60,7 @@ export function createNodeContact(input: ENR | Multiaddr): NodeContact {
     if (!peerIdStr) {
       throw new Error("Multiaddr must specify a peer id");
     }
-    const peerId = PeerId.createFromB58String(peerIdStr);
+    const peerId = peerIdFromString(peerIdStr);
     const keypair = createKeypairFromPeerId(peerId);
     const nodeId = v4.nodeId(keypair.publicKey);
     return {

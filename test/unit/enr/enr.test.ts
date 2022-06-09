@@ -1,15 +1,15 @@
-import PeerId from "peer-id";
 import { expect, assert } from "chai";
-import { ENR } from "../../../src/enr/enr";
-import { createKeypairFromPeerId } from "../../../src/keypair";
-import { toHex } from "../../../src/util";
-import { ERR_INVALID_ID } from "../../../src/enr/constants";
-import { Multiaddr } from "multiaddr";
+import { ENR } from "../../../src/enr/enr.js";
+import { createKeypairFromPeerId } from "../../../src/keypair/index.js";
+import { toHex } from "../../../src/util/index.js";
+import { ERR_INVALID_ID } from "../../../src/enr/constants.js";
+import { Multiaddr } from "@multiformats/multiaddr";
+import { createSecp256k1PeerId } from "@libp2p/peer-id-factory";
 
 describe("ENR", function () {
   describe("decodeTxt", () => {
     it("should encodeTxt and decodeTxt", async () => {
-      const peerId = await PeerId.create({ keyType: "secp256k1" });
+      const peerId = await createSecp256k1PeerId();
       const enr = ENR.createFromPeerId(peerId);
       const keypair = createKeypairFromPeerId(peerId);
       enr.setLocationMultiaddr(new Multiaddr("/ip4/18.223.219.100/udp/9000"));
@@ -31,13 +31,13 @@ describe("ENR", function () {
     });
 
     it("should encodeTxt and decodeTxt ipv6 enr successfully", async () => {
-      const peerId = await PeerId.create({ keyType: "secp256k1" });
+      const peerId = await createSecp256k1PeerId();
       const enr = ENR.createFromPeerId(peerId);
       enr.setLocationMultiaddr(new Multiaddr("/ip6/aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa/udp/9000"));
       const keypair = createKeypairFromPeerId(peerId);
       const enr2 = ENR.decodeTxt(enr.encodeTxt(keypair.privateKey));
       expect(enr2.udp6).to.equal(9000);
-      expect(enr2.ip6).to.equal('aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa');
+      expect(enr2.ip6).to.equal("aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa");
     });
 
     it("should throw error - no id", () => {
@@ -48,7 +48,7 @@ describe("ENR", function () {
         ).toString();
         ENR.decodeTxt(txt);
         assert.fail("Expect error here");
-      } catch (err) {
+      } catch (err: any) {
         expect(err.message).to.be.equal(ERR_INVALID_ID);
       }
     });
@@ -59,7 +59,7 @@ describe("ENR", function () {
           "enr:-IS4QJ2d11eu6dC7E7LoXeLMgMP3kom1u3SE8esFSWvaHoo0dP1jg8O3-nx9ht-EO3CmG7L6OkHcMmoIh00IYWB92QABgmlkgnY0gmlwhH8AAAGJc2d11eu6dCsxoQIB_c-jQMOXsbjWkbN-kj99H57gfId5pfb4wa1qxwV4CIN1ZHCCIyk";
         ENR.decodeTxt(txt);
         assert.fail("Expect error here");
-      } catch (err) {
+      } catch (err: any) {
         expect(err.message).to.be.equal("Failed to verify enr: No public key");
       }
     });
@@ -71,7 +71,7 @@ describe("ENR", function () {
         const enr = new ENR({}, BigInt(0), Buffer.alloc(0));
         enr.verify(Buffer.alloc(0), Buffer.alloc(0));
         assert.fail("Expect error here");
-      } catch (err) {
+      } catch (err: any) {
         expect(err.message).to.be.equal(ERR_INVALID_ID);
       }
     });
@@ -81,7 +81,7 @@ describe("ENR", function () {
         const enr = new ENR({ id: Buffer.from("v3") }, BigInt(0), Buffer.alloc(0));
         enr.verify(Buffer.alloc(0), Buffer.alloc(0));
         assert.fail("Expect error here");
-      } catch (err) {
+      } catch (err: any) {
         expect(err.message).to.be.equal(ERR_INVALID_ID);
       }
     });
@@ -91,7 +91,7 @@ describe("ENR", function () {
         const enr = new ENR({ id: Buffer.from("v4") }, BigInt(0), Buffer.alloc(0));
         enr.verify(Buffer.alloc(0), Buffer.alloc(0));
         assert.fail("Expect error here");
-      } catch (err) {
+      } catch (err: any) {
         expect(err.message).to.be.equal("Failed to verify enr: No public key");
       }
     });
@@ -108,19 +108,25 @@ describe("ENR", function () {
 
 describe("ENR fuzzing testcases", () => {
   it("should throw error in invalid signature", () => {
-    const buf = Buffer.from("656e723a2d4b7634514147774f54385374716d7749354c486149796d494f346f6f464b664e6b456a576130663150384f73456c67426832496a622d4772445f2d623957346b6350466377796e354845516d526371584e716470566f3168656f42683246306447356c64484f494141414141414141414143455a58526f4d704141414141414141414141505f5f5f5f5f5f5f5f5f5f676d6c6b676e5930676d6c7768424c663232534a6332566a634449314e6d73786f514a78436e4536765f7832656b67595f756f45317274777a76477934306d7139654436365866485042576749494e315a48437f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f434436410d0a", 'hex').toString()
+    const buf = Buffer.from(
+      "656e723a2d4b7634514147774f54385374716d7749354c486149796d494f346f6f464b664e6b456a576130663150384f73456c67426832496a622d4772445f2d623957346b6350466377796e354845516d526371584e716470566f3168656f42683246306447356c64484f494141414141414141414143455a58526f4d704141414141414141414141505f5f5f5f5f5f5f5f5f5f676d6c6b676e5930676d6c7768424c663232534a6332566a634449314e6d73786f514a78436e4536765f7832656b67595f756f45317274777a76477934306d7139654436365866485042576749494e315a48437f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f434436410d0a",
+      "hex"
+    ).toString();
     try {
       ENR.decodeTxt(buf);
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).to.equal("Decoded ENR invalid signature: must be a byte array");
     }
   });
   it("should throw error in invalid sequence number", () => {
-    const buf = Buffer.from("656e723a2d495334514b6b33ff583945717841337838334162436979416e537550444d764b353264433530486d31584744643574457951684d3356634a4c2d5062446b44673541507a5f706f76763022d48dcf992d5379716b306e616e636f4e572d656e7263713042676d6c6b676e5930676d6c77684838414141474a6332566a634449314e6d73786f514d31453579557370397638516a397476335a575843766146427672504e647a384b5049314e68576651577a494e315a4843434239410a", 'hex').toString()
+    const buf = Buffer.from(
+      "656e723a2d495334514b6b33ff583945717841337838334162436979416e537550444d764b353264433530486d31584744643574457951684d3356634a4c2d5062446b44673541507a5f706f76763022d48dcf992d5379716b306e616e636f4e572d656e7263713042676d6c6b676e5930676d6c77684838414141474a6332566a634449314e6d73786f514d31453579557370397638516a397476335a575843766146427672504e647a384b5049314e68576651577a494e315a4843434239410a",
+      "hex"
+    ).toString();
     try {
       ENR.decodeTxt(buf);
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).to.equal("Decoded ENR invalid sequence number: must be a byte array");
     }
   });
-})
+});

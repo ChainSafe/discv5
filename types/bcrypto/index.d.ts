@@ -1,6 +1,6 @@
 /// <reference types="node"/>
 
-declare module "bcrypto/lib/keccak" {
+declare module "bcrypto/lib/keccak.js" {
   /**
    * keccak.js - Keccak/SHA3 implementation for bcrypto
    * Copyright (c) 2017-2019, Christopher Jeffrey (MIT License).
@@ -44,7 +44,7 @@ declare module "bcrypto/lib/keccak" {
   export = Keccak;
 }
 
-declare module "bcrypto/lib/secp256k1" {
+declare module "bcrypto/lib/secp256k1.js" {
   export function privateKeyGenerate(): Buffer;
   export function privateKeyVerify(key: Buffer): boolean;
   export function publicKeyCreate(key: Buffer, compress?: boolean): Buffer;
@@ -55,15 +55,15 @@ declare module "bcrypto/lib/secp256k1" {
   export function derive(pub: Buffer, priv: Buffer, compress?: boolean): Buffer;
 }
 
-declare module "bcrypto/lib/hkdf" {
+declare module "bcrypto/lib/hkdf.js" {
   export function extract(hash: any, ikm: Buffer, salt?: Buffer): Buffer;
   export function expand(hash: any, prk: Buffer, info: Buffer, length: number): Buffer;
 }
 
-declare module "bcrypto/lib/sha256" {
+declare module "bcrypto/lib/sha256.js" {
   export function digest(data: Buffer): Buffer;
 }
-declare module "bcrypto/lib/cipher" {
+declare module "bcrypto/lib/cipher.js" {
   class CipherBase {
     init(key: Buffer, iv: Buffer): this;
     update(data: Buffer): Buffer;
@@ -79,6 +79,6 @@ declare module "bcrypto/lib/cipher" {
     constructor(name: string);
   }
 }
-declare module "bcrypto/lib/random" {
+declare module "bcrypto/lib/random.js" {
   export function randomBytes(size: number): Buffer;
 }

@@ -1,5 +1,5 @@
-import { ISessionConfig } from "../session";
-import { ILookupConfig } from "../kademlia";
+import { ISessionConfig } from "../session/index.js";
+import { ILookupConfig } from "../kademlia/index.js";
 
 export type IDiscv5Config = ISessionConfig &
   ILookupConfig & {

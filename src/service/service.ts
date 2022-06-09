@@ -1,15 +1,22 @@
 import { EventEmitter } from "events";
 import debug from "debug";
-import { randomBytes } from "libp2p-crypto";
-import { Multiaddr } from "multiaddr";
-import PeerId from "peer-id";
+import { randomBytes } from "@libp2p/crypto";
+import { Multiaddr } from "@multiformats/multiaddr";
+import { PeerId } from "@libp2p/interfaces/peer-id";
 
-import { ITransportService, UDPTransportService } from "../transport";
-import { MAX_PACKET_SIZE } from "../packet";
-import { ConnectionDirection, RequestErrorType, SessionService } from "../session";
-import { ENR, NodeId, MAX_RECORD_SIZE, createNodeId } from "../enr";
-import { IKeypair, createKeypairFromPeerId, createPeerIdFromKeypair } from "../keypair";
-import { EntryStatus, InsertResult, KademliaRoutingTable, log2Distance, Lookup, UpdateResult } from "../kademlia";
+import { ITransportService, UDPTransportService } from "../transport/index.js";
+import { MAX_PACKET_SIZE } from "../packet/index.js";
+import { ConnectionDirection, RequestErrorType, SessionService } from "../session/index.js";
+import { ENR, NodeId, MAX_RECORD_SIZE, createNodeId } from "../enr/index.js";
+import { IKeypair, createKeypairFromPeerId, createPeerIdFromKeypair } from "../keypair/index.js";
+import {
+  EntryStatus,
+  InsertResult,
+  KademliaRoutingTable,
+  log2Distance,
+  Lookup,
+  UpdateResult,
+} from "../kademlia/index.js";
 import {
   RequestMessage,
   ResponseMessage,
@@ -28,13 +35,21 @@ import {
   createTalkRequestMessage,
   createTalkResponseMessage,
   RequestId,
-} from "../message";
-import { Discv5EventEmitter, ENRInput, IActiveRequest, IDiscv5Metrics, INodesResponse } from "./types";
-import { AddrVotes } from "./addrVotes";
-import { toBuffer } from "../util";
-import { IDiscv5Config, defaultConfig } from "../config";
-import { createNodeContact, getNodeAddress, getNodeId, INodeAddress, NodeContact } from "../session/nodeInfo";
-import { BufferCallback, ConnectionStatus, ConnectionStatusType } from ".";
+} from "../message/index.js";
+import { AddrVotes } from "./addrVotes.js";
+import { toBuffer } from "../util/index.js";
+import { IDiscv5Config, defaultConfig } from "../config/index.js";
+import { createNodeContact, getNodeAddress, getNodeId, INodeAddress, NodeContact } from "../session/nodeInfo.js";
+import {
+  BufferCallback,
+  ConnectionStatus,
+  ConnectionStatusType,
+  Discv5EventEmitter,
+  ENRInput,
+  IActiveRequest,
+  IDiscv5Metrics,
+  INodesResponse,
+} from "./types.js";
 
 const log = debug("discv5:service");
 

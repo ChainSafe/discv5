@@ -1,7 +1,7 @@
 import { expect } from "chai";
-import { Multiaddr } from "multiaddr";
-import { createNodeId } from "../../../src/enr";
-import {AddrVotes} from "../../../src/service/addrVotes";
+import { Multiaddr } from "@multiformats/multiaddr";
+import { createNodeId } from "../../../src/enr/index.js";
+import { AddrVotes } from "../../../src/service/addrVotes.js";
 
 describe("AddrVotes", () => {
   let addVotes: AddrVotes;
@@ -15,7 +15,7 @@ describe("AddrVotes", () => {
     const recipientPort = 30303;
     const multi0 = new Multiaddr(`/ip4/${recipientIp}/udp/${recipientPort}`);
     const nodeId = createNodeId(Buffer.alloc(32));
-    const vote = {recipientIp, recipientPort};
+    const vote = { recipientIp, recipientPort };
     expect(addVotes.addVote(nodeId, vote)).to.be.undefined;
     // same vote, no effect
     for (let i = 0; i < 100; i++) {
@@ -33,10 +33,10 @@ describe("AddrVotes", () => {
     const recipientPort = 30303;
     const multi0 = new Multiaddr(`/ip4/${recipientIp}/udp/${recipientPort}`);
     const nodeId = createNodeId(Buffer.alloc(32));
-    const vote = {recipientIp, recipientPort};
+    const vote = { recipientIp, recipientPort };
     expect(addVotes.addVote(nodeId, vote)).to.be.undefined;
     // new vote, strange one => 1st vote is deleted
-    expect(addVotes.addVote(nodeId, {...vote, recipientPort: 30304})).to.be.undefined;
+    expect(addVotes.addVote(nodeId, { ...vote, recipientPort: 30304 })).to.be.undefined;
 
     // need 3 more votes to win
     expect(addVotes.addVote(createNodeId(Buffer.alloc(32, 1)), vote)).to.be.undefined;
