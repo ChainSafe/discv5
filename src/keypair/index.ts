@@ -1,4 +1,4 @@
-import { PeerId } from "@libp2p/interfaces/peer-id";
+import { PeerId } from "@libp2p/interface-peer-id";
 import { peerIdFromKeys } from "@libp2p/peer-id";
 import { keysPBM, supportedKeys } from "@libp2p/crypto/keys";
 

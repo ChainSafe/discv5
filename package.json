@@ -65,7 +65,7 @@
   "devDependencies": {
     "@chainsafe/eslint-plugin-node": "^11.2.3",
     "@dapplion/benchmark": "^0.1.6",
-    "@libp2p/peer-id-factory": "^1.0.11",
+    "@libp2p/peer-id-factory": "^1.0.12",
     "@types/bn.js": "^4.11.5",
     "@types/chai": "^4.2.0",
     "@types/debug": "^4.1.5",
@@ -90,8 +90,11 @@
   },
   "dependencies": {
     "@libp2p/crypto": "^0.22.14",
-    "@libp2p/interfaces": "2.0.3",
-    "@libp2p/peer-id": "^1.1.11",
+    "@libp2p/interface-peer-discovery": "^1.0.0",
+    "@libp2p/interface-peer-id": "^1.0.2",
+    "@libp2p/interface-peer-info": "^1.0.1",
+    "@libp2p/interfaces": "3.0.2",
+    "@libp2p/peer-id": "^1.1.12",
     "@multiformats/multiaddr": "^10.2.0",
     "base64url": "^3.0.1",
     "bcrypto": "^5.4.0",
