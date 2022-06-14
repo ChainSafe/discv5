@@ -1,8 +1,8 @@
-import { PeerId } from "@libp2p/interfaces/peer-id";
-import { PeerDiscovery, PeerDiscoveryEvents, symbol as peerDiscoverySymbol } from "@libp2p/interfaces/peer-discovery";
+import { PeerId } from "@libp2p/interface-peer-id";
+import { PeerDiscovery, PeerDiscoveryEvents, symbol as peerDiscoverySymbol } from "@libp2p/interface-peer-discovery";
+import { PeerInfo } from "@libp2p/interface-peer-info";
 import { CustomEvent, EventEmitter } from "@libp2p/interfaces/events";
 import { Multiaddr } from "@multiformats/multiaddr";
-import { PeerInfo } from "@libp2p/interfaces/peer-info";
 
 import { Discv5, ENRInput, IDiscv5Metrics } from "../service/index.js";
 import { ENR } from "../enr/index.js";
