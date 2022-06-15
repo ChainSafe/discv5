@@ -152,6 +152,13 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [1.0.2](https://github.com/ChainSafe/discv5/compare/v1.0.1...v1.0.2) (2022-06-15)
+
+
+### Miscellaneous
+
+* update libp2p dependencies ([#190](https://github.com/ChainSafe/discv5/issues/190)) ([08f0aca](https://github.com/ChainSafe/discv5/commit/08f0aca77cac8a860633b30c2f86c64bd24bc75a))
+
 ## [1.0.1](https://github.com/ChainSafe/discv5/compare/v1.0.0...v1.0.1) (2022-06-14)
 
 
