@@ -21,6 +21,9 @@
     },
     "./libp2p": {
       "import": "./lib/libp2p/index.js"
+    },
+    "./packet": {
+      "import": "./lib/packet/index.js"
     }
   },
   "typesVersions": {
