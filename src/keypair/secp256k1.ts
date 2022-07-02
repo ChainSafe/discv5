@@ -36,13 +36,13 @@ export const Secp256k1Keypair: IKeypairClass = class Secp256k1Keypair extends Ab
 
   privateKeyVerify(key = this._privateKey): boolean {
     if (key) {
-      return secp.utils.isValidPrivateKey(secp.utils.bytesToHex(Uint8Array.from(key)));
+      return secp.utils.isValidPrivateKey(Uint8Array.from(key));
     }
     return true;
   }
 
   sign(msg: Buffer): Buffer {
-    return Buffer.from(secp.sign(secp.utils.bytesToHex(Uint8Array.from(msg)), this.privateKey));
+    return Buffer.from(secp.sign(Uint8Array.from(msg), Uint8Array.from(this.privateKey)));
   }
   verify(msg: Buffer, sig: Buffer): boolean {
     return secp.verify(

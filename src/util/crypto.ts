@@ -1,13 +1,15 @@
-import { aes } from "@libp2p/crypto";
+import { crypto } from "@noble/hashes/crypto";
+
+const Crypto = crypto.node ?? crypto.web
 
 export async function aesCtrEncrypt(key: Buffer, iv: Buffer, pt: Buffer): Promise<Buffer> {
-  const ctx = await aes.create(Uint8Array.from(key), Uint8Array.from(iv))
-  const encoded = await ctx.encrypt(Uint8Array.from(pt))
-  return Buffer.from(encoded)
+  const ctx = Crypto.createCipheriv('aes-128-gcm', key, iv);
+    ctx.update(pt);
+    return ctx.final();
 }
 
 export async function aesCtrDecrypt(key: Buffer, iv: Buffer, pt: Buffer): Promise<Buffer> {
-  const ctx = await aes.create(Uint8Array.from(key), Uint8Array.from(iv))
-  const decoded = await ctx.decrypt(Uint8Array.from(pt))
-  return Buffer.from(decoded)
+  const ctx = Crypto.createDecipheriv('aes-128-gcm', key, iv);
+  ctx.update(pt);
+  return ctx.final();
 }

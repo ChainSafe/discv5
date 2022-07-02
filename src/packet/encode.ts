@@ -1,4 +1,5 @@
-import Crypto from "@libp2p/crypto";
+import { crypto } from '@noble/hashes/crypto'
+
 import { toBigIntBE, toBufferBE } from "bigint-buffer";
 import errcode from "err-code";
 
@@ -29,13 +30,15 @@ import {
 } from "./constants.js";
 import { IHandshakeAuthdata, IHeader, IMessageAuthdata, IPacket, IWhoAreYouAuthdata, PacketType } from "./types.js";
 
+const Crypto = crypto.node ?? crypto.web
+
 export async function encodePacket(destId: string, packet: IPacket): Promise<Buffer> {
   return Buffer.concat([packet.maskingIv, await encodeHeader(destId, packet.maskingIv, packet.header), packet.message]);
 }
 
 export async function encodeHeader(destId: string, maskingIv: Buffer, header: IHeader): Promise<Buffer> {
-    const ctx = await Crypto.aes.create(Uint8Array.from(fromHex(destId).slice(0, MASKING_KEY_SIZE)), Uint8Array.from(maskingIv));
-    const encodedHeader = await ctx.encrypt(
+  const ctx = Crypto.createCipheriv('aes-128-gcm', fromHex(destId).slice(0, MASKING_KEY_SIZE), maskingIv);
+  return ctx.update(
       Uint8Array.from(
         Buffer.concat([
           // static header
@@ -49,7 +52,6 @@ export async function encodeHeader(destId: string, maskingIv: Buffer, header: IH
         ])
       )
     );
-    return Buffer.from(encodedHeader)
 }
 
 export async function decodePacket(srcId: string, data: Buffer): Promise<IPacket> {
@@ -76,7 +78,7 @@ export async function decodePacket(srcId: string, data: Buffer): Promise<IPacket
  * Return the decoded header and the header as a buffer
  */
  export async function decodeHeader(srcId: string, maskingIv: Buffer, data: Buffer): Promise<[IHeader, Buffer]> {
-  const ctx = await Crypto.aes.create(Uint8Array.from(fromHex(srcId).slice(0, MASKING_KEY_SIZE)), Uint8Array.from(maskingIv));
+  const ctx = Crypto.createDecipheriv(fromHex(srcId).slice(0, MASKING_KEY_SIZE), maskingIv);
 
   // unmask the static header
   const staticHeaderBuf = Buffer.from(await ctx.decrypt(Uint8Array.from(data.slice(0, STATIC_HEADER_SIZE))));
@@ -111,9 +113,7 @@ export async function decodePacket(srcId: string, data: Buffer): Promise<IPacket
   );
 
   // Once the authdataSize is known, unmask the authdata
-  const authdata = Buffer.from(
-    await ctx.decrypt(Uint8Array.from(data.slice(STATIC_HEADER_SIZE, STATIC_HEADER_SIZE + authdataSize)))
-  );
+  const authdata = ctx.update(data.slice(STATIC_HEADER_SIZE, STATIC_HEADER_SIZE + authdataSize));
 
   return [
     {
