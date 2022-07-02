@@ -1,4 +1,4 @@
-import cipher from "bcrypto/lib/cipher.js";
+import Crypto from "@libp2p/crypto";
 import { toBigIntBE, toBufferBE } from "bigint-buffer";
 import errcode from "err-code";
 
@@ -29,28 +29,30 @@ import {
 } from "./constants.js";
 import { IHandshakeAuthdata, IHeader, IMessageAuthdata, IPacket, IWhoAreYouAuthdata, PacketType } from "./types.js";
 
-export function encodePacket(destId: string, packet: IPacket): Buffer {
-  return Buffer.concat([packet.maskingIv, encodeHeader(destId, packet.maskingIv, packet.header), packet.message]);
+export async function encodePacket(destId: string, packet: IPacket): Promise<Buffer> {
+  return Buffer.concat([packet.maskingIv, await encodeHeader(destId, packet.maskingIv, packet.header), packet.message]);
 }
 
-export function encodeHeader(destId: string, maskingIv: Buffer, header: IHeader): Buffer {
-  const ctx = new cipher.Cipher("AES-128-CTR");
-  ctx.init(fromHex(destId).slice(0, MASKING_KEY_SIZE), maskingIv);
-  return ctx.update(
-    Buffer.concat([
-      // static header
-      Buffer.from(header.protocolId, "ascii"),
-      numberToBuffer(header.version, VERSION_SIZE),
-      numberToBuffer(header.flag, FLAG_SIZE),
-      header.nonce,
-      numberToBuffer(header.authdataSize, AUTHDATA_SIZE_SIZE),
-      // authdata
-      header.authdata,
-    ])
-  );
+export async function encodeHeader(destId: string, maskingIv: Buffer, header: IHeader): Promise<Buffer> {
+    const ctx = await Crypto.aes.create(Uint8Array.from(fromHex(destId).slice(0, MASKING_KEY_SIZE)), Uint8Array.from(maskingIv));
+    const encodedHeader = await ctx.encrypt(
+      Uint8Array.from(
+        Buffer.concat([
+          // static header
+          Buffer.from(header.protocolId, "ascii"),
+          numberToBuffer(header.version, VERSION_SIZE),
+          numberToBuffer(header.flag, FLAG_SIZE),
+          header.nonce,
+          numberToBuffer(header.authdataSize, AUTHDATA_SIZE_SIZE),
+          // authdata
+          header.authdata,
+        ])
+      )
+    );
+    return Buffer.from(encodedHeader)
 }
 
-export function decodePacket(srcId: string, data: Buffer): IPacket {
+export async function decodePacket(srcId: string, data: Buffer): Promise<IPacket> {
   if (data.length < MIN_PACKET_SIZE) {
     throw errcode(new Error(`Packet too small: ${data.length}`), ERR_TOO_SMALL);
   }
@@ -59,7 +61,7 @@ export function decodePacket(srcId: string, data: Buffer): IPacket {
   }
 
   const maskingIv = data.slice(0, MASKING_IV_SIZE);
-  const [header, headerBuf] = decodeHeader(srcId, maskingIv, data.slice(MASKING_IV_SIZE));
+  const [header, headerBuf] = await decodeHeader(srcId, maskingIv, data.slice(MASKING_IV_SIZE));
 
   const message = data.slice(MASKING_IV_SIZE + headerBuf.length);
   return {
@@ -73,11 +75,11 @@ export function decodePacket(srcId: string, data: Buffer): IPacket {
 /**
  * Return the decoded header and the header as a buffer
  */
-export function decodeHeader(srcId: string, maskingIv: Buffer, data: Buffer): [IHeader, Buffer] {
-  const ctx = new cipher.Decipher("AES-128-CTR");
-  ctx.init(fromHex(srcId).slice(0, MASKING_KEY_SIZE), maskingIv);
+ export async function decodeHeader(srcId: string, maskingIv: Buffer, data: Buffer): Promise<[IHeader, Buffer]> {
+  const ctx = await Crypto.aes.create(Uint8Array.from(fromHex(srcId).slice(0, MASKING_KEY_SIZE)), Uint8Array.from(maskingIv));
+
   // unmask the static header
-  const staticHeaderBuf = ctx.update(data.slice(0, STATIC_HEADER_SIZE));
+  const staticHeaderBuf = Buffer.from(await ctx.decrypt(Uint8Array.from(data.slice(0, STATIC_HEADER_SIZE))));
 
   // validate the static header field by field
   const protocolId = staticHeaderBuf.slice(0, PROTOCOL_SIZE).toString("ascii");
@@ -109,7 +111,9 @@ export function decodeHeader(srcId: string, maskingIv: Buffer, data: Buffer): [I
   );
 
   // Once the authdataSize is known, unmask the authdata
-  const authdata = ctx.update(data.slice(STATIC_HEADER_SIZE, STATIC_HEADER_SIZE + authdataSize));
+  const authdata = Buffer.from(
+    await ctx.decrypt(Uint8Array.from(data.slice(STATIC_HEADER_SIZE, STATIC_HEADER_SIZE + authdataSize)))
+  );
 
   return [
     {

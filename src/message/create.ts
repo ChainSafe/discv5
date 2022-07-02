@@ -1,4 +1,4 @@
-import { randomBytes } from "bcrypto/lib/random.js";
+import { randomBytes } from "@noble/hashes/utils";
 import { toBigIntBE } from "bigint-buffer";
 
 import {
@@ -14,7 +14,7 @@ import {
 import { SequenceNumber, ENR } from "../enr/index.js";
 
 export function createRequestId(): RequestId {
-  return toBigIntBE(randomBytes(8));
+  return toBigIntBE(Buffer.from(randomBytes(8)));
 }
 
 export function createPingMessage(enrSeq: SequenceNumber): IPingMessage {

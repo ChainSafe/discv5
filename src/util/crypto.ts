@@ -1,15 +1,13 @@
-import cipher from "bcrypto/lib/cipher.js";
+import { aes } from "@libp2p/crypto";
 
-export function aesCtrEncrypt(key: Buffer, iv: Buffer, pt: Buffer): Buffer {
-  const ctx = new cipher.Cipher("AES-128-CTR");
-  ctx.init(key, iv);
-  ctx.update(pt);
-  return ctx.final();
+export async function aesCtrEncrypt(key: Buffer, iv: Buffer, pt: Buffer): Promise<Buffer> {
+  const ctx = await aes.create(Uint8Array.from(key), Uint8Array.from(iv))
+  const encoded = await ctx.encrypt(Uint8Array.from(pt))
+  return Buffer.from(encoded)
 }
 
-export function aesCtrDecrypt(key: Buffer, iv: Buffer, pt: Buffer): Buffer {
-  const ctx = new cipher.Decipher("AES-128-CTR");
-  ctx.init(key, iv);
-  ctx.update(pt);
-  return ctx.final();
+export async function aesCtrDecrypt(key: Buffer, iv: Buffer, pt: Buffer): Promise<Buffer> {
+  const ctx = await aes.create(Uint8Array.from(key), Uint8Array.from(iv))
+  const decoded = await ctx.decrypt(Uint8Array.from(pt))
+  return Buffer.from(decoded)
 }

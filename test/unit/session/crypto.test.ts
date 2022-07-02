@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import { expect } from "chai";
-import secp256k1 from "bcrypto/lib/secp256k1.js";
-import { randomBytes } from "bcrypto/lib/random.js";
+import * as secp from "@noble/secp256k1";
+import { randomBytes } from "@libp2p/crypto";
 
 import {
   deriveKey,
@@ -26,7 +26,7 @@ describe("session crypto", () => {
     );
     const localSK = Buffer.from("fb757dc581730490a1d7a00deea65e9b1936924caaea8f44d476014856b68736", "hex");
 
-    expect(secp256k1.derive(remotePK, localSK)).to.deep.equal(expected);
+    expect(secp.getSharedSecret(Uint8Array.from(remotePK), Uint8Array.from(localSK))).to.deep.equal(expected);
   });
 
   it("key derivation should produce expected keys", () => {
@@ -38,7 +38,7 @@ describe("session crypto", () => {
     const ephemKey = Buffer.from("fb757dc581730490a1d7a00deea65e9b1936924caaea8f44d476014856b68736", "hex");
     const destPubkey = Buffer.from("0317931e6e0840220642f230037d285d122bc59063221ef3226b1f403ddc69ca91", "hex");
 
-    const secret = secp256k1.derive(destPubkey, ephemKey);
+    const secret = secp.getSharedSecret(Uint8Array.from(destPubkey), Uint8Array.from(ephemKey));
     const firstNodeId = "aaaa8419e9f49d0083561b48287df592939a8d19947d8c0ef88f2a4856a69fbb";
     const secondNodeId = "bbbb9d047f0488c0b5a93c1c3f2d8bafc7c8ff337024a55434a0d0555de64db9";
     const challengeData = Buffer.from(
@@ -46,7 +46,7 @@ describe("session crypto", () => {
       "hex"
     );
 
-    expect(deriveKey(secret, firstNodeId, secondNodeId, challengeData)).to.deep.equal(expected);
+    expect(deriveKey(Buffer.from(secret), firstNodeId, secondNodeId, challengeData)).to.deep.equal(expected);
   });
 
   it("symmetric keys should be derived correctly", () => {
@@ -55,13 +55,13 @@ describe("session crypto", () => {
     const enr1 = ENR.createV4(v4.publicKey(sk1));
     const enr2 = ENR.createV4(v4.publicKey(sk2));
     const nonce = randomBytes(32);
-    const [a1, b1, pk] = generateSessionKeys(enr1.nodeId, createNodeContact(enr2), nonce);
+    const [a1, b1, pk] = generateSessionKeys(enr1.nodeId, createNodeContact(enr2), Buffer.from(nonce));
     const [a2, b2] = deriveKeysFromPubkey(
       createKeypair(KeypairType.Secp256k1, sk2),
       enr2.nodeId,
       enr1.nodeId,
       pk,
-      nonce
+      Buffer.from(nonce)
     );
 
     expect(a1).to.deep.equal(a2);
@@ -107,10 +107,10 @@ describe("session crypto", () => {
   });
 
   it("encrypted data should successfully be decrypted", () => {
-    const key = randomBytes(16);
-    const nonce = randomBytes(12);
-    const msg = randomBytes(16);
-    const ad = randomBytes(16);
+    const key = Buffer.from(randomBytes(16));
+    const nonce = Buffer.from(randomBytes(12));
+    const msg = Buffer.from(randomBytes(16));
+    const ad = Buffer.from(randomBytes(16));
 
     const cipher = encryptMessage(key, nonce, msg, ad);
     const decrypted = decryptMessage(key, nonce, cipher, ad);

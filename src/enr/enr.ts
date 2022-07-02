@@ -315,17 +315,17 @@ export class ENR extends Map<ENRKey, ENRValue> {
     }
     return v4.verify(this.publicKey, data, signature);
   }
-  sign(data: Buffer, privateKey: Buffer): Buffer {
+  async sign(data: Buffer, privateKey: Buffer): Promise<Buffer> {
     switch (this.id) {
       case "v4":
-        this.signature = v4.sign(privateKey, data);
+        this.signature = await v4.sign(privateKey, data);
         break;
       default:
         throw new Error(ERR_INVALID_ID);
     }
     return this.signature;
   }
-  encodeToValues(privateKey?: Buffer): (ENRKey | ENRValue | number)[] {
+  async encodeToValues(privateKey?: Buffer): Promise<(ENRKey | ENRValue | number)[]> {
     // sort keys and flatten into [k, v, k, v, ...]
     const content: Array<ENRKey | ENRValue | number> = Array.from(this.keys())
       .sort((a, b) => a.localeCompare(b))
@@ -333,7 +333,7 @@ export class ENR extends Map<ENRKey, ENRValue> {
       .flat();
     content.unshift(Number(this.seq));
     if (privateKey) {
-      content.unshift(this.sign(RLP.encode(content), privateKey));
+      content.unshift(await this.sign(RLP.encode(content), privateKey));
     } else {
       if (!this.signature) {
         throw new Error(ERR_NO_SIGNATURE);
@@ -342,14 +342,14 @@ export class ENR extends Map<ENRKey, ENRValue> {
     }
     return content;
   }
-  encode(privateKey?: Buffer): Buffer {
-    const encoded = RLP.encode(this.encodeToValues(privateKey));
+  async encode(privateKey?: Buffer): Promise<Buffer> {
+    const encoded = RLP.encode(await this.encodeToValues(privateKey));
     if (encoded.length >= MAX_RECORD_SIZE) {
       throw new Error("ENR must be less than 300 bytes");
     }
     return encoded;
   }
-  encodeTxt(privateKey?: Buffer): string {
-    return "enr:" + base64url.encode(Buffer.from(this.encode(privateKey)));
+  async encodeTxt(privateKey?: Buffer): Promise<string> {
+    return "enr:" + base64url.encode(Buffer.from(await this.encode(privateKey)));
   }
 }

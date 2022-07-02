@@ -81,8 +81,8 @@ describe("message", () => {
     },
   ];
   for (const { message, expected } of testCases) {
-    it(`should encode/decode message type ${MessageType[message.type]}`, () => {
-      const actual = encode(message);
+    it(`should encode/decode message type ${MessageType[message.type]}`, async () => {
+      const actual = await encode(message);
       expect(actual).to.deep.equal(expected);
       expect(decode(actual)).to.deep.equal(message);
     });

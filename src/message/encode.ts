@@ -17,7 +17,7 @@ import {
   ITalkRespMessage,
 } from "./types.js";
 
-export function encode(message: Message): Buffer {
+export async function encode(message: Message): Promise<Buffer> {
   switch (message.type) {
     case MessageType.PING:
       return encodePingMessage(message as IPingMessage);
@@ -71,10 +71,10 @@ export function encodeFindNodeMessage(m: IFindNodeMessage): Buffer {
   return Buffer.concat([Buffer.from([MessageType.FINDNODE]), RLP.encode([toBuffer(m.id), m.distances])]);
 }
 
-export function encodeNodesMessage(m: INodesMessage): Buffer {
+export async function encodeNodesMessage(m: INodesMessage): Promise<Buffer> {
   return Buffer.concat([
     Buffer.from([MessageType.NODES]),
-    RLP.encode([toBuffer(m.id), m.total, m.enrs.map((enr) => enr.encodeToValues())]),
+    RLP.encode([toBuffer(m.id), m.total, await Promise.all(m.enrs.map(async (enr) => enr.encodeToValues()))]),
   ]);
 }
 
@@ -86,10 +86,10 @@ export function encodeTalkRespMessage(m: ITalkRespMessage): Buffer {
   return Buffer.concat([Buffer.from([MessageType.TALKRESP]), RLP.encode([toBuffer(m.id), m.response])]);
 }
 
-export function encodeRegTopicMessage(m: IRegTopicMessage): Buffer {
+export async function encodeRegTopicMessage(m: IRegTopicMessage): Promise<Buffer> {
   return Buffer.concat([
     Buffer.from([MessageType.REGTOPIC]),
-    RLP.encode([toBuffer(m.id), m.topic, m.enr.encodeToValues(), m.ticket]),
+    RLP.encode([toBuffer(m.id), m.topic, await m.enr.encodeToValues(), m.ticket]),
   ]);
 }
 
