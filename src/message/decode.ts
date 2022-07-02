@@ -1,5 +1,5 @@
 import * as RLP from "rlp";
-import { toString as ipBufferToString } from "multiaddr/src/ip";
+import { convertToString } from "@multiformats/multiaddr/convert";
 import { toBigIntBE } from "bigint-buffer";
 import * as ip6addr from "ip6addr";
 import {
@@ -15,9 +15,9 @@ import {
   MessageType,
   ITalkReqMessage,
   ITalkRespMessage,
-} from "./types";
-import { ENR } from "../enr";
-import { toNewUint8Array } from "../util";
+} from "./types.js";
+import { ENR } from "../enr/index.js";
+import { toNewUint8Array } from "../util/index.js";
 
 const ERR_INVALID_MESSAGE = "invalid message";
 
@@ -66,7 +66,7 @@ function decodePong(data: Buffer): IPongMessage {
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 4) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
-  let stringIpAddr = ipBufferToString(toNewUint8Array(rlpRaw[2]));
+  let stringIpAddr = convertToString("ip4", toNewUint8Array(rlpRaw[2]));
   // let stringIpAddr = ipBufferToString(rlpRaw[2]);
   const parsedIp = ip6addr.parse(stringIpAddr);
   if (parsedIp.kind() === "ipv4") {

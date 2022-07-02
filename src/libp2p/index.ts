@@ -1,1 +1,1 @@
-export * from "./discv5";
+export * from "./discv5.js";

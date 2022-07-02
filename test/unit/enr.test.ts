@@ -1,8 +1,8 @@
 /* eslint-env mocha */
 import { expect } from "chai";
-import { Multiaddr } from "multiaddr";
-import PeerId from "peer-id";
-import { ENR, v4 } from "../../src/enr";
+import { Multiaddr } from "@multiformats/multiaddr";
+import { createSecp256k1PeerId } from "@libp2p/peer-id-factory";
+import { ENR, v4 } from "../../src/enr/index.js";
 
 describe("ENR", () => {
   let seq: bigint;
@@ -39,12 +39,10 @@ describe("ENR", () => {
   });
 });
 describe("ENR Multiformats support", () => {
-  let seq: bigint;
   let privateKey: Buffer;
   let record: ENR;
 
   beforeEach(() => {
-    seq = 1n;
     privateKey = Buffer.from("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291", "hex");
     record = ENR.createV4(v4.publicKey(privateKey));
   });
@@ -54,7 +52,7 @@ describe("ENR Multiformats support", () => {
     const tuples0 = multi0.tuples();
 
     if (!tuples0[0][1] || !tuples0[1][1]) {
-      throw new Error('invalid multiaddr')
+      throw new Error("invalid multiaddr");
     }
     // set underlying records
     record.set("ip", tuples0[0][1]);
@@ -76,7 +74,7 @@ describe("ENR Multiformats support", () => {
     const tuples0 = multi0.tuples();
 
     if (!tuples0[0][1] || !tuples0[1][1]) {
-      throw new Error('invalid multiaddr')
+      throw new Error("invalid multiaddr");
     }
 
     // set underlying records
@@ -101,7 +99,7 @@ describe("ENR Multiformats support", () => {
     const tcp = 8080;
     const udp = 8080;
 
-    const peerId = await PeerId.create({ keyType: "secp256k1" });
+    const peerId = await createSecp256k1PeerId();
     const enr = ENR.createFromPeerId(peerId);
     enr.ip = ip4;
     enr.ip6 = ip6;
@@ -109,7 +107,6 @@ describe("ENR Multiformats support", () => {
     enr.udp = udp;
     enr.tcp6 = tcp;
     enr.udp6 = udp;
-
 
     it("should properly create location multiaddrs - udp4", () => {
       expect(enr.getLocationMultiaddr("udp4")).to.deep.equal(new Multiaddr(`/ip4/${ip4}/udp/${udp}`));

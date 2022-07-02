@@ -1,8 +1,10 @@
 /* eslint-env mocha */
 import { expect } from "chai";
-import { Multiaddr } from "multiaddr";
-import PeerId from "peer-id";
-import { createKeypairFromPeerId, Discv5, ENR } from "../../src";
+import { Multiaddr } from "@multiformats/multiaddr";
+import { PeerId } from "@libp2p/interface-peer-id";
+import { createFromPrivKey } from "@libp2p/peer-id-factory";
+import { unmarshalPrivateKey } from "@libp2p/crypto/keys";
+import { createKeypairFromPeerId, Discv5, ENR } from "../../src/index.js";
 
 let nodeIdx = 0;
 const portBase = 10000;
@@ -10,7 +12,12 @@ const portBase = 10000;
 describe("discv5 integration test", function () {
   const nodes: Discv5[] = [];
 
-  async function getDiscv5Node() {
+  type Node = {
+    peerId: PeerId;
+    enr: ENR;
+    discv5: Discv5;
+  };
+  async function getDiscv5Node(): Promise<Node> {
     const idx = nodeIdx++;
     const port = portBase + idx;
     const peerId = await getPeerId(idx);
@@ -45,7 +52,7 @@ describe("discv5 integration test", function () {
     for (const node of nodes) {
       await node.stop();
     }
-  })
+  });
 
   it("Connect two nodes", async () => {
     const node0 = await getDiscv5Node();
@@ -69,6 +76,7 @@ describe("discv5 integration test", function () {
       await node0.discv5.sendTalkReq(node1.enr, Buffer.from([0, 1, 2, 3]), "foo");
       expect.fail("TALKREQ response should throw when no response is given");
     } catch (e) {
+      // expected
     }
 
     // test a TALKRESP with a response
@@ -78,7 +86,6 @@ describe("discv5 integration test", function () {
     });
     const resp = await node0.discv5.sendTalkReq(node1.enr, Buffer.from([0, 1, 2, 3]), "foo");
     expect(resp).to.deep.equal(expectedResp);
-
   });
 });
 
@@ -95,5 +102,5 @@ async function getPeerId(i: number): Promise<PeerId> {
     "CAISIHRKcVKLTpKhQOEIPwQjH2xx/nvJWWLUCr90/NOuuZ+l",
     "CAISIP3n7vFWZKye7duop0nhfttFJUXTVvQfd4q0dPpURLke",
   ];
-  return await PeerId.createFromPrivKey(privKeysBase64[i]);
+  return await createFromPrivKey(await unmarshalPrivateKey(Buffer.from(privKeysBase64[i], "base64")));
 }

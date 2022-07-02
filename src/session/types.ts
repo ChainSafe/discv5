@@ -1,9 +1,9 @@
-import { Multiaddr } from "multiaddr";
+import { Multiaddr } from "@multiformats/multiaddr";
 
-import { NodeId, ENR } from "../enr";
-import { IPacket } from "../packet";
-import { RequestMessage, ResponseMessage } from "../message";
-import { INodeAddress, NodeContact } from "./nodeInfo";
+import { NodeId, ENR } from "../enr/index.js";
+import { IPacket } from "../packet/index.js";
+import { RequestMessage, ResponseMessage } from "../message/index.js";
+import { INodeAddress, NodeContact } from "./nodeInfo.js";
 
 export type NodeAddressString = string;
 

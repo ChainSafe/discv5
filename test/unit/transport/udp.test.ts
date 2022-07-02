@@ -1,10 +1,10 @@
 /* eslint-env mocha */
 import { expect } from "chai";
-import { Multiaddr } from "multiaddr";
+import { Multiaddr } from "@multiformats/multiaddr";
 
-import { PacketType, IPacket, NONCE_SIZE, MASKING_IV_SIZE } from "../../../src/packet";
-import { UDPTransportService } from "../../../src/transport";
-import { toHex } from "../../../src/util";
+import { PacketType, IPacket, NONCE_SIZE, MASKING_IV_SIZE } from "../../../src/packet/index.js";
+import { UDPTransportService } from "../../../src/transport/index.js";
+import { toHex } from "../../../src/util/index.js";
 
 describe("UDP transport", () => {
   const address = "127.0.0.1";
@@ -37,13 +37,14 @@ describe("UDP transport", () => {
         flag: PacketType.Message,
         nonce: Buffer.alloc(NONCE_SIZE),
         authdataSize: 32,
-        authdata: Buffer.alloc(32, 2)
+        authdata: Buffer.alloc(32, 2),
       },
       message: Buffer.alloc(44, 1),
     };
-    const received = new Promise((resolve) => a.once("packet", (sender, packet) => resolve([sender, packet])));
+    const received = new Promise<[Multiaddr, IPacket]>((resolve) =>
+      a.once("packet", (sender, packet) => resolve([sender, packet]))
+    );
     await b.send(multiaddrA, nodeIdA, messagePacket);
-    // @ts-ignore
     const [rSender, rPacket] = await received;
     expect(rSender.toString()).to.deep.equal(multiaddrB.toString());
     expect(rPacket.maskingIv).to.deep.equal(messagePacket.maskingIv);

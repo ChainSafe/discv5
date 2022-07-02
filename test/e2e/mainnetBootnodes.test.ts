@@ -1,8 +1,9 @@
 /* eslint-env mocha */
 import { expect } from "chai";
-import { Multiaddr } from "multiaddr";
-import PeerId from "peer-id";
-import { Discv5, ENR } from "../../src";
+import { Multiaddr } from "@multiformats/multiaddr";
+import { createSecp256k1PeerId, createFromPrivKey } from "@libp2p/peer-id-factory";
+import { unmarshalPrivateKey } from "@libp2p/crypto/keys";
+import { Discv5, ENR } from "../../src/index.js";
 
 let port = 9000;
 
@@ -15,9 +16,11 @@ describe("discv5 integration test", function () {
   for (const bootCount of [1, bootnodesENRText.length]) {
     it("Connect to nodes from Mainnet bootnodes", async () => {
       const peerId = RANDOM_PEER_ID
-        ? await PeerId.create({ keyType: "secp256k1" })
-        : await PeerId.createFromPrivKey(
-            Buffer.from("080212205465237331224a07d9c7b9c458e0859f401ab49f01c971857d373a3e6f6fdf3a", "hex")
+        ? await createSecp256k1PeerId()
+        : await createFromPrivKey(
+            await unmarshalPrivateKey(
+              Buffer.from("080212205465237331224a07d9c7b9c458e0859f401ab49f01c971857d373a3e6f6fdf3a", "hex")
+            )
           );
 
       const enr = ENR.createFromPeerId(peerId);
@@ -30,7 +33,7 @@ describe("discv5 integration test", function () {
         peerId,
         multiaddr: multiAddrUdp,
         config: {
-          lookupTimeout: 2000
+          lookupTimeout: 2000,
         },
       });
 
@@ -54,7 +57,7 @@ describe("discv5 integration test", function () {
   }
 });
 
-function getMainnetBootnodesENRText() {
+function getMainnetBootnodesENRText(): string[] {
   return [
     // # Teku team's bootnodes",
     "enr:-KG4QOtcP9X1FbIMOe17QNMKqDxCpm14jcX5tiOE4_TyMrFqbmhPZHK_ZPG2Gxb1GE2xdtodOfx9-cgvNtxnRyHEmC0ghGV0aDKQ9aX9QgAAAAD__________4JpZIJ2NIJpcIQDE8KdiXNlY3AyNTZrMaEDhpehBDbZjM_L9ek699Y7vhUJ-eAdMyQW_Fil522Y0fODdGNwgiMog3VkcIIjKA",

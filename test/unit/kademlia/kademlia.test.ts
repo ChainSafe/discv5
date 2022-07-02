@@ -1,10 +1,10 @@
 /* eslint-env mocha */
-import { KademliaRoutingTable } from "../../../src/kademlia/kademlia";
+import { KademliaRoutingTable } from "../../../src/kademlia/kademlia.js";
 import { expect } from "chai";
-import { ENR, v4, createNodeId } from "../../../src/enr";
-import { distance, EntryStatus, log2Distance } from "../../../src/kademlia";
-import { randomBytes } from "libp2p-crypto";
-import { toBuffer } from "../../../src/util";
+import { ENR, v4, createNodeId } from "../../../src/enr/index.js";
+import { EntryStatus, log2Distance } from "../../../src/kademlia/index.js";
+import { randomBytes } from "@libp2p/crypto";
+import { toBuffer } from "../../../src/util/index.js";
 
 describe("Kademlia routing table", () => {
   const nodeId = createNodeId(Buffer.alloc(32));
@@ -111,10 +111,10 @@ describe("Kademlia routing table", () => {
     for (let i = 0; i < 10; i++) {
       const target = randomNodeId();
       const enrs = table.nearest(target, 100);
-      const expectedEnrs = enrs.slice().sort((a, b) => log2Distance(target, a.nodeId) - log2Distance(target, b.nodeId))
+      const expectedEnrs = enrs.slice().sort((a, b) => log2Distance(target, a.nodeId) - log2Distance(target, b.nodeId));
       expect(enrs).to.deep.equal(expectedEnrs);
     }
-  })
+  });
 });
 
 function randomENR(): ENR {

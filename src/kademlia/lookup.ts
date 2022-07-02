@@ -1,9 +1,9 @@
 import { EventEmitter } from "events";
 
-import { ENR, NodeId } from "../enr";
-import { createFindNodeMessage, RequestMessage } from "../message";
-import { ILookupPeer, ILookupConfig, LookupState, LookupPeerState, LookupEventEmitter } from "./types";
-import { distance, findNodeLog2Distances } from "./util";
+import { ENR, NodeId } from "../enr/index.js";
+import { createFindNodeMessage, RequestMessage } from "../message/index.js";
+import { ILookupPeer, ILookupConfig, LookupState, LookupPeerState, LookupEventEmitter } from "./types.js";
+import { distance, findNodeLog2Distances } from "./util.js";
 
 export function createLookupPeer(nodeId: NodeId, state: LookupPeerState): ILookupPeer {
   return {
@@ -48,7 +48,7 @@ export class Lookup extends (EventEmitter as { new (): LookupEventEmitter }) {
   config: ILookupConfig;
 
   timeout?: number;
-  timeoutFn: Function;
+  timeoutFn: TimerHandler;
 
   constructor(config: ILookupConfig, nodeId: NodeId, closestPeers: NodeId[]) {
     super();

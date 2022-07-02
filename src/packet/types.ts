@@ -1,4 +1,4 @@
-import { NodeId } from "../enr";
+import { NodeId } from "../enr/index.js";
 
 // DISCV5 message packet types
 

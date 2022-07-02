@@ -1,8 +1,8 @@
-import cipher = require("bcrypto/lib/cipher");
+import cipher from "bcrypto/lib/cipher.js";
 import { toBigIntBE, toBufferBE } from "bigint-buffer";
 import errcode from "err-code";
 
-import { bufferToNumber, fromHex, numberToBuffer, toHex } from "../util";
+import { bufferToNumber, fromHex, numberToBuffer, toHex } from "../util/index.js";
 import {
   AUTHDATA_SIZE_SIZE,
   EPH_KEY_SIZE_SIZE,
@@ -26,8 +26,8 @@ import {
   WHOAREYOU_AUTHDATA_SIZE,
   ID_NONCE_SIZE,
   MIN_HANDSHAKE_AUTHDATA_SIZE,
-} from "./constants";
-import { IHandshakeAuthdata, IHeader, IMessageAuthdata, IPacket, IWhoAreYouAuthdata, PacketType } from "./types";
+} from "./constants.js";
+import { IHandshakeAuthdata, IHeader, IMessageAuthdata, IPacket, IWhoAreYouAuthdata, PacketType } from "./types.js";
 
 export function encodePacket(destId: string, packet: IPacket): Buffer {
   return Buffer.concat([packet.maskingIv, encodeHeader(destId, packet.maskingIv, packet.header), packet.message]);

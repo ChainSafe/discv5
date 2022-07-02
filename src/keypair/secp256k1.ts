@@ -1,6 +1,6 @@
-import secp256k1 = require("bcrypto/lib/secp256k1");
-import { AbstractKeypair, IKeypair, IKeypairClass, KeypairType } from "./types";
-import { ERR_INVALID_KEYPAIR_TYPE } from "./constants";
+import secp256k1 from "bcrypto/lib/secp256k1.js";
+import { AbstractKeypair, IKeypair, IKeypairClass, KeypairType } from "./types.js";
+import { ERR_INVALID_KEYPAIR_TYPE } from "./constants.js";
 
 export function secp256k1PublicKeyToCompressed(publicKey: Buffer): Buffer {
   if (publicKey.length === 64) {
@@ -29,7 +29,7 @@ export const Secp256k1Keypair: IKeypairClass = class Secp256k1Keypair extends Ab
       pub = secp256k1PublicKeyToCompressed(pub);
     }
     super(privateKey, pub);
-    this.type = KeypairType.secp256k1;
+    this.type = KeypairType.Secp256k1;
   }
 
   static generate(): Secp256k1Keypair {

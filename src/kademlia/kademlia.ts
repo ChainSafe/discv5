@@ -1,11 +1,11 @@
 import { EventEmitter } from "events";
 
-import { Bucket } from "./bucket";
-import { EntryStatus, IEntryFull, BucketEventEmitter, IEntry, InsertResult } from "./types";
-import { NodeId, ENR } from "../enr";
-import { NUM_BUCKETS, PENDING_TIMEOUT } from "./constants";
-import { log2Distance } from "./util";
-import { UpdateResult } from ".";
+import { Bucket } from "./bucket.js";
+import { EntryStatus, IEntryFull, BucketEventEmitter, IEntry, InsertResult } from "./types.js";
+import { NodeId, ENR } from "../enr/index.js";
+import { NUM_BUCKETS, PENDING_TIMEOUT } from "./constants.js";
+import { log2Distance } from "./util.js";
+import { UpdateResult } from "./types.js";
 
 /**
  * A Kademlia routing table, for storing ENRs based on their NodeIds

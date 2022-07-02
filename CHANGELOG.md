@@ -152,6 +152,57 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [1.1.1](https://github.com/ChainSafe/discv5/compare/v1.1.0...v1.1.1) (2022-06-29)
+
+
+### Bug Fixes
+
+* use ^ with @libp2p/interfaces dep ([#195](https://github.com/ChainSafe/discv5/issues/195)) ([67338bb](https://github.com/ChainSafe/discv5/commit/67338bb833f723e30bdcc24fe4c6ab2f70949c10))
+
+## [1.1.0](https://github.com/ChainSafe/discv5/compare/v1.0.2...v1.1.0) (2022-06-26)
+
+
+### Features
+
+* Add `packet` to package.json `exports ([#192](https://github.com/ChainSafe/discv5/issues/192)) ([c4e7c33](https://github.com/ChainSafe/discv5/commit/c4e7c33f119dfde62a81dfca878195bb5cb2a726))
+
+## [1.0.2](https://github.com/ChainSafe/discv5/compare/v1.0.1...v1.0.2) (2022-06-15)
+
+
+### Miscellaneous
+
+* update libp2p dependencies ([#190](https://github.com/ChainSafe/discv5/issues/190)) ([08f0aca](https://github.com/ChainSafe/discv5/commit/08f0aca77cac8a860633b30c2f86c64bd24bc75a))
+
+## [1.0.1](https://github.com/ChainSafe/discv5/compare/v1.0.0...v1.0.1) (2022-06-14)
+
+
+### Miscellaneous
+
+* update libp2p dependencies ([#188](https://github.com/ChainSafe/discv5/issues/188)) ([8d79b87](https://github.com/ChainSafe/discv5/commit/8d79b873b4bd55a0c46251d64a5a12cb177f9bff))
+
+## [1.0.0](https://github.com/ChainSafe/discv5/compare/v0.8.1...v1.0.0) (2022-06-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* convert to esm only (#184)
+
+### Features
+
+* convert to esm only ([#184](https://github.com/ChainSafe/discv5/issues/184)) ([119f1eb](https://github.com/ChainSafe/discv5/commit/119f1ebd16701ef216afcf96e11fb402151b7695))
+
+
+### Miscellaneous
+
+* update release ci for 1.0 ([#187](https://github.com/ChainSafe/discv5/issues/187)) ([c9ac749](https://github.com/ChainSafe/discv5/commit/c9ac7499bed96a2ab3aa6e48c62ab7b4f0c628c1))
+
+### [0.8.1](https://github.com/ChainSafe/discv5/compare/v0.8.0...v0.8.1) (2022-05-31)
+
+
+### Bug Fixes
+
+* Remove p2p portions of multiaddr in `nodeAddressToString` ([#182](https://github.com/ChainSafe/discv5/issues/182)) ([72cd0f5](https://github.com/ChainSafe/discv5/commit/72cd0f5372f2a49599783b495e43fec8fe0e6ade))
+
 ## [0.8.0](https://github.com/ChainSafe/discv5/compare/v0.7.1...v0.8.0) (2022-05-25)
 
 
