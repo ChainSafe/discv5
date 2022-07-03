@@ -10,7 +10,7 @@ export interface IKeypair {
   publicKey: Buffer;
   privateKeyVerify(): boolean;
   publicKeyVerify(): boolean;
-  sign(msg: Buffer): Buffer;
+  sign(msg: Buffer): Promise<Buffer>;
   verify(msg: Buffer, sig: Buffer): boolean;
   deriveSecret(keypair: IKeypair): Buffer;
   hasPrivateKey(): boolean;

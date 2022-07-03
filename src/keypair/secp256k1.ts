@@ -41,8 +41,8 @@ export const Secp256k1Keypair: IKeypairClass = class Secp256k1Keypair extends Ab
     return true;
   }
 
-  sign(msg: Buffer): Buffer {
-    return Buffer.from(secp.sign(Uint8Array.from(msg), Uint8Array.from(this.privateKey)));
+  async sign(msg: Buffer): Promise<Buffer> {
+    return Buffer.from(await secp.sign(Uint8Array.from(msg), Uint8Array.from(this.privateKey)));
   }
   verify(msg: Buffer, sig: Buffer): boolean {
     return secp.verify(

@@ -64,7 +64,7 @@ export function deriveKeysFromPubkey(
 }
 
 // Generates a signature given a keypair.
-export function idSign(kpriv: IKeypair, challengeData: Buffer, ephemPK: Buffer, destNodeId: NodeId): Buffer {
+export async function idSign(kpriv: IKeypair, challengeData: Buffer, ephemPK: Buffer, destNodeId: NodeId): Promise<Buffer> {
   const signingNonce = generateIdSignatureInput(challengeData, ephemPK, destNodeId);
   return kpriv.sign(signingNonce);
 }

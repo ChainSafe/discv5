@@ -68,7 +68,7 @@ describe("session crypto", () => {
     expect(b1).to.deep.equal(b2);
   });
 
-  it("id signature should match expected value", () => {
+  it("id signature should match expected value", async () => {
     const expected = Buffer.from(
       "94852a1e2318c4e5e9d422c98eaf19d1d90d876b29cd06ca7cb7546d0fff7b484fe86c09a064fe72bdbef73ba8e9c34df0cd2b53e9d65528c2c7f336d5dfc6e6",
       "hex"
@@ -82,7 +82,7 @@ describe("session crypto", () => {
     const ephemPK = Buffer.from("039961e4c2356d61bedb83052c115d311acb3a96f5777296dcf297351130266231", "hex");
     const nodeIdB = "bbbb9d047f0488c0b5a93c1c3f2d8bafc7c8ff337024a55434a0d0555de64db9";
 
-    const actual = idSign(createKeypair(KeypairType.Secp256k1, localSK), challengeData, ephemPK, nodeIdB);
+    const actual = await idSign(createKeypair(KeypairType.Secp256k1, localSK), challengeData, ephemPK, nodeIdB);
     expect(actual).to.deep.equal(expected);
     expect(
       idVerify(

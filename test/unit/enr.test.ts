@@ -22,8 +22,8 @@ describe("ENR", () => {
     expect(record.nodeId).to.equal("a448f24c6d18e575453db13171562b71999873db5b286df957af199ec94617f7");
   });
 
-  it("should encode/decode to RLP encoding", () => {
-    const decoded = ENR.decode(record.encode(privateKey));
+  it("should encode/decode to RLP encoding", async () => {
+    const decoded = ENR.decode(await record.encode(privateKey));
     expect(decoded).to.deep.equal(record);
   });
 
