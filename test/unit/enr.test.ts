@@ -27,7 +27,7 @@ describe("ENR", () => {
     expect(decoded).to.deep.equal(record);
   });
 
-  it("should encode/decode to text encoding", () => {
+  it("should encode/decode to text encoding", async () => {
     // spec enr https://eips.ethereum.org/EIPS/eip-778
     const testTxt =
       "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8";
@@ -35,7 +35,7 @@ describe("ENR", () => {
     expect(decoded.udp).to.be.equal(30303);
     expect(decoded.ip).to.be.equal("127.0.0.1");
     expect(decoded).to.deep.equal(record);
-    expect(record.encodeTxt(privateKey)).to.equal(testTxt);
+    expect(await record.encodeTxt(privateKey)).to.equal(testTxt);
   });
 });
 describe("ENR Multiformats support", () => {

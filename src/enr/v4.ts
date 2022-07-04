@@ -1,11 +1,18 @@
 import { keccak_256 as keccak } from "@noble/hashes/sha3";
 import * as secp256k1 from "@noble/secp256k1";
+import { hmac } from "@noble/hashes/hmac";
+import { sha256 } from "@noble/hashes/sha256";
+secp256k1.utils.hmacSha256Sync = (key: Uint8Array, ...msgs: Uint8Array[]) => {
+  const h = hmac.create(sha256, key);
+  msgs.forEach((msg) => h.update(msg));
+  return h.digest();
+};
 
 import { NodeId } from "./types.js";
 import { createNodeId } from "./create.js";
 
 export function hash(input: Buffer): Buffer {
-  return Buffer.from(keccak(input));
+  return Buffer.from(keccak(Uint8Array.from(input)));
 }
 
 export function createPrivateKey(): Buffer {
@@ -16,8 +23,8 @@ export function publicKey(privKey: Buffer): Buffer {
   return Buffer.from(secp256k1.getPublicKey(Uint8Array.from(privKey), true));
 }
 
-export async function sign(privKey: Buffer, msg: Buffer): Promise<Buffer> {
-  return Buffer.from(await secp256k1.sign(Uint8Array.from(hash(msg)), privKey));
+export function sign(privKey: Buffer, msg: Buffer): Buffer {
+  return Buffer.from(secp256k1.signSync(Uint8Array.from(hash(msg)), privKey));
 }
 
 export function verify(pubKey: Buffer, msg: Buffer, sig: Buffer): boolean {

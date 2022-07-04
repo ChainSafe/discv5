@@ -71,10 +71,10 @@ export function encodeFindNodeMessage(m: IFindNodeMessage): Buffer {
   return Buffer.concat([Buffer.from([MessageType.FINDNODE]), RLP.encode([toBuffer(m.id), m.distances])]);
 }
 
-export async function encodeNodesMessage(m: INodesMessage): Promise<Buffer> {
+export function encodeNodesMessage(m: INodesMessage): Buffer {
   return Buffer.concat([
     Buffer.from([MessageType.NODES]),
-    RLP.encode([toBuffer(m.id), m.total, await Promise.all(m.enrs.map(async (enr) => enr.encodeToValues()))]),
+    RLP.encode([toBuffer(m.id), m.total, m.enrs.map((enr) => enr.encodeToValues())]),
   ]);
 }
 

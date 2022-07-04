@@ -8,6 +8,7 @@ secp.utils.hmacSha256Sync = (key: Uint8Array, ...msgs: Uint8Array[]) => {
   msgs.forEach((msg) => h.update(msg));
   return h.digest();
 };
+
 export function secp256k1PublicKeyToCompressed(publicKey: Buffer): Buffer {
   if (publicKey.length === 64) {
     publicKey = Buffer.concat([Buffer.from([4]), publicKey]);

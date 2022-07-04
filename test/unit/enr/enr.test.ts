@@ -35,7 +35,7 @@ describe("ENR", function () {
       const enr = ENR.createFromPeerId(peerId);
       enr.setLocationMultiaddr(new Multiaddr("/ip6/aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa/udp/9000"));
       const keypair = createKeypairFromPeerId(peerId);
-      const enr2 = ENR.decodeTxt(await enr.encodeTxt(keypair.privateKey));
+      const enr2 = ENR.decodeTxt(enr.encodeTxt(keypair.privateKey));
       expect(enr2.udp6).to.equal(9000);
       expect(enr2.ip6).to.equal("aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa");
     });
