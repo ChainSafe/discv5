@@ -13,7 +13,7 @@ export function createPrivateKey(): Buffer {
 }
 
 export function publicKey(privKey: Buffer): Buffer {
-  return Buffer.from(secp256k1.getPublicKey(Uint8Array.from(privKey)));
+  return Buffer.from(secp256k1.getPublicKey(Uint8Array.from(privKey), true));
 }
 
 export async function sign(privKey: Buffer, msg: Buffer): Promise<Buffer> {

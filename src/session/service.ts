@@ -287,7 +287,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     this.activeChallenges.set(nodeAddrStr, { data: challengeData, remoteEnr: remoteEnr ?? undefined });
   }
 
-  public async processInboundPacket (src: Multiaddr, packet: IPacket): Promise<void> {
+  public async processInboundPacket(src: Multiaddr, packet: IPacket): Promise<void> {
     switch (packet.header.flag) {
       case PacketType.WhoAreYou:
         return this.handleChallenge(src, packet);
@@ -296,9 +296,9 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       case PacketType.Message:
         return this.handleMessage(src, packet);
     }
-  };
+  }
 
-  private async  handleChallenge(src: Multiaddr, packet: IPacket): Promise<void> {
+  private async handleChallenge(src: Multiaddr, packet: IPacket): Promise<void> {
     // First decode the authdata
     let authdata;
     try {
@@ -383,7 +383,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     const updatedEnr = authdata.enrSeq < this.enr.seq ? await this.enr.encode(this.keypair.privateKey) : null;
 
     // Generate a new session and authentication packet
-    const [authPacket, session] = Session.encryptWithHeader(
+    const [authPacket, session] = await Session.encryptWithHeader(
       requestCall.contact,
       this.keypair,
       this.enr.nodeId,

@@ -1,4 +1,4 @@
-import * as hkdf  from "@noble/hashes/hkdf";
+import * as hkdf from "@noble/hashes/hkdf";
 import { sha256 } from "@noble/hashes/sha256";
 import { crypto } from "@noble/hashes/crypto";
 
@@ -7,7 +7,7 @@ import { generateKeypair, IKeypair, createKeypair } from "../keypair/index.js";
 import { fromHex } from "../util/index.js";
 import { getNodeId, getPublicKey, NodeContact } from "./nodeInfo.js";
 
-const Crypto = crypto.node ?? crypto.web
+const Crypto = crypto.node ?? crypto.web;
 
 // Implementation for generating session keys in the Discv5 protocol.
 // Currently, Diffie-Hellman key agreement is performed with known public key types. Session keys
@@ -48,7 +48,14 @@ export function generateSessionKeys(
 
 export function deriveKey(secret: Buffer, firstId: NodeId, secondId: NodeId, challengeData: Buffer): [Buffer, Buffer] {
   const info = Buffer.concat([Buffer.from(KEY_AGREEMENT_STRING), fromHex(firstId), fromHex(secondId)]);
-  const output = Buffer.from(hkdf.expand(sha256, hkdf.extract(sha256, Uint8Array.from(secret), Uint8Array.from(challengeData)), Uint8Array.from(info), 2 * KEY_LENGTH));
+  const output = Buffer.from(
+    hkdf.expand(
+      sha256,
+      hkdf.extract(sha256, Uint8Array.from(secret), Uint8Array.from(challengeData)),
+      Uint8Array.from(info),
+      2 * KEY_LENGTH
+    )
+  );
   return [output.slice(0, KEY_LENGTH), output.slice(KEY_LENGTH, 2 * KEY_LENGTH)];
 }
 
@@ -64,7 +71,12 @@ export function deriveKeysFromPubkey(
 }
 
 // Generates a signature given a keypair.
-export async function idSign(kpriv: IKeypair, challengeData: Buffer, ephemPK: Buffer, destNodeId: NodeId): Promise<Buffer> {
+export async function idSign(
+  kpriv: IKeypair,
+  challengeData: Buffer,
+  ephemPK: Buffer,
+  destNodeId: NodeId
+): Promise<Buffer> {
   const signingNonce = generateIdSignatureInput(challengeData, ephemPK, destNodeId);
   return kpriv.sign(signingNonce);
 }
@@ -82,9 +94,11 @@ export function idVerify(
 }
 
 export function generateIdSignatureInput(challengeData: Buffer, ephemPK: Buffer, nodeId: NodeId): Buffer {
-  const hash = sha256.create().update(Uint8Array.from(Buffer.concat([Buffer.from(ID_SIGNATURE_TEXT), challengeData, ephemPK, fromHex(nodeId)]))).digest();
-  return Buffer.from(hash)
-
+  const hash = sha256
+    .create()
+    .update(Uint8Array.from(Buffer.concat([Buffer.from(ID_SIGNATURE_TEXT), challengeData, ephemPK, fromHex(nodeId)])))
+    .digest();
+  return Buffer.from(hash);
 }
 
 export function decryptMessage(key: Buffer, nonce: Buffer, data: Buffer, aad: Buffer): Buffer {
@@ -92,7 +106,7 @@ export function decryptMessage(key: Buffer, nonce: Buffer, data: Buffer, aad: Bu
     throw new Error("message data not long enough");
   }
 
-  const ctx = Crypto.createDecipheriv('aes-128-gcm', key, nonce);
+  const ctx = Crypto.createDecipheriv("aes-128-gcm", key, nonce);
   ctx.setAAD(aad);
   ctx.setAuthTag(data.slice(data.length - MAC_LENGTH));
   return Buffer.concat([
@@ -102,7 +116,7 @@ export function decryptMessage(key: Buffer, nonce: Buffer, data: Buffer, aad: Bu
 }
 
 export function encryptMessage(key: Buffer, nonce: Buffer, data: Buffer, aad: Buffer): Buffer {
-  const ctx = Crypto.createCipheriv('aes-128-gcm', key, nonce);
+  const ctx = Crypto.createCipheriv("aes-128-gcm", key, nonce);
   ctx.setAAD(aad);
   return Buffer.concat([
     ctx.update(data),
