@@ -83,8 +83,8 @@ describe("session crypto", () => {
     );
     const ephemPK = Buffer.from("039961e4c2356d61bedb83052c115d311acb3a96f5777296dcf297351130266231", "hex");
     const nodeIdB = "bbbb9d047f0488c0b5a93c1c3f2d8bafc7c8ff337024a55434a0d0555de64db9";
-
-    const actual = await idSign(createKeypair(KeypairType.Secp256k1, localSK), challengeData, ephemPK, nodeIdB);
+    const keypair = createKeypair(KeypairType.Secp256k1, localSK);
+    const actual = await idSign(keypair, challengeData, ephemPK, nodeIdB);
     expect(actual).to.deep.equal(expected);
     expect(
       idVerify(

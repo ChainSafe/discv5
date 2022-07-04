@@ -1,7 +1,13 @@
 import * as secp from "@noble/secp256k1";
 import { AbstractKeypair, IKeypair, IKeypairClass, KeypairType } from "./types.js";
 import { ERR_INVALID_KEYPAIR_TYPE } from "./constants.js";
-
+import { hmac } from "@noble/hashes/hmac";
+import { sha256 } from "@noble/hashes/sha256";
+secp.utils.hmacSha256Sync = (key: Uint8Array, ...msgs: Uint8Array[]) => {
+  const h = hmac.create(sha256, key);
+  msgs.forEach((msg) => h.update(msg));
+  return h.digest();
+};
 export function secp256k1PublicKeyToCompressed(publicKey: Buffer): Buffer {
   if (publicKey.length === 64) {
     publicKey = Buffer.concat([Buffer.from([4]), publicKey]);
@@ -45,8 +51,16 @@ export const Secp256k1Keypair: IKeypairClass = class Secp256k1Keypair extends Ab
     return true;
   }
 
-  async sign(msg: Buffer): Promise<Buffer> {
-    return Buffer.from(await secp.sign(Uint8Array.from(msg), Uint8Array.from(this.privateKey)));
+  publicKeyVerify(): boolean {
+    try {
+      secp.Point.fromHex(Uint8Array.from(this.publicKey)).assertValidity();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  sign(msg: Buffer): Buffer {
+    return Buffer.from(secp.signSync(Uint8Array.from(msg), Uint8Array.from(this.privateKey)));
   }
   verify(msg: Buffer, sig: Buffer): boolean {
     return secp.verify(Uint8Array.from(sig), Uint8Array.from(msg), this.publicKey);

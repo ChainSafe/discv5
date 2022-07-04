@@ -71,12 +71,7 @@ export function deriveKeysFromPubkey(
 }
 
 // Generates a signature given a keypair.
-export async function idSign(
-  kpriv: IKeypair,
-  challengeData: Buffer,
-  ephemPK: Buffer,
-  destNodeId: NodeId
-): Promise<Buffer> {
+export function idSign(kpriv: IKeypair, challengeData: Buffer, ephemPK: Buffer, destNodeId: NodeId): Buffer {
   const signingNonce = generateIdSignatureInput(challengeData, ephemPK, destNodeId);
   return kpriv.sign(signingNonce);
 }
@@ -94,10 +89,9 @@ export function idVerify(
 }
 
 export function generateIdSignatureInput(challengeData: Buffer, ephemPK: Buffer, nodeId: NodeId): Buffer {
-  const hash = sha256
-    .create()
-    .update(Uint8Array.from(Buffer.concat([Buffer.from(ID_SIGNATURE_TEXT), challengeData, ephemPK, fromHex(nodeId)])))
-    .digest();
+  const hash = sha256(
+    Uint8Array.from(Buffer.concat([Buffer.from(ID_SIGNATURE_TEXT), challengeData, ephemPK, fromHex(nodeId)]))
+  );
   return Buffer.from(hash);
 }
 
