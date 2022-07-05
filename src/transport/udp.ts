@@ -59,5 +59,5 @@ export class UDPTransportService
     } catch (e: unknown) {
       this.emit("decodeError", e as Error, multiaddr);
     }
-  }
+  };
 }

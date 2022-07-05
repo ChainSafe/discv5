@@ -296,7 +296,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       case PacketType.Message:
         return this.handleMessage(src, packet);
     }
-  }
+  };
 
   private handleChallenge(src: Multiaddr, packet: IPacket): void {
     // First decode the authdata
