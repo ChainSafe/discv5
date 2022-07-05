@@ -1,12 +1,5 @@
 import { keccak_256 as keccak } from "@noble/hashes/sha3";
-import * as secp256k1 from "@noble/secp256k1";
-import { hmac } from "@noble/hashes/hmac";
-import { sha256 } from "@noble/hashes/sha256";
-secp256k1.utils.hmacSha256Sync = (key: Uint8Array, ...msgs: Uint8Array[]) => {
-  const h = hmac.create(sha256, key);
-  msgs.forEach((msg) => h.update(msg));
-  return h.digest();
-};
+import { secp256k1 } from "../util/crypto.js";
 
 import { NodeId } from "./types.js";
 import { createNodeId } from "./create.js";

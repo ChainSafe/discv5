@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import { expect } from "chai";
-import * as secp from "@noble/secp256k1";
+import { secp256k1 } from "../../../src/util/crypto.js";
 import { randomBytes } from "@libp2p/crypto";
 
 import {
@@ -26,7 +26,7 @@ describe("session crypto", () => {
     );
     const localSK = Buffer.from("fb757dc581730490a1d7a00deea65e9b1936924caaea8f44d476014856b68736", "hex");
 
-    expect(Buffer.from(secp.getSharedSecret(localSK, remotePK, true))).to.deep.equal(expected);
+    expect(Buffer.from(secp256k1.getSharedSecret(localSK, remotePK, true))).to.deep.equal(expected);
   });
 
   it("key derivation should produce expected keys", () => {
@@ -38,7 +38,7 @@ describe("session crypto", () => {
     const ephemKey = Buffer.from("fb757dc581730490a1d7a00deea65e9b1936924caaea8f44d476014856b68736", "hex");
     const destPubkey = Buffer.from("0317931e6e0840220642f230037d285d122bc59063221ef3226b1f403ddc69ca91", "hex");
 
-    const secret = secp.getSharedSecret(ephemKey, destPubkey, true);
+    const secret = secp256k1.getSharedSecret(ephemKey, destPubkey, true);
     const firstNodeId = "aaaa8419e9f49d0083561b48287df592939a8d19947d8c0ef88f2a4856a69fbb";
     const secondNodeId = "bbbb9d047f0488c0b5a93c1c3f2d8bafc7c8ff337024a55434a0d0555de64db9";
     const challengeData = Buffer.from(
