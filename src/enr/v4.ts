@@ -29,7 +29,7 @@ export function sign(privKey: Buffer, msg: Buffer): Buffer {
 }
 
 export function verify(pubKey: Buffer, msg: Buffer, sig: Buffer): boolean {
-  return secp256k1.verify(Uint8Array.from(sig), Uint8Array.from(hash(msg)), Uint8Array.from(pubKey));
+  return secp256k1.verify(sig, hash(msg), pubKey);
 }
 
 export function nodeId(pubKey: Buffer): NodeId {
@@ -43,7 +43,7 @@ export class ENRKeyPair {
 
   public constructor(privateKey?: Buffer) {
     if (privateKey) {
-      if (!secp256k1.utils.isValidPrivateKey(Uint8Array.from(privateKey))) {
+      if (!secp256k1.utils.isValidPrivateKey(privateKey)) {
         throw new Error("Invalid private key");
       }
     }

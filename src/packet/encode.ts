@@ -38,18 +38,16 @@ export function encodePacket(destId: string, packet: IPacket): Buffer {
 export function encodeHeader(destId: string, maskingIv: Buffer, header: IHeader): Buffer {
   const ctx = Crypto.createCipheriv("aes-128-gcm", fromHex(destId).slice(0, MASKING_KEY_SIZE), maskingIv);
   return ctx.update(
-    Uint8Array.from(
-      Buffer.concat([
-        // static header
-        Buffer.from(header.protocolId, "ascii"),
-        numberToBuffer(header.version, VERSION_SIZE),
-        numberToBuffer(header.flag, FLAG_SIZE),
-        header.nonce,
-        numberToBuffer(header.authdataSize, AUTHDATA_SIZE_SIZE),
-        // authdata
-        header.authdata,
-      ])
-    )
+    Buffer.concat([
+      // static header
+      Buffer.from(header.protocolId, "ascii"),
+      numberToBuffer(header.version, VERSION_SIZE),
+      numberToBuffer(header.flag, FLAG_SIZE),
+      header.nonce,
+      numberToBuffer(header.authdataSize, AUTHDATA_SIZE_SIZE),
+      // authdata
+      header.authdata,
+    ])
   );
 }
 
@@ -80,7 +78,7 @@ export function decodeHeader(srcId: string, maskingIv: Buffer, data: Buffer): [I
   const ctx = Crypto.createDecipheriv("aes-128-gcm", fromHex(srcId).slice(0, MASKING_KEY_SIZE), maskingIv);
 
   // unmask the static header
-  const staticHeaderBuf = ctx.update(Uint8Array.from(data.slice(0, STATIC_HEADER_SIZE)));
+  const staticHeaderBuf = ctx.update(data.slice(0, STATIC_HEADER_SIZE));
 
   // validate the static header field by field
   const protocolId = staticHeaderBuf.slice(0, PROTOCOL_SIZE).toString("ascii");

@@ -47,14 +47,14 @@ export const Secp256k1Keypair: IKeypairClass = class Secp256k1Keypair extends Ab
 
   privateKeyVerify(key = this._privateKey): boolean {
     if (key) {
-      return secp.utils.isValidPrivateKey(Uint8Array.from(key));
+      return secp.utils.isValidPrivateKey(key);
     }
     return true;
   }
 
   publicKeyVerify(): boolean {
     try {
-      secp.Point.fromHex(Uint8Array.from(this.publicKey)).assertValidity();
+      secp.Point.fromHex(this.publicKey).assertValidity();
       return true;
     } catch {
       return false;
@@ -64,15 +64,13 @@ export const Secp256k1Keypair: IKeypairClass = class Secp256k1Keypair extends Ab
     return Buffer.from(secp.signSync(msg, this.privateKey, { der: false }));
   }
   verify(msg: Buffer, sig: Buffer): boolean {
-    return secp.verify(Uint8Array.from(sig), Uint8Array.from(msg), this.publicKey);
+    return secp.verify(sig, msg, this.publicKey);
   }
   deriveSecret(keypair: IKeypair): Buffer {
     if (keypair.type !== this.type) {
       throw new Error(ERR_INVALID_KEYPAIR_TYPE);
     }
-    const secret = Buffer.from(
-      secp.getSharedSecret(Uint8Array.from(this.privateKey), Uint8Array.from(keypair.publicKey), true)
-    );
+    const secret = Buffer.from(secp.getSharedSecret(this.privateKey, keypair.publicKey, true));
     return secret;
   }
 };
