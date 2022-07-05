@@ -287,7 +287,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     this.activeChallenges.set(nodeAddrStr, { data: challengeData, remoteEnr: remoteEnr ?? undefined });
   }
 
-  public processInboundPacket(src: Multiaddr, packet: IPacket): void {
+  public processInboundPacket = (src: Multiaddr, packet: IPacket): void => {
     switch (packet.header.flag) {
       case PacketType.WhoAreYou:
         return this.handleChallenge(src, packet);
