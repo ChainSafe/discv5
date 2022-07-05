@@ -1,4 +1,4 @@
-import { crypto } from "@noble/hashes/crypto";
+import Crypto from "crypto";
 import { toBigIntBE, toBufferBE } from "bigint-buffer";
 import errcode from "err-code";
 
@@ -28,8 +28,6 @@ import {
   MIN_HANDSHAKE_AUTHDATA_SIZE,
 } from "./constants.js";
 import { IHandshakeAuthdata, IHeader, IMessageAuthdata, IPacket, IWhoAreYouAuthdata, PacketType } from "./types.js";
-
-const Crypto = crypto.node ?? crypto.web;
 
 export function encodePacket(destId: string, packet: IPacket): Buffer {
   return Buffer.concat([packet.maskingIv, encodeHeader(destId, packet.maskingIv, packet.header), packet.message]);

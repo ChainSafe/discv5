@@ -1,12 +1,10 @@
 import * as hkdf from "@noble/hashes/hkdf";
 import { sha256 } from "@noble/hashes/sha256";
-import { crypto } from "@noble/hashes/crypto";
+import Crypto from "crypto";
 import { NodeId } from "../enr/index.js";
 import { generateKeypair, IKeypair, createKeypair } from "../keypair/index.js";
 import { fromHex } from "../util/index.js";
 import { getNodeId, getPublicKey, NodeContact } from "./nodeInfo.js";
-
-const Crypto = crypto.node ?? crypto.web;
 
 // Implementation for generating session keys in the Discv5 protocol.
 // Currently, Diffie-Hellman key agreement is performed with known public key types. Session keys
