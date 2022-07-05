@@ -49,7 +49,7 @@ export class UDPTransportService
     );
   }
 
-  public handleIncoming(data: Buffer, rinfo: IRemoteInfo): void {
+  public handleIncoming = (data: Buffer, rinfo: IRemoteInfo): void => {
     const multiaddr = new Multiaddr(
       `/${String(rinfo.family).endsWith("4") ? "ip4" : "ip6"}/${rinfo.address}/udp/${rinfo.port}`
     );
