@@ -41,6 +41,7 @@ describe("discv5 integration test", function () {
       for (let i = 0; i < bootCount; i++) {
         const bootEnr = ENR.decodeTxt(bootnodesENRText[i]);
         discv5.addEnr(bootEnr);
+        //eslint-disable-next-line no-console
         console.log("BOOTNODE", bootEnr.ip, bootEnr.udp);
       }
 
@@ -48,7 +49,7 @@ describe("discv5 integration test", function () {
       discv5.on("discovered", (enr) => {
         foundENRs.push(enr);
       });
-      discv5.enableLogs()
+      discv5.enableLogs();
       await discv5.findRandomNode();
 
       expect(foundENRs).to.have.length.greaterThan(0, "Should found some ENRs");

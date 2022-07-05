@@ -17,6 +17,7 @@ describe("ENR", function () {
       expect(txt.slice(0, 4)).to.be.equal("enr:");
       const enr2 = ENR.decodeTxt(txt);
       expect(toHex(enr2.signature as Buffer)).to.be.equal(toHex(enr.signature as Buffer));
+      //eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const multiaddr = enr2.getLocationMultiaddr("udp")!;
       expect(multiaddr.toString()).to.be.equal("/ip4/18.223.219.100/udp/9000");
     });

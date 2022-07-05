@@ -784,6 +784,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       const entry = this.pendingRequests.get(nodeAddrStr);
       if (entry) {
         // if it exists, there must be a request here
+        //eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const request = entry.shift()!;
         if (!entry.length) {
           this.pendingRequests.delete(nodeAddrStr);
