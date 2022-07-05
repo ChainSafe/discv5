@@ -44,19 +44,20 @@ export class UDPTransportService
 
   public async send(to: Multiaddr, toId: string, packet: IPacket): Promise<void> {
     const nodeAddr = to.toOptions();
-    const encodedPacket = await encodePacket(toId, packet);
-    return new Promise((resolve) => this.socket.send(encodedPacket, nodeAddr.port, nodeAddr.host, () => resolve()));
+    return new Promise((resolve) =>
+      this.socket.send(encodePacket(toId, packet), nodeAddr.port, nodeAddr.host, () => resolve())
+    );
   }
 
-  public async handleIncoming(data: Buffer, rinfo: IRemoteInfo): Promise<void> {
+  public handleIncoming(data: Buffer, rinfo: IRemoteInfo): void {
     const multiaddr = new Multiaddr(
       `/${String(rinfo.family).endsWith("4") ? "ip4" : "ip6"}/${rinfo.address}/udp/${rinfo.port}`
     );
     try {
-      const packet = await decodePacket(this.srcId, data);
+      const packet = decodePacket(this.srcId, data);
       this.emit("packet", multiaddr, packet);
     } catch (e: unknown) {
       this.emit("decodeError", e as Error, multiaddr);
     }
-  };
+  }
 }
