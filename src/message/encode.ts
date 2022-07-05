@@ -17,7 +17,7 @@ import {
   ITalkRespMessage,
 } from "./types.js";
 
-export async function encode(message: Message): Promise<Buffer> {
+export function encode(message: Message): Buffer {
   switch (message.type) {
     case MessageType.PING:
       return encodePingMessage(message as IPingMessage);
@@ -86,10 +86,10 @@ export function encodeTalkRespMessage(m: ITalkRespMessage): Buffer {
   return Buffer.concat([Buffer.from([MessageType.TALKRESP]), RLP.encode([toBuffer(m.id), m.response])]);
 }
 
-export async function encodeRegTopicMessage(m: IRegTopicMessage): Promise<Buffer> {
+export function encodeRegTopicMessage(m: IRegTopicMessage): Buffer {
   return Buffer.concat([
     Buffer.from([MessageType.REGTOPIC]),
-    RLP.encode([toBuffer(m.id), m.topic, await m.enr.encodeToValues(), m.ticket]),
+    RLP.encode([toBuffer(m.id), m.topic, m.enr.encodeToValues(), m.ticket]),
   ]);
 }
 
