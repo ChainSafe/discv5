@@ -118,20 +118,20 @@ export class Session {
   /**
    * Encrypts a message and produces an handshake packet.
    */
-  static async encryptWithHeader(
+  static encryptWithHeader(
     remoteContact: NodeContact,
     localKey: IKeypair,
     localNodeId: NodeId,
     updatedEnr: Buffer | null,
     challengeData: Buffer,
     message: Buffer
-  ): Promise<[IPacket, Session]> {
+  ): [IPacket, Session] {
     // generate session keys
     const [encryptionKey, decryptionKey, ephPubkey] = generateSessionKeys(localNodeId, remoteContact, challengeData);
     const keys = { encryptionKey, decryptionKey };
 
     // construct nonce signature
-    const idSignature = await idSign(localKey, challengeData, ephPubkey, getNodeId(remoteContact));
+    const idSignature = idSign(localKey, challengeData, ephPubkey, getNodeId(remoteContact));
 
     // create authdata
     const authdata = encodeHandshakeAuthdata({

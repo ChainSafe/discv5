@@ -175,7 +175,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   /**
    * Sends an RequestMessage to a node.
    */
-  public async sendRequest(contact: NodeContact, request: RequestMessage): Promise<void> {
+  public sendRequest(contact: NodeContact, request: RequestMessage): void {
     const nodeAddr = getNodeAddress(contact);
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
@@ -200,7 +200,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     let packet, initiatingSession;
     if (session) {
       // Encrypt the message and send
-      packet = session.encryptMessage(this.enr.nodeId, nodeAddr.nodeId, await encode(request));
+      packet = session.encryptMessage(this.enr.nodeId, nodeAddr.nodeId, encode(request));
       initiatingSession = false;
     } else {
       // No session exists, start a new handshake
