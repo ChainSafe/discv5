@@ -12,7 +12,7 @@ import { NodeId } from "./types.js";
 import { createNodeId } from "./create.js";
 
 export function hash(input: Buffer): Buffer {
-  return Buffer.from(keccak(Uint8Array.from(input)));
+  return Buffer.from(keccak(input).buffer);
 }
 
 export function createPrivateKey(): Buffer {
@@ -20,7 +20,7 @@ export function createPrivateKey(): Buffer {
 }
 
 export function publicKey(privKey: Buffer): Buffer {
-  return Buffer.from(secp256k1.getPublicKey(Uint8Array.from(privKey), true));
+  return Buffer.from(secp256k1.getPublicKey(privKey, true));
 }
 
 export function sign(privKey: Buffer, msg: Buffer): Buffer {
