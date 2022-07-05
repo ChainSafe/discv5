@@ -232,7 +232,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   /**
    * Sends an RPC response
    */
-  public async sendResponse(nodeAddr: INodeAddress, response: ResponseMessage): Promise<void> {
+  public sendResponse(nodeAddr: INodeAddress, response: ResponseMessage): void {
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
     // Check for an established session
@@ -245,7 +245,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     // Encrypt the message and send
     let packet;
     try {
-      packet = session.encryptMessage(this.enr.nodeId, nodeAddr.nodeId, await encode(response));
+      packet = session.encryptMessage(this.enr.nodeId, nodeAddr.nodeId, encode(response));
     } catch (e) {
       log("Could not encrypt response: %s", e);
       return;
@@ -287,7 +287,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     this.activeChallenges.set(nodeAddrStr, { data: challengeData, remoteEnr: remoteEnr ?? undefined });
   }
 
-  public async processInboundPacket(src: Multiaddr, packet: IPacket): Promise<void> {
+  public processInboundPacket(src: Multiaddr, packet: IPacket): void {
     switch (packet.header.flag) {
       case PacketType.WhoAreYou:
         return this.handleChallenge(src, packet);
@@ -298,7 +298,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     }
   }
 
-  private async handleChallenge(src: Multiaddr, packet: IPacket): Promise<void> {
+  private handleChallenge(src: Multiaddr, packet: IPacket): void {
     // First decode the authdata
     let authdata;
     try {
@@ -380,16 +380,16 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     // Encrypt the message with an auth header and respond
 
     // First if a new version of our ENR is requested, obtain it for the header
-    const updatedEnr = authdata.enrSeq < this.enr.seq ? await this.enr.encode(this.keypair.privateKey) : null;
+    const updatedEnr = authdata.enrSeq < this.enr.seq ? this.enr.encode(this.keypair.privateKey) : null;
 
     // Generate a new session and authentication packet
-    const [authPacket, session] = await Session.encryptWithHeader(
+    const [authPacket, session] = Session.encryptWithHeader(
       requestCall.contact,
       this.keypair,
       this.enr.nodeId,
       updatedEnr,
       encodeChallengeData(packet.maskingIv, packet.header),
-      await encode(requestCall.request)
+      encode(requestCall.request)
     );
 
     // There are two quirks with an established session at this point.
@@ -476,7 +476,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   }
 
   /** Handle a message that contains an authentication header */
-  private async handleHandshake(src: Multiaddr, packet: IPacket): Promise<void> {
+  private handleHandshake(src: Multiaddr, packet: IPacket): void {
     // Needs to match an outgoing WHOAREYOU packet (so we have the required nonce to be signed).
     // If it doesn't we drop the packet.
     // This will lead to future outgoing WHOAREYOU packets if they proceed to send further encrypted packets
@@ -553,7 +553,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     }
   }
 
-  private async handleMessage(src: Multiaddr, packet: IPacket): Promise<void> {
+  private handleMessage(src: Multiaddr, packet: IPacket): void {
     let authdata;
     try {
       authdata = decodeMessageAuthdata(packet.header.authdata);
