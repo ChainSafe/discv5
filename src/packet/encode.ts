@@ -77,10 +77,10 @@ export function decodePacket(srcId: string, data: Buffer): IPacket {
  * Return the decoded header and the header as a buffer
  */
 export function decodeHeader(srcId: string, maskingIv: Buffer, data: Buffer): [IHeader, Buffer] {
-  const ctx = Crypto.createDecipheriv(fromHex(srcId).slice(0, MASKING_KEY_SIZE), maskingIv);
+  const ctx = Crypto.createDecipheriv("aes-128-gcm", fromHex(srcId).slice(0, MASKING_KEY_SIZE), maskingIv);
 
   // unmask the static header
-  const staticHeaderBuf = Buffer.from(ctx.decrypt(Uint8Array.from(data.slice(0, STATIC_HEADER_SIZE))));
+  const staticHeaderBuf = ctx.update(Uint8Array.from(data.slice(0, STATIC_HEADER_SIZE)));
 
   // validate the static header field by field
   const protocolId = staticHeaderBuf.slice(0, PROTOCOL_SIZE).toString("ascii");
