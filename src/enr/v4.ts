@@ -25,7 +25,7 @@ export function publicKey(privKey: Buffer): Buffer {
 }
 
 export function sign(privKey: Buffer, msg: Buffer): Buffer {
-  return Buffer.from(secp256k1.signSync(hash(msg), privKey).buffer);
+  return Buffer.from(secp256k1.signSync(hash(msg), privKey, { der: false }).buffer);
 }
 
 export function verify(pubKey: Buffer, msg: Buffer, sig: Buffer): boolean {
