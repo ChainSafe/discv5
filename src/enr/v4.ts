@@ -21,11 +21,11 @@ export function createPrivateKey(): Buffer {
 }
 
 export function publicKey(privKey: Buffer): Buffer {
-  return Buffer.from(secp256k1.getPublicKey(privKey, true));
+  return Buffer.from(secp256k1.getPublicKey(privKey, true).buffer);
 }
 
 export function sign(privKey: Buffer, msg: Buffer): Buffer {
-  return Buffer.from(secp256k1.signSync(Uint8Array.from(hash(msg)), privKey));
+  return Buffer.from(secp256k1.signSync(hash(msg), privKey).buffer);
 }
 
 export function verify(pubKey: Buffer, msg: Buffer, sig: Buffer): boolean {
