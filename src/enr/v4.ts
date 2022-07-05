@@ -10,6 +10,7 @@ secp256k1.utils.hmacSha256Sync = (key: Uint8Array, ...msgs: Uint8Array[]) => {
 
 import { NodeId } from "./types.js";
 import { createNodeId } from "./create.js";
+import { secp256k1PublicKeyToRaw } from "../keypair/secp256k1.js";
 
 export function hash(input: Buffer): Buffer {
   return Buffer.from(keccak(input).buffer);
@@ -32,7 +33,7 @@ export function verify(pubKey: Buffer, msg: Buffer, sig: Buffer): boolean {
 }
 
 export function nodeId(pubKey: Buffer): NodeId {
-  return createNodeId(hash(pubKey));
+  return createNodeId(hash(secp256k1PublicKeyToRaw(pubKey)));
 }
 
 export class ENRKeyPair {
