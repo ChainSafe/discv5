@@ -47,7 +47,9 @@ export function generateSessionKeys(
 
 export function deriveKey(secret: Buffer, firstId: NodeId, secondId: NodeId, challengeData: Buffer): [Buffer, Buffer] {
   const info = Buffer.concat([Buffer.from(KEY_AGREEMENT_STRING), fromHex(firstId), fromHex(secondId)]);
-  const output = Buffer.from(hkdf.expand(sha256, hkdf.extract(sha256, secret, challengeData), info, 2 * KEY_LENGTH));
+  const output = Buffer.from(
+    hkdf.expand(sha256, hkdf.extract(sha256, secret, challengeData), info, 2 * KEY_LENGTH).buffer
+  );
   return [output.slice(0, KEY_LENGTH), output.slice(KEY_LENGTH, 2 * KEY_LENGTH)];
 }
 
@@ -82,7 +84,7 @@ export function idVerify(
 
 export function generateIdSignatureInput(challengeData: Buffer, ephemPK: Buffer, nodeId: NodeId): Buffer {
   const hash = sha256(Buffer.concat([Buffer.from(ID_SIGNATURE_TEXT), challengeData, ephemPK, fromHex(nodeId)]));
-  return Buffer.from(hash);
+  return Buffer.from(hash.buffer);
 }
 
 export function decryptMessage(key: Buffer, nonce: Buffer, data: Buffer, aad: Buffer): Buffer {

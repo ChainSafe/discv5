@@ -22,8 +22,8 @@ export function createHeader(
 export function createRandomPacket(srcId: NodeId): IPacket {
   const authdata = encodeMessageAuthdata({ srcId });
   const header = createHeader(PacketType.Message, authdata);
-  const maskingIv = Buffer.from(randomBytes(MASKING_IV_SIZE));
-  const message = Buffer.from(randomBytes(44));
+  const maskingIv = Buffer.from(randomBytes(MASKING_IV_SIZE).buffer);
+  const message = Buffer.from(randomBytes(44).buffer);
   return {
     maskingIv,
     header,
@@ -32,10 +32,10 @@ export function createRandomPacket(srcId: NodeId): IPacket {
 }
 
 export function createWhoAreYouPacket(nonce: Buffer, enrSeq: SequenceNumber): IPacket {
-  const idNonce = Buffer.from(randomBytes(ID_NONCE_SIZE));
+  const idNonce = Buffer.from(randomBytes(ID_NONCE_SIZE).buffer);
   const authdata = encodeWhoAreYouAuthdata({ idNonce, enrSeq });
   const header = createHeader(PacketType.WhoAreYou, authdata, nonce);
-  const maskingIv = Buffer.from(randomBytes(MASKING_IV_SIZE));
+  const maskingIv = Buffer.from(randomBytes(MASKING_IV_SIZE).buffer);
   const message = Buffer.alloc(0);
   return {
     maskingIv,

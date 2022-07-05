@@ -17,7 +17,7 @@ export function hash(input: Buffer): Buffer {
 }
 
 export function createPrivateKey(): Buffer {
-  return Buffer.from(secp256k1.utils.randomPrivateKey());
+  return Buffer.from(secp256k1.utils.randomPrivateKey().buffer);
 }
 
 export function publicKey(privKey: Buffer): Buffer {

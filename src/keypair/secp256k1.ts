@@ -20,11 +20,11 @@ export function secp256k1PublicKeyToFull(publicKey: Buffer): Buffer {
   if (publicKey.length === 64) {
     return Buffer.concat([Buffer.from([4]), publicKey]);
   }
-  return Buffer.from(secp.Point.fromHex(publicKey).toRawBytes(false));
+  return Buffer.from(secp.Point.fromHex(publicKey).toRawBytes(false).buffer);
 }
 
 export function secp256k1PublicKeyToRaw(publicKey: Buffer): Buffer {
-  return Buffer.from(secp.Point.fromHex(publicKey).toRawBytes(false)).slice(1);
+  return Buffer.from(secp.Point.fromHex(publicKey).toRawBytes(false).buffer).slice(1);
 }
 
 export const Secp256k1Keypair: IKeypairClass = class Secp256k1Keypair extends AbstractKeypair implements IKeypair {
@@ -42,7 +42,7 @@ export const Secp256k1Keypair: IKeypairClass = class Secp256k1Keypair extends Ab
   static generate(): Secp256k1Keypair {
     const privateKey = secp.utils.randomPrivateKey();
     const publicKey = secp.getPublicKey(privateKey);
-    return new Secp256k1Keypair(Buffer.from(privateKey), Buffer.from(publicKey));
+    return new Secp256k1Keypair(Buffer.from(privateKey.buffer), Buffer.from(publicKey.buffer));
   }
 
   privateKeyVerify(key = this._privateKey): boolean {
@@ -61,7 +61,7 @@ export const Secp256k1Keypair: IKeypairClass = class Secp256k1Keypair extends Ab
     }
   }
   sign(msg: Buffer): Buffer {
-    return Buffer.from(secp.signSync(msg, this.privateKey, { der: false }));
+    return Buffer.from(secp.signSync(msg, this.privateKey, { der: false }).buffer);
   }
   verify(msg: Buffer, sig: Buffer): boolean {
     return secp.verify(sig, msg, this.publicKey);
@@ -70,7 +70,7 @@ export const Secp256k1Keypair: IKeypairClass = class Secp256k1Keypair extends Ab
     if (keypair.type !== this.type) {
       throw new Error(ERR_INVALID_KEYPAIR_TYPE);
     }
-    const secret = Buffer.from(secp.getSharedSecret(this.privateKey, keypair.publicKey, true));
+    const secret = Buffer.from(secp.getSharedSecret(this.privateKey, keypair.publicKey, true).buffer);
     return secret;
   }
 };

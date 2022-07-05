@@ -14,7 +14,7 @@ import {
 import { SequenceNumber, ENR } from "../enr/index.js";
 
 export function createRequestId(): RequestId {
-  return toBigIntBE(Buffer.from(randomBytes(8)));
+  return toBigIntBE(Buffer.from(randomBytes(8).buffer));
 }
 
 export function createPingMessage(enrSeq: SequenceNumber): IPingMessage {
