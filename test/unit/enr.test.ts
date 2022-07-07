@@ -58,11 +58,13 @@ describe("ENR Multiformats support", () => {
     record.set("ip", tuples0[0][1]);
     record.set("udp", tuples0[1][1]);
     // and get the multiaddr
+    //eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(record.getLocationMultiaddr("udp")!.toString()).to.equal(multi0.toString());
     // set the multiaddr
     const multi1 = new Multiaddr("/ip4/0.0.0.0/udp/30300");
     record.setLocationMultiaddr(multi1);
     // and get the multiaddr
+    //eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(record.getLocationMultiaddr("udp")!.toString()).to.equal(multi1.toString());
     // and get the underlying records
     const tuples1 = multi1.tuples();
@@ -81,11 +83,13 @@ describe("ENR Multiformats support", () => {
     record.set("ip", tuples0[0][1]);
     record.set("tcp", tuples0[1][1]);
     // and get the multiaddr
+    //eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(record.getLocationMultiaddr("tcp")!.toString()).to.equal(multi0.toString());
     // set the multiaddr
     const multi1 = new Multiaddr("/ip4/0.0.0.0/tcp/30300");
     record.setLocationMultiaddr(multi1);
     // and get the multiaddr
+    //eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(record.getLocationMultiaddr("tcp")!.toString()).to.equal(multi1.toString());
     // and get the underlying records
     const tuples1 = multi1.tuples();

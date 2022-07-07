@@ -1,31 +1,32 @@
-import keccak from "bcrypto/lib/keccak.js";
-import secp256k1 from "bcrypto/lib/secp256k1.js";
+import { keccak_256 as keccak } from "@noble/hashes/sha3";
+import { secp256k1 } from "../util/crypto.js";
 
 import { NodeId } from "./types.js";
 import { createNodeId } from "./create.js";
+import { secp256k1PublicKeyToRaw } from "../keypair/secp256k1.js";
 
 export function hash(input: Buffer): Buffer {
-  return keccak.digest(input);
+  return Buffer.from(keccak(input).buffer);
 }
 
 export function createPrivateKey(): Buffer {
-  return secp256k1.privateKeyGenerate();
+  return Buffer.from(secp256k1.utils.randomPrivateKey().buffer);
 }
 
 export function publicKey(privKey: Buffer): Buffer {
-  return secp256k1.publicKeyCreate(privKey);
+  return Buffer.from(secp256k1.getPublicKey(privKey, true).buffer);
 }
 
 export function sign(privKey: Buffer, msg: Buffer): Buffer {
-  return secp256k1.sign(hash(msg), privKey);
+  return Buffer.from(secp256k1.signSync(hash(msg), privKey, { der: false }).buffer);
 }
 
 export function verify(pubKey: Buffer, msg: Buffer, sig: Buffer): boolean {
-  return secp256k1.verify(hash(msg), sig, pubKey);
+  return secp256k1.verify(sig, hash(msg), pubKey);
 }
 
 export function nodeId(pubKey: Buffer): NodeId {
-  return createNodeId(hash(secp256k1.publicKeyConvert(pubKey, false).slice(1)));
+  return createNodeId(hash(secp256k1PublicKeyToRaw(pubKey)));
 }
 
 export class ENRKeyPair {
@@ -35,7 +36,7 @@ export class ENRKeyPair {
 
   public constructor(privateKey?: Buffer) {
     if (privateKey) {
-      if (!secp256k1.privateKeyVerify(privateKey)) {
+      if (!secp256k1.utils.isValidPrivateKey(privateKey)) {
         throw new Error("Invalid private key");
       }
     }
@@ -44,8 +45,8 @@ export class ENRKeyPair {
     this.nodeId = nodeId(this.publicKey);
   }
 
-  public sign(msg: Buffer): Buffer {
-    return sign(this.privateKey, msg);
+  public async sign(msg: Buffer): Promise<Buffer> {
+    return await sign(this.privateKey, msg);
   }
 
   public verify(msg: Buffer, sig: Buffer): boolean {

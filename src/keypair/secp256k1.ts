@@ -1,23 +1,23 @@
-import secp256k1 from "bcrypto/lib/secp256k1.js";
 import { AbstractKeypair, IKeypair, IKeypairClass, KeypairType } from "./types.js";
 import { ERR_INVALID_KEYPAIR_TYPE } from "./constants.js";
+import { secp256k1 } from "../util/crypto.js";
 
 export function secp256k1PublicKeyToCompressed(publicKey: Buffer): Buffer {
   if (publicKey.length === 64) {
     publicKey = Buffer.concat([Buffer.from([4]), publicKey]);
   }
-  return secp256k1.publicKeyConvert(publicKey, true);
+  return Buffer.from(secp256k1.Point.fromHex(publicKey).toRawBytes(true));
 }
 
 export function secp256k1PublicKeyToFull(publicKey: Buffer): Buffer {
   if (publicKey.length === 64) {
     return Buffer.concat([Buffer.from([4]), publicKey]);
   }
-  return secp256k1.publicKeyConvert(publicKey, false);
+  return Buffer.from(secp256k1.Point.fromHex(publicKey).toRawBytes(false).buffer);
 }
 
 export function secp256k1PublicKeyToRaw(publicKey: Buffer): Buffer {
-  return secp256k1.publicKeyConvert(publicKey, false).slice(1);
+  return Buffer.from(secp256k1.Point.fromHex(publicKey).toRawBytes(false).buffer).slice(1);
 }
 
 export const Secp256k1Keypair: IKeypairClass = class Secp256k1Keypair extends AbstractKeypair implements IKeypair {
@@ -33,33 +33,37 @@ export const Secp256k1Keypair: IKeypairClass = class Secp256k1Keypair extends Ab
   }
 
   static generate(): Secp256k1Keypair {
-    const privateKey = secp256k1.privateKeyGenerate();
-    const publicKey = secp256k1.publicKeyCreate(privateKey);
-    return new Secp256k1Keypair(privateKey, publicKey);
+    const privateKey = secp256k1.utils.randomPrivateKey();
+    const publicKey = secp256k1.getPublicKey(privateKey);
+    return new Secp256k1Keypair(Buffer.from(privateKey.buffer), Buffer.from(publicKey.buffer));
   }
 
   privateKeyVerify(key = this._privateKey): boolean {
     if (key) {
-      return secp256k1.privateKeyVerify(key);
+      return secp256k1.utils.isValidPrivateKey(key);
     }
     return true;
   }
-  publicKeyVerify(key = this._publicKey): boolean {
-    if (key) {
-      return secp256k1.publicKeyVerify(key);
+
+  publicKeyVerify(): boolean {
+    try {
+      secp256k1.Point.fromHex(this.publicKey).assertValidity();
+      return true;
+    } catch {
+      return false;
     }
-    return true;
   }
   sign(msg: Buffer): Buffer {
-    return secp256k1.sign(msg, this.privateKey);
+    return Buffer.from(secp256k1.signSync(msg, this.privateKey, { der: false }).buffer);
   }
   verify(msg: Buffer, sig: Buffer): boolean {
-    return secp256k1.verify(msg, sig, this.publicKey);
+    return secp256k1.verify(sig, msg, this.publicKey);
   }
   deriveSecret(keypair: IKeypair): Buffer {
     if (keypair.type !== this.type) {
       throw new Error(ERR_INVALID_KEYPAIR_TYPE);
     }
-    return secp256k1.derive(keypair.publicKey, this.privateKey);
+    const secret = Buffer.from(secp256k1.getSharedSecret(this.privateKey, keypair.publicKey, true).buffer);
+    return secret;
   }
 };

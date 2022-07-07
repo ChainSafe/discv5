@@ -1,7 +1,6 @@
-import hkdf from "bcrypto/lib/hkdf.js";
-import sha256 from "bcrypto/lib/sha256.js";
-import cipher from "bcrypto/lib/cipher.js";
-
+import * as hkdf from "@noble/hashes/hkdf";
+import { sha256 } from "@noble/hashes/sha256";
+import Crypto from "crypto";
 import { NodeId } from "../enr/index.js";
 import { generateKeypair, IKeypair, createKeypair } from "../keypair/index.js";
 import { fromHex } from "../util/index.js";
@@ -46,7 +45,9 @@ export function generateSessionKeys(
 
 export function deriveKey(secret: Buffer, firstId: NodeId, secondId: NodeId, challengeData: Buffer): [Buffer, Buffer] {
   const info = Buffer.concat([Buffer.from(KEY_AGREEMENT_STRING), fromHex(firstId), fromHex(secondId)]);
-  const output = hkdf.expand(sha256, hkdf.extract(sha256, secret, challengeData), info, 2 * KEY_LENGTH);
+  const output = Buffer.from(
+    hkdf.expand(sha256, hkdf.extract(sha256, secret, challengeData), info, 2 * KEY_LENGTH).buffer
+  );
   return [output.slice(0, KEY_LENGTH), output.slice(KEY_LENGTH, 2 * KEY_LENGTH)];
 }
 
@@ -80,15 +81,16 @@ export function idVerify(
 }
 
 export function generateIdSignatureInput(challengeData: Buffer, ephemPK: Buffer, nodeId: NodeId): Buffer {
-  return sha256.digest(Buffer.concat([Buffer.from(ID_SIGNATURE_TEXT), challengeData, ephemPK, fromHex(nodeId)]));
+  const hash = sha256(Buffer.concat([Buffer.from(ID_SIGNATURE_TEXT), challengeData, ephemPK, fromHex(nodeId)]));
+  return Buffer.from(hash.buffer);
 }
 
 export function decryptMessage(key: Buffer, nonce: Buffer, data: Buffer, aad: Buffer): Buffer {
   if (data.length < MAC_LENGTH) {
     throw new Error("message data not long enough");
   }
-  const ctx = new cipher.Decipher("AES-128-GCM");
-  ctx.init(key, nonce);
+
+  const ctx = Crypto.createDecipheriv("aes-128-gcm", key, nonce);
   ctx.setAAD(aad);
   ctx.setAuthTag(data.slice(data.length - MAC_LENGTH));
   return Buffer.concat([
@@ -98,8 +100,7 @@ export function decryptMessage(key: Buffer, nonce: Buffer, data: Buffer, aad: Bu
 }
 
 export function encryptMessage(key: Buffer, nonce: Buffer, data: Buffer, aad: Buffer): Buffer {
-  const ctx = new cipher.Cipher("AES-128-GCM");
-  ctx.init(key, nonce);
+  const ctx = Crypto.createCipheriv("aes-128-gcm", key, nonce);
   ctx.setAAD(aad);
   return Buffer.concat([
     ctx.update(data),

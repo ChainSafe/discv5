@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import { expect } from "chai";
-import { randomBytes } from "bcrypto/lib/random.js";
+import { randomBytes } from "@noble/hashes/utils";
 import { distance, log2Distance } from "../../../src/kademlia/index.js";
 import { createNodeId } from "../../../src/enr/index.js";
 
@@ -17,9 +17,9 @@ describe("Kademlia distance function", () => {
   });
 
   it("triangle inequality", () => {
-    const a = createNodeId(randomBytes(32));
-    const b = createNodeId(randomBytes(32));
-    const c = createNodeId(randomBytes(32));
+    const a = createNodeId(Buffer.from(randomBytes(32)));
+    const b = createNodeId(Buffer.from(randomBytes(32)));
+    const c = createNodeId(Buffer.from(randomBytes(32)));
     expect(distance(a, b) <= distance(a, c) + distance(c, b)).to.be.true;
   });
 });

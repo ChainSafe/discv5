@@ -18,7 +18,7 @@ import {
   idVerify,
 } from "./crypto.js";
 import { IKeypair } from "../keypair/index.js";
-import { randomBytes } from "crypto";
+import { randomBytes } from "@noble/hashes/utils";
 import { RequestId } from "../message/index.js";
 import { IChallenge } from ".";
 import { getNodeId, NodeContact } from "./nodeInfo.js";
@@ -144,7 +144,7 @@ export class Session {
     });
 
     const header = createHeader(PacketType.Handshake, authdata);
-    const maskingIv = randomBytes(MASKING_IV_SIZE);
+    const maskingIv = Buffer.from(randomBytes(MASKING_IV_SIZE).buffer);
     const aad = encodeChallengeData(maskingIv, header);
 
     // encrypt the message
@@ -176,7 +176,7 @@ export class Session {
   encryptMessage(srcId: NodeId, destId: NodeId, message: Buffer): IPacket {
     const authdata = encodeMessageAuthdata({ srcId });
     const header = createHeader(PacketType.Message, authdata);
-    const maskingIv = randomBytes(MASKING_IV_SIZE);
+    const maskingIv = Buffer.from(randomBytes(MASKING_IV_SIZE).buffer);
     const aad = encodeChallengeData(maskingIv, header);
     const ciphertext = encryptMessage(this.keys.encryptionKey, header.nonce, message, aad);
     return {
