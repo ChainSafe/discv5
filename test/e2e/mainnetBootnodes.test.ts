@@ -49,7 +49,6 @@ describe("discv5 integration test", function () {
       discv5.on("discovered", (enr) => {
         foundENRs.push(enr);
       });
-      discv5.enableLogs();
       await discv5.findRandomNode();
 
       expect(foundENRs).to.have.length.greaterThan(0, "Should found some ENRs");

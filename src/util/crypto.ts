@@ -11,13 +11,13 @@ secp256k1.utils.hmacSha256Sync = (key: Uint8Array, ...msgs: Uint8Array[]) => {
 
 export * as secp256k1 from "@noble/secp256k1";
 
-export async function aesCtrEncrypt(key: Buffer, iv: Buffer, pt: Buffer): Promise<Buffer> {
+export function aesCtrEncrypt(key: Buffer, iv: Buffer, pt: Buffer): Buffer {
   const ctx = Crypto.createCipheriv("aes-128-gcm", key, iv);
   ctx.update(pt);
   return ctx.final();
 }
 
-export async function aesCtrDecrypt(key: Buffer, iv: Buffer, pt: Buffer): Promise<Buffer> {
+export function aesCtrDecrypt(key: Buffer, iv: Buffer, pt: Buffer): Buffer {
   const ctx = Crypto.createDecipheriv("aes-128-gcm", key, iv);
   ctx.update(pt);
   return ctx.final();
