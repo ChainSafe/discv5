@@ -168,7 +168,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   /**
    * Sends an RequestMessage to a node.
    */
-  public sendRequest(contact: NodeContact, request: RequestMessage): void {
+  public async sendRequest(contact: NodeContact, request: RequestMessage): Promise<void> {
     const nodeAddr = getNodeAddress(contact);
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
@@ -216,7 +216,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     // let the filter know we are expecting a response
     this.addExpectedResponse(nodeAddr.socketAddr);
 
-    this.send(nodeAddr, packet);
+    await this.send(nodeAddr, packet);
 
     this.activeRequestsNonceMapping.set(packet.header.nonce.toString("hex"), nodeAddr);
     this.activeRequests.set(nodeAddrStr, call);
@@ -225,7 +225,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   /**
    * Sends an RPC response
    */
-  public sendResponse(nodeAddr: INodeAddress, response: ResponseMessage): void {
+  public async sendResponse(nodeAddr: INodeAddress, response: ResponseMessage): Promise<void> {
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
     // Check for an established session
@@ -244,14 +244,14 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       return;
     }
 
-    this.send(nodeAddr, packet);
+    await this.send(nodeAddr, packet);
   }
 
   /**
    * This is called in response to a "whoAreYouRequest" event.
    * The applications finds the highest known ENR for a node then we respond to the node with a WHOAREYOU packet.
    */
-  public sendChallenge(nodeAddr: INodeAddress, nonce: Buffer, remoteEnr: ENR | null): void {
+  public async sendChallenge(nodeAddr: INodeAddress, nonce: Buffer, remoteEnr: ENR | null): Promise<void> {
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
     if (this.activeChallenges.peek(nodeAddrStr)) {
@@ -275,12 +275,12 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     const challengeData = encodeChallengeData(packet.maskingIv, packet.header);
 
     log("Sending WHOAREYOU to %o", nodeAddr);
-    this.send(nodeAddr, packet);
+    await this.send(nodeAddr, packet);
 
     this.activeChallenges.set(nodeAddrStr, { data: challengeData, remoteEnr: remoteEnr ?? undefined });
   }
 
-  public processInboundPacket = (src: Multiaddr, packet: IPacket): void => {
+  public processInboundPacket = async (src: Multiaddr, packet: IPacket): Promise<void> => {
     switch (packet.header.flag) {
       case PacketType.WhoAreYou:
         return this.handleChallenge(src, packet);
@@ -291,7 +291,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     }
   };
 
-  private handleChallenge(src: Multiaddr, packet: IPacket): void {
+  private async handleChallenge(src: Multiaddr, packet: IPacket): Promise<void> {
     // First decode the authdata
     let authdata;
     try {
@@ -427,7 +427,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
         this.insertActiveRequest(requestCall);
 
         // Send the actual packet
-        this.send(nodeAddr, authPacket);
+        await this.send(nodeAddr, authPacket);
 
         // Notify the application that the session has been established
         this.emit("established", requestCall.contact.enr, connectionDirection);
@@ -446,12 +446,12 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
         this.insertActiveRequest(requestCall);
 
         // Send the actual request
-        this.send(nodeAddr, authPacket);
+        await this.send(nodeAddr, authPacket);
 
         // send FINDNODE 0
         const request = createFindNodeMessage([0]);
         session.awaitingEnr = request.id;
-        this.sendRequest(requestCall.contact, request);
+        await this.sendRequest(requestCall.contact, request);
         break;
       }
     }
@@ -472,7 +472,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   }
 
   /** Handle a message that contains an authentication header */
-  private handleHandshake(src: Multiaddr, packet: IPacket): void {
+  private async handleHandshake(src: Multiaddr, packet: IPacket): Promise<void> {
     // Needs to match an outgoing WHOAREYOU packet (so we have the required nonce to be signed).
     // If it doesn't we drop the packet.
     // This will lead to future outgoing WHOAREYOU packets if they proceed to send further encrypted packets
@@ -521,7 +521,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
         this.newSession(nodeAddr, session);
 
         // decrypt the message
-        this.handleMessage(src, {
+        await this.handleMessage(src, {
           maskingIv: packet.maskingIv,
           header: createHeader(
             PacketType.Message,
@@ -543,7 +543,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     }
   }
 
-  private handleMessage(src: Multiaddr, packet: IPacket): void {
+  private async handleMessage(src: Multiaddr, packet: IPacket): Promise<void> {
     let authdata;
     try {
       authdata = decodeMessageAuthdata(packet.header.authdata);
@@ -638,7 +638,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       }
 
       // Handle standard responses
-      this.handleResponse(nodeAddr, message as ResponseMessage);
+      await this.handleResponse(nodeAddr, message as ResponseMessage);
     }
   }
 
@@ -646,7 +646,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * Handles a response to a request.
    * Re-inserts the request call if the response is a multiple Nodes response.
    */
-  private handleResponse(nodeAddr: INodeAddress, response: ResponseMessage): void {
+  private async handleResponse(nodeAddr: INodeAddress, response: ResponseMessage): Promise<void> {
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
     // Find a matching request, if any
@@ -700,7 +700,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     // The request matches, report the response
     this.emit("response", nodeAddr, response);
 
-    this.sendNextRequest(nodeAddr);
+    await this.sendNextRequest(nodeAddr);
   }
 
   /**
@@ -735,7 +735,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     //
   }
 
-  private handleRequestTimeout(nodeAddr: INodeAddress, requestCall: IRequestCall): void {
+  private async handleRequestTimeout(nodeAddr: INodeAddress, requestCall: IRequestCall): Promise<void> {
     if (requestCall.retries >= this.config.requestRetries) {
       log("Request timed out with %o", nodeAddr);
 
@@ -751,13 +751,13 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
 
       // increment the request retry count and restart the timeout
       log("Resending message to: %o", nodeAddr);
-      this.send(nodeAddr, requestCall.packet);
+      await this.send(nodeAddr, requestCall.packet);
       requestCall.retries++;
       this.activeRequests.set(nodeAddrStr, requestCall);
     }
   }
 
-  private sendNextRequest(nodeAddr: INodeAddress): void {
+  private async sendNextRequest(nodeAddr: INodeAddress): Promise<void> {
     const nodeAddrStr = nodeAddressToString(nodeAddr);
     // ensure we are not overwriting any existing requests
 
@@ -771,7 +771,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
         }
 
         log("Sending next awaiting message. Node: %o", request[0]);
-        this.sendRequest(request[0], request[1]);
+        await this.sendRequest(request[0], request[1]);
       }
     }
   }
@@ -810,7 +810,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     }
   }
 
-  private send(nodeAddr: INodeAddress, packet: IPacket): void {
-    this.transport.send(nodeAddr.socketAddr, nodeAddr.nodeId, packet);
+  private async send(nodeAddr: INodeAddress, packet: IPacket): Promise<void> {
+    return this.transport.send(nodeAddr.socketAddr, nodeAddr.nodeId, packet);
   }
 }
