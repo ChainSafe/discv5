@@ -1,4 +1,4 @@
-import { Multiaddr, protocols } from "@multiformats/multiaddr";
+import { Multiaddr, multiaddr, protocols } from "@multiformats/multiaddr";
 import base64url from "base64url";
 import { toBigIntBE } from "bigint-buffer";
 import * as RLP from "rlp";
@@ -278,7 +278,7 @@ export class ENR extends Map<ENRKey, ENRValue> {
     maBuf.set(protoBuf, 1 + ipByteLen);
     maBuf.set(protoVal, 1 + ipByteLen + protoBuf.length);
 
-    return new Multiaddr(maBuf);
+    return multiaddr(maBuf);
   }
   setLocationMultiaddr(multiaddr: Multiaddr): void {
     const protoNames = multiaddr.protoNames();

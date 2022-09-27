@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import { expect } from "chai";
-import { Multiaddr } from "@multiformats/multiaddr";
+import { multiaddr } from "@multiformats/multiaddr";
 
 import { Discv5 } from "../../../src/service/service.js";
 import { ENR } from "../../../src/enr/index.js";
@@ -10,7 +10,7 @@ describe("Discv5", async () => {
   const kp0 = generateKeypair(KeypairType.Secp256k1);
   const peerId0 = await createPeerIdFromKeypair(kp0);
   const enr0 = ENR.createV4(kp0.publicKey);
-  const mu0 = new Multiaddr("/ip4/127.0.0.1/udp/40000");
+  const mu0 = multiaddr("/ip4/127.0.0.1/udp/40000");
 
   const service0 = Discv5.create({ enr: enr0, peerId: peerId0, multiaddr: mu0 });
 
@@ -43,7 +43,7 @@ describe("Discv5", async () => {
     const kp1 = generateKeypair(KeypairType.Secp256k1);
     const peerId1 = await createPeerIdFromKeypair(kp1);
     const enr1 = ENR.createV4(kp1.publicKey);
-    const mu1 = new Multiaddr("/ip4/127.0.0.1/udp/10360");
+    const mu1 = multiaddr("/ip4/127.0.0.1/udp/10360");
     const addr1 = mu1.tuples();
 
     if (!addr1[0][1] || !addr1[1][1]) {

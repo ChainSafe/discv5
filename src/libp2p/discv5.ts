@@ -2,7 +2,7 @@ import { PeerId } from "@libp2p/interface-peer-id";
 import { PeerDiscovery, PeerDiscoveryEvents, symbol as peerDiscoverySymbol } from "@libp2p/interface-peer-discovery";
 import { PeerInfo } from "@libp2p/interface-peer-info";
 import { CustomEvent, EventEmitter } from "@libp2p/interfaces/events";
-import { Multiaddr } from "@multiformats/multiaddr";
+import { multiaddr } from "@multiformats/multiaddr";
 
 import { Discv5, ENRInput, IDiscv5Metrics } from "../service/index.js";
 import { ENR } from "../enr/index.js";
@@ -68,7 +68,7 @@ export class Discv5Discovery extends EventEmitter<PeerDiscoveryEvents> implement
     this.discv5 = Discv5.create({
       enr: options.enr,
       peerId: options.peerId,
-      multiaddr: new Multiaddr(options.bindAddr),
+      multiaddr: multiaddr(options.bindAddr),
       config: options,
       metrics: options.metrics,
     });
