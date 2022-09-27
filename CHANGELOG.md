@@ -152,6 +152,13 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [1.1.2](https://github.com/ChainSafe/discv5/compare/v1.1.1...v1.1.2) (2022-09-27)
+
+
+### Miscellaneous
+
+* bump multiaddr dependency to ^11.0.0 ([#203](https://github.com/ChainSafe/discv5/issues/203)) ([62fe0e2](https://github.com/ChainSafe/discv5/commit/62fe0e2b34b10971189869e77de785e6c8193e10))
+
 ## [1.1.1](https://github.com/ChainSafe/discv5/compare/v1.1.0...v1.1.1) (2022-06-29)
 
 
