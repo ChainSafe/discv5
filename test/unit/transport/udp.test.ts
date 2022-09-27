@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import { expect } from "chai";
-import { Multiaddr } from "@multiformats/multiaddr";
+import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
 
 import { PacketType, IPacket, NONCE_SIZE, MASKING_IV_SIZE } from "../../../src/packet/index.js";
 import { UDPTransportService } from "../../../src/transport/index.js";
@@ -10,12 +10,12 @@ describe("UDP transport", () => {
   const address = "127.0.0.1";
   const nodeIdA = toHex(Buffer.alloc(32, 1));
   const portA = 49523;
-  const multiaddrA = new Multiaddr(`/ip4/${address}/udp/${portA}`);
+  const multiaddrA = multiaddr(`/ip4/${address}/udp/${portA}`);
   const a = new UDPTransportService(multiaddrA, nodeIdA);
 
   const nodeIdB = toHex(Buffer.alloc(32, 2));
   const portB = portA + 1;
-  const multiaddrB = new Multiaddr(`/ip4/${address}/udp/${portB}`);
+  const multiaddrB = multiaddr(`/ip4/${address}/udp/${portB}`);
   const b = new UDPTransportService(multiaddrB, nodeIdB);
 
   before(async () => {

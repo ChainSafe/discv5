@@ -1,6 +1,6 @@
 import * as dgram from "dgram";
 import { EventEmitter } from "events";
-import { Multiaddr } from "@multiformats/multiaddr";
+import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
 
 import { decodePacket, encodePacket, IPacket, MAX_PACKET_SIZE } from "../packet/index.js";
 import { IRemoteInfo, ITransportService, TransportEventEmitter } from "./types.js";
@@ -50,14 +50,12 @@ export class UDPTransportService
   }
 
   public handleIncoming = (data: Buffer, rinfo: IRemoteInfo): void => {
-    const multiaddr = new Multiaddr(
-      `/${String(rinfo.family).endsWith("4") ? "ip4" : "ip6"}/${rinfo.address}/udp/${rinfo.port}`
-    );
+    const mu = multiaddr(`/${String(rinfo.family).endsWith("4") ? "ip4" : "ip6"}/${rinfo.address}/udp/${rinfo.port}`);
     try {
       const packet = decodePacket(this.srcId, data);
-      this.emit("packet", multiaddr, packet);
+      this.emit("packet", mu, packet);
     } catch (e: unknown) {
-      this.emit("decodeError", e as Error, multiaddr);
+      this.emit("decodeError", e as Error, mu);
     }
   };
 }

@@ -3,7 +3,7 @@ import { ENR } from "../../../src/enr/enr.js";
 import { createKeypairFromPeerId } from "../../../src/keypair/index.js";
 import { toHex } from "../../../src/util/index.js";
 import { ERR_INVALID_ID } from "../../../src/enr/constants.js";
-import { Multiaddr } from "@multiformats/multiaddr";
+import { multiaddr } from "@multiformats/multiaddr";
 import { createSecp256k1PeerId } from "@libp2p/peer-id-factory";
 
 describe("ENR", function () {
@@ -12,13 +12,13 @@ describe("ENR", function () {
       const peerId = await createSecp256k1PeerId();
       const enr = ENR.createFromPeerId(peerId);
       const keypair = createKeypairFromPeerId(peerId);
-      enr.setLocationMultiaddr(new Multiaddr("/ip4/18.223.219.100/udp/9000"));
+      enr.setLocationMultiaddr(multiaddr("/ip4/18.223.219.100/udp/9000"));
       const txt = enr.encodeTxt(keypair.privateKey);
       expect(txt.slice(0, 4)).to.be.equal("enr:");
       const enr2 = ENR.decodeTxt(txt);
       expect(toHex(enr2.signature as Buffer)).to.be.equal(toHex(enr.signature as Buffer));
-      const multiaddr = enr2.getLocationMultiaddr("udp")!;
-      expect(multiaddr.toString()).to.be.equal("/ip4/18.223.219.100/udp/9000");
+      const mu = enr2.getLocationMultiaddr("udp")!;
+      expect(mu.toString()).to.be.equal("/ip4/18.223.219.100/udp/9000");
     });
 
     it("should decode valid enr successfully", () => {
@@ -33,7 +33,7 @@ describe("ENR", function () {
     it("should encodeTxt and decodeTxt ipv6 enr successfully", async () => {
       const peerId = await createSecp256k1PeerId();
       const enr = ENR.createFromPeerId(peerId);
-      enr.setLocationMultiaddr(new Multiaddr("/ip6/aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa/udp/9000"));
+      enr.setLocationMultiaddr(multiaddr("/ip6/aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa/udp/9000"));
       const keypair = createKeypairFromPeerId(peerId);
       const enr2 = ENR.decodeTxt(enr.encodeTxt(keypair.privateKey));
       expect(enr2.udp6).to.equal(9000);

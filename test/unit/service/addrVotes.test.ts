@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { Multiaddr } from "@multiformats/multiaddr";
+import { multiaddr } from "@multiformats/multiaddr";
 import { createNodeId } from "../../../src/enr/index.js";
 import { AddrVotes } from "../../../src/service/addrVotes.js";
 
@@ -13,7 +13,7 @@ describe("AddrVotes", () => {
   it("should return winning vote after 3 same votes", () => {
     const recipientIp = "127.0.0.1";
     const recipientPort = 30303;
-    const multi0 = new Multiaddr(`/ip4/${recipientIp}/udp/${recipientPort}`);
+    const multi0 = multiaddr(`/ip4/${recipientIp}/udp/${recipientPort}`);
     const nodeId = createNodeId(Buffer.alloc(32));
     const vote = { recipientIp, recipientPort };
     expect(addVotes.addVote(nodeId, vote)).to.be.undefined;
@@ -31,7 +31,7 @@ describe("AddrVotes", () => {
   it("1 node adds 2 different vote", () => {
     const recipientIp = "127.0.0.1";
     const recipientPort = 30303;
-    const multi0 = new Multiaddr(`/ip4/${recipientIp}/udp/${recipientPort}`);
+    const multi0 = multiaddr(`/ip4/${recipientIp}/udp/${recipientPort}`);
     const nodeId = createNodeId(Buffer.alloc(32));
     const vote = { recipientIp, recipientPort };
     expect(addVotes.addVote(nodeId, vote)).to.be.undefined;

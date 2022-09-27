@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import debug from "debug";
 import { randomBytes } from "@libp2p/crypto";
-import { Multiaddr } from "@multiformats/multiaddr";
+import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
 import { PeerId } from "@libp2p/interface-peer-id";
 
 import { ITransportService, UDPTransportService } from "../transport/index.js";
@@ -838,7 +838,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       const currentAddr = this.enr.getLocationMultiaddr("udp");
       if (winningVote && (!currentAddr || winningVote.multiaddrStr !== currentAddr.toString())) {
         log("Local ENR (IP & UDP) updated: %s", winningVote.multiaddrStr);
-        const votedAddr = new Multiaddr(winningVote.multiaddrStr);
+        const votedAddr = multiaddr(winningVote.multiaddrStr);
         this.enr.setLocationMultiaddr(votedAddr);
         this.emit("multiaddrUpdated", votedAddr);
 

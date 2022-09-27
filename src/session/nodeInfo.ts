@@ -1,4 +1,4 @@
-import { Multiaddr } from "@multiformats/multiaddr";
+import { Multiaddr, isMultiaddr } from "@multiformats/multiaddr";
 import { peerIdFromString } from "@libp2p/peer-id";
 import { createKeypairFromPeerId, IKeypair } from "../keypair/index.js";
 import { ENR, NodeId, v4 } from "../enr/index.js";
@@ -51,7 +51,7 @@ export type NodeContact =
     };
 
 export function createNodeContact(input: ENR | Multiaddr): NodeContact {
-  if (Multiaddr.isMultiaddr(input)) {
+  if (isMultiaddr(input)) {
     const options = input.toOptions();
     if (options.transport !== "udp") {
       throw new Error("Multiaddr must specify a UDP port");
