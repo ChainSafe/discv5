@@ -3,7 +3,7 @@ import StrictEventEmitter from "strict-event-emitter-types";
 import debug from "debug";
 import { Multiaddr } from "@multiformats/multiaddr";
 
-import { ITransportService } from "../transport/index.js";
+import { ITransportService, UDPTransportService } from "../transport/index.js";
 import {
   PacketType,
   IPacket,
@@ -15,6 +15,9 @@ import {
   encodeMessageAuthdata,
   createRandomPacket,
   createWhoAreYouPacket,
+  HandshakeAuthdata,
+  MessageAuthdata,
+  WhoAreYouAuthdata,
 } from "../packet/index.js";
 import { ENR } from "../enr/index.js";
 import { ERR_INVALID_SIG, Session } from "./session.js";
@@ -41,8 +44,18 @@ import {
 import { getNodeAddress, INodeAddress, INodeContactType, nodeAddressToString, NodeContact } from "./nodeInfo.js";
 import LRUCache from "lru-cache";
 import { TimeoutMap } from "../util/index.js";
+import { IRateLimiter, RateLimiter } from "../rateLimit/index.js";
+import { IDiscv5Metrics } from "../service/types.js";
 
 const log = debug("discv5:sessionService");
+
+export interface SessionServiceOpts {
+  enr: ENR;
+  keypair: IKeypair;
+  multiaddr: Multiaddr;
+  transport?: ITransportService;
+  metrics?: IDiscv5Metrics
+}
 
 /**
  * Session management for the Discv5 Discovery service.
@@ -74,6 +87,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * The underlying packet transport
    */
   public transport: ITransportService;
+  private readonly rateLimiter: IRateLimiter | undefined
 
   /**
    * Configuration
@@ -126,8 +140,11 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    */
   private sessions: LRUCache<NodeAddressString, Session>;
 
-  constructor(config: ISessionConfig, enr: ENR, keypair: IKeypair, transport: ITransportService) {
+  constructor(config: ISessionConfig, opts: SessionServiceOpts) {
     super();
+
+    const {enr, keypair, multiaddr, transport, metrics} = opts;
+
     // ensure the keypair matches the one that signed the ENR
     if (!keypair.publicKey.equals(enr.publicKey)) {
       throw new Error("Provided keypair does not match the provided ENR keypair");
@@ -135,7 +152,10 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     this.config = config;
     this.enr = enr;
     this.keypair = keypair;
-    this.transport = transport;
+    
+    this.rateLimiter = config.rateLimiterOpts && new RateLimiter(config.rateLimiterOpts, metrics ?? null)
+    this.transport = transport ?? new UDPTransportService(multiaddr, enr.nodeId, this.rateLimiter)
+
     this.activeRequests = new TimeoutMap(config.requestTimeout, (k, v) =>
       this.handleRequestTimeout(getNodeAddress(v.contact), v)
     );
@@ -222,7 +242,6 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
 
     // let the filter know we are expecting a response
     this.addExpectedResponse(nodeAddr.socketAddr);
-
     this.send(nodeAddr, packet);
 
     this.activeRequestsNonceMapping.set(packet.header.nonce.toString("hex"), nodeAddr);
@@ -282,31 +301,24 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     const challengeData = encodeChallengeData(packet.maskingIv, packet.header);
 
     log("Sending WHOAREYOU to %o", nodeAddr);
+    this.addExpectedResponse(nodeAddr.socketAddr);
     this.send(nodeAddr, packet);
 
     this.activeChallenges.set(nodeAddrStr, { data: challengeData, remoteEnr: remoteEnr ?? undefined });
   }
 
   public processInboundPacket = (src: Multiaddr, packet: IPacket): void => {
-    switch (packet.header.flag) {
+    switch (packet.authdata.type) {
       case PacketType.WhoAreYou:
-        return this.handleChallenge(src, packet);
+        return this.handleChallenge(src, packet, packet.authdata);
       case PacketType.Handshake:
-        return this.handleHandshake(src, packet);
+        return this.handleHandshake(src, packet, packet.authdata);
       case PacketType.Message:
-        return this.handleMessage(src, packet);
+        return this.handleMessage(src, packet, packet.authdata);
     }
   };
 
-  private handleChallenge(src: Multiaddr, packet: IPacket): void {
-    // First decode the authdata
-    let authdata;
-    try {
-      authdata = decodeWhoAreYouAuthdata(packet.header.authdata);
-    } catch (e) {
-      log("Cannot decode WHOAREYOU authdata from %s: %s", src, e);
-      return;
-    }
+  private handleChallenge(src: Multiaddr, packet: IPacket, authdata: WhoAreYouAuthdata): void {
     const nonce = packet.header.nonce.toString("hex");
 
     // Check that this challenge matches a known active request.
@@ -476,17 +488,10 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   }
 
   /** Handle a message that contains an authentication header */
-  private handleHandshake(src: Multiaddr, packet: IPacket): void {
+  private handleHandshake(src: Multiaddr, packet: IPacket, authdata: HandshakeAuthdata): void {
     // Needs to match an outgoing WHOAREYOU packet (so we have the required nonce to be signed).
     // If it doesn't we drop the packet.
     // This will lead to future outgoing WHOAREYOU packets if they proceed to send further encrypted packets
-    let authdata;
-    try {
-      authdata = decodeHandshakeAuthdata(packet.header.authdata);
-    } catch (e) {
-      log("Unable to decode handkshake authdata: %s", e);
-      return;
-    }
     const nodeAddr = {
       socketAddr: src,
       nodeId: authdata.srcId,
@@ -532,16 +537,18 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       this.newSession(nodeAddr, session);
 
       // decrypt the message
+      const newAuthdata: MessageAuthdata = {type: PacketType.Message,srcId: nodeAddr.nodeId}
       this.handleMessage(src, {
         maskingIv: packet.maskingIv,
         header: createHeader(
           PacketType.Message,
-          encodeMessageAuthdata({ srcId: nodeAddr.nodeId }),
+          encodeMessageAuthdata(newAuthdata),
           packet.header.nonce
         ),
+        authdata: newAuthdata,
         message: packet.message,
         messageAd: encodeChallengeData(packet.maskingIv, packet.header),
-      });
+      }, newAuthdata);
     } catch (e) {
       if ((e as Error).name === ERR_INVALID_SIG) {
         log("Authentication header contained invalid signature. Ignoring packet from: %o", nodeAddr);
@@ -553,14 +560,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     }
   }
 
-  private handleMessage(src: Multiaddr, packet: IPacket): void {
-    let authdata;
-    try {
-      authdata = decodeMessageAuthdata(packet.header.authdata);
-    } catch (e) {
-      log("Cannot decode message authdata: %s", e);
-      return;
-    }
+  private handleMessage(src: Multiaddr, packet: IPacket, authdata: MessageAuthdata): void {
     const nodeAddr = {
       socketAddr: src,
       nodeId: authdata.srcId,
@@ -744,14 +744,12 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private removeExpectedResponse(socketAddr: Multiaddr): void {
-    //
+    this.rateLimiter?.addExpectedResponse(socketAddr.toOptions().host)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private addExpectedResponse(socketAddr: Multiaddr): void {
-    //
+    this.rateLimiter?.removeExpectedResponse(socketAddr.toOptions().host)
   }
 
   private handleRequestTimeout(nodeAddr: INodeAddress, requestCall: IRequestCall): void {

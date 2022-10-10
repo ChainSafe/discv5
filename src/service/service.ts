@@ -4,7 +4,7 @@ import { randomBytes } from "@libp2p/crypto";
 import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
 import { PeerId } from "@libp2p/interface-peer-id";
 
-import { ITransportService, UDPTransportService } from "../transport/index.js";
+import { ITransportService } from "../transport/index.js";
 import { MAX_PACKET_SIZE } from "../packet/index.js";
 import { ConnectionDirection, RequestErrorType, SessionService } from "../session/index.js";
 import { ENR, NodeId, MAX_RECORD_SIZE, createNodeId } from "../enr/index.js";
@@ -184,15 +184,16 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * @param peerId the PeerId with the keypair that identifies the enr
    * @param multiaddr The multiaddr which contains the the network interface and port to which the UDP server binds
    */
-  public static create({ enr, peerId, multiaddr, config = {}, metrics, transport }: IDiscv5CreateOptions): Discv5 {
+  public static create(opts: IDiscv5CreateOptions): Discv5 {
+    const { enr, peerId, multiaddr, config = {}, metrics, transport } = opts;
     const fullConfig = { ...defaultConfig, ...config };
     const decodedEnr = typeof enr === "string" ? ENR.decodeTxt(enr) : enr;
-    const sessionService = new SessionService(
-      fullConfig,
-      decodedEnr,
-      createKeypairFromPeerId(peerId),
-      transport ?? new UDPTransportService(multiaddr, decodedEnr.nodeId)
-    );
+    const sessionService = new SessionService(fullConfig, {
+      enr: decodedEnr,
+      keypair: createKeypairFromPeerId(peerId),
+      multiaddr,
+      transport,
+    });
     return new Discv5(fullConfig, sessionService, metrics);
   }
 

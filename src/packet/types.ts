@@ -10,13 +10,13 @@ export enum PacketType {
   /**
    * Sent when the recipient of an ordinary message packet cannot decrypt/authenticate the packet's message
    */
-  WhoAreYou,
+  WhoAreYou = 1,
   /**
    * Sent following a WHOAREYOU.
    * These packets establish a new session and carry handshake related data
    * in addition to the encrypted/authenticated message
    */
-  Handshake,
+  Handshake = 2,
 }
 
 export interface IStaticHeader {
@@ -46,17 +46,22 @@ export interface IHeader extends IStaticHeader {
   authdata: Buffer;
 }
 
+export type AuthData = MessageAuthdata | WhoAreYouAuthdata | HandshakeAuthdata
 // A IHeader contains an "authdata
 // the contents of which are dependent on the packet type
 
-export interface IMessageAuthdata {
+export interface MessageAuthdata {
+  type: PacketType.Message;
+
   /**
    * 32 bytes
    */
   srcId: NodeId;
 }
 
-export interface IWhoAreYouAuthdata {
+export interface WhoAreYouAuthdata {
+  type: PacketType.WhoAreYou;
+
   /**
    * 16 bytes
    */
@@ -67,7 +72,9 @@ export interface IWhoAreYouAuthdata {
   enrSeq: bigint;
 }
 
-export interface IHandshakeAuthdata {
+export interface HandshakeAuthdata {
+  type: PacketType.Handshake;
+
   srcId: NodeId;
   sigSize: number;
   ephKeySize: number;
@@ -80,6 +87,7 @@ export interface IHandshakeAuthdata {
 export interface IPacket {
   maskingIv: Buffer;
   header: IHeader;
+  authdata: AuthData;
   message: Buffer;
   messageAd?: Buffer;
 }

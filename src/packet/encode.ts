@@ -27,7 +27,15 @@ import {
   ID_NONCE_SIZE,
   MIN_HANDSHAKE_AUTHDATA_SIZE,
 } from "./constants.js";
-import { IHandshakeAuthdata, IHeader, IMessageAuthdata, IPacket, IWhoAreYouAuthdata, PacketType } from "./types.js";
+import {
+  AuthData,
+  HandshakeAuthdata,
+  IHeader,
+  MessageAuthdata,
+  IPacket,
+  WhoAreYouAuthdata,
+  PacketType,
+} from "./types.js";
 
 export function encodePacket(destId: string, packet: IPacket): Buffer {
   return Buffer.concat([packet.maskingIv, encodeHeader(destId, packet.maskingIv, packet.header), packet.message]);
@@ -65,6 +73,7 @@ export function decodePacket(srcId: string, data: Buffer): IPacket {
   return {
     maskingIv,
     header,
+    authdata: decodeAuthData(header.flag, header.authdata),
     message,
     messageAd: Buffer.concat([maskingIv, headerBuf]),
   };
@@ -126,15 +135,15 @@ export function decodeHeader(srcId: string, maskingIv: Buffer, data: Buffer): [I
 
 // authdata
 
-export function encodeWhoAreYouAuthdata(authdata: IWhoAreYouAuthdata): Buffer {
+export function encodeWhoAreYouAuthdata(authdata: WhoAreYouAuthdata): Buffer {
   return Buffer.concat([authdata.idNonce, toBufferBE(authdata.enrSeq, 8)]);
 }
 
-export function encodeMessageAuthdata(authdata: IMessageAuthdata): Buffer {
+export function encodeMessageAuthdata(authdata: MessageAuthdata): Buffer {
   return fromHex(authdata.srcId);
 }
 
-export function encodeHandshakeAuthdata(authdata: IHandshakeAuthdata): Buffer {
+export function encodeHandshakeAuthdata(authdata: HandshakeAuthdata): Buffer {
   return Buffer.concat([
     fromHex(authdata.srcId),
     numberToBuffer(authdata.sigSize, SIG_SIZE_SIZE),
@@ -145,26 +154,28 @@ export function encodeHandshakeAuthdata(authdata: IHandshakeAuthdata): Buffer {
   ]);
 }
 
-export function decodeWhoAreYouAuthdata(data: Buffer): IWhoAreYouAuthdata {
+export function decodeWhoAreYouAuthdata(data: Buffer): WhoAreYouAuthdata {
   if (data.length !== WHOAREYOU_AUTHDATA_SIZE) {
     throw errcode(new Error(`Invalid authdata length: ${data.length}`), ERR_INVALID_AUTHDATA_SIZE);
   }
   return {
+    type: PacketType.WhoAreYou,
     idNonce: data.slice(0, ID_NONCE_SIZE),
     enrSeq: toBigIntBE(data.slice(ID_NONCE_SIZE)),
   };
 }
 
-export function decodeMessageAuthdata(data: Buffer): IMessageAuthdata {
+export function decodeMessageAuthdata(data: Buffer): MessageAuthdata {
   if (data.length !== MESSAGE_AUTHDATA_SIZE) {
     throw errcode(new Error(`Invalid authdata length: ${data.length}`), ERR_INVALID_AUTHDATA_SIZE);
   }
   return {
+    type: PacketType.Message,
     srcId: toHex(data),
   };
 }
 
-export function decodeHandshakeAuthdata(data: Buffer): IHandshakeAuthdata {
+export function decodeHandshakeAuthdata(data: Buffer): HandshakeAuthdata {
   if (data.length < MIN_HANDSHAKE_AUTHDATA_SIZE) {
     throw errcode(new Error(`Invalid authdata length: ${data.length}`), ERR_INVALID_AUTHDATA_SIZE);
   }
@@ -175,6 +186,7 @@ export function decodeHandshakeAuthdata(data: Buffer): IHandshakeAuthdata {
   const ephPubkey = data.slice(34 + sigSize, 34 + sigSize + ephKeySize);
   const record = data.slice(34 + sigSize + ephKeySize);
   return {
+    type: PacketType.Handshake,
     srcId,
     sigSize,
     ephKeySize,
@@ -198,4 +210,28 @@ export function encodeChallengeData(maskingIv: Buffer, header: IHeader): Buffer 
     numberToBuffer(header.authdataSize, AUTHDATA_SIZE_SIZE),
     header.authdata,
   ]);
+}
+
+export function decodeAuthData(kind: number, authData: Buffer): AuthData {
+  switch (kind) {
+    case PacketType.Message:
+      return decodeMessageAuthdata(authData);
+    case PacketType.WhoAreYou:
+      return decodeWhoAreYouAuthdata(authData);
+    case PacketType.Handshake:
+      return decodeHandshakeAuthdata(authData);
+    default:
+      throw Error(`Unknown packet kind ${kind}`);
+  }
+}
+
+export function getPacketNodeID(packet: IPacket): string | null {
+  switch (packet.authdata.type) {
+    case PacketType.Message:
+      return packet.authdata.srcId;
+    case PacketType.WhoAreYou:
+      return null;
+    case PacketType.Handshake:
+      return packet.authdata.srcId;
+  }
 }

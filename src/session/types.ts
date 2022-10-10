@@ -4,6 +4,7 @@ import { NodeId, ENR } from "../enr/index.js";
 import { IPacket } from "../packet/index.js";
 import { RequestMessage, ResponseMessage } from "../message/index.js";
 import { INodeAddress, NodeContact } from "./nodeInfo.js";
+import { RateLimiterOpts } from "../rateLimit/index.js";
 
 export type NodeAddressString = string;
 
@@ -36,6 +37,10 @@ export interface ISessionConfig {
    * UDP endpoint does not match observed socket address)
    */
   allowUnverifiedSessions: boolean;
+  /**
+   * Enable optional packet rate limiter with opts
+   */
+  rateLimiterOpts?: RateLimiterOpts
 }
 
 export enum RequestErrorType {
