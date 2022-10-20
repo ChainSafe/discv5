@@ -128,4 +128,9 @@ export interface IDiscv5Metrics {
   sentMessageCount: IGauge<"type">;
   /** Total number messages received by message type */
   rcvdMessageCount: IGauge<"type">;
+
+  /** Total count of rate limit hits by IP */
+  rateLimitHitIP: IGauge;
+  /** Total count of rate limit hits by total requests */
+  rateLimitHitTotal: IGauge;
 }

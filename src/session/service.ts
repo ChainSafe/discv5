@@ -41,8 +41,16 @@ import {
 import { getNodeAddress, INodeAddress, INodeContactType, nodeAddressToString, NodeContact } from "./nodeInfo.js";
 import LRUCache from "lru-cache";
 import { TimeoutMap } from "../util/index.js";
+import { IDiscv5Metrics } from "../service/types.js";
 
 const log = debug("discv5:sessionService");
+
+export interface SessionServiceOpts {
+  enr: ENR;
+  keypair: IKeypair;
+  transport: ITransportService;
+  metrics?: IDiscv5Metrics;
+}
 
 /**
  * Session management for the Discv5 Discovery service.
@@ -126,8 +134,11 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    */
   private sessions: LRUCache<NodeAddressString, Session>;
 
-  constructor(config: ISessionConfig, enr: ENR, keypair: IKeypair, transport: ITransportService) {
+  constructor(config: ISessionConfig, opts: SessionServiceOpts) {
     super();
+
+    const { enr, keypair, transport } = opts;
+
     // ensure the keypair matches the one that signed the ENR
     if (!keypair.publicKey.equals(enr.publicKey)) {
       throw new Error("Provided keypair does not match the provided ENR keypair");
@@ -136,6 +147,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     this.enr = enr;
     this.keypair = keypair;
     this.transport = transport;
+
     this.activeRequests = new TimeoutMap(config.requestTimeout, (k, v) =>
       this.handleRequestTimeout(getNodeAddress(v.contact), v)
     );
@@ -282,6 +294,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     const challengeData = encodeChallengeData(packet.maskingIv, packet.header);
 
     log("Sending WHOAREYOU to %o", nodeAddr);
+    this.addExpectedResponse(nodeAddr.socketAddr);
     this.send(nodeAddr, packet);
 
     this.activeChallenges.set(nodeAddrStr, { data: challengeData, remoteEnr: remoteEnr ?? undefined });
@@ -744,14 +757,12 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private removeExpectedResponse(socketAddr: Multiaddr): void {
-    //
+    this.transport.addExpectedResponse(socketAddr.toOptions().host);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private addExpectedResponse(socketAddr: Multiaddr): void {
-    //
+    this.transport.removeExpectedResponse(socketAddr.toOptions().host);
   }
 
   private handleRequestTimeout(nodeAddr: INodeAddress, requestCall: IRequestCall): void {
