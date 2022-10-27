@@ -53,8 +53,8 @@ export function createKeypairFromPeerId(peerId: PeerId): IKeypair {
   const pub = keysPBM.PublicKey.decode(peerId.publicKey);
   if (peerId.privateKey) {
     const priv = keysPBM.PrivateKey.decode(peerId.privateKey);
-    return createKeypair(KeypairType[pub.Type] as KeypairType, toBuffer(priv.Data), toBuffer(pub.Data));
+    return createKeypair(KeypairType[pub.Type!] as KeypairType, toBuffer(priv.Data!), toBuffer(pub.Data!));
   } else {
-    return createKeypair(KeypairType[pub.Type] as KeypairType, undefined, toBuffer(pub.Data));
+    return createKeypair(KeypairType[pub.Type!] as KeypairType, undefined, toBuffer(pub.Data!));
   }
 }
