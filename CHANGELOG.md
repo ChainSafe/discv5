@@ -152,6 +152,21 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [1.2.0](https://github.com/ChainSafe/discv5/compare/v1.1.2...v1.2.0) (2022-10-28)
+
+
+### Features
+
+* Add IP based rate limiting ([#206](https://github.com/ChainSafe/discv5/issues/206)) ([122adbf](https://github.com/ChainSafe/discv5/commit/122adbf00734ab03bba7bc47abafafc69ca1ef23))
+
+
+### Miscellaneous
+
+* Commit package-lock for deterministic CI ([#208](https://github.com/ChainSafe/discv5/issues/208)) ([2c90b5e](https://github.com/ChainSafe/discv5/commit/2c90b5e3a9146d98489597eef0e71280269aef92))
+* disable validateSingleCommit ([#213](https://github.com/ChainSafe/discv5/issues/213)) ([43a87ca](https://github.com/ChainSafe/discv5/commit/43a87ca01616d08c3549b630c7cd9e0a5f3f8a21))
+* migrate to is-ip 4.0.0 ([#211](https://github.com/ChainSafe/discv5/issues/211)) ([e2cf4ac](https://github.com/ChainSafe/discv5/commit/e2cf4ac475c42c93fd7020715b16fc5b1fcc854c))
+* remove breaking change introduced in [#206](https://github.com/ChainSafe/discv5/issues/206) ([#212](https://github.com/ChainSafe/discv5/issues/212)) ([7a95ca6](https://github.com/ChainSafe/discv5/commit/7a95ca6c500188c779cb05af77040ac42fc66490))
+
 ## [1.1.2](https://github.com/ChainSafe/discv5/compare/v1.1.1...v1.1.2) (2022-09-27)
 
 
