@@ -1,4 +1,4 @@
-import isIp from "is-ip";
+import { isIPv4 } from "is-ip";
 import { NodeId } from "../enr/index.js";
 
 type MultiaddrStr = string;
@@ -21,7 +21,7 @@ export class AddrVotes {
     voter: NodeId,
     { recipientIp, recipientPort }: { recipientIp: string; recipientPort: number }
   ): { multiaddrStr: string } | undefined {
-    const multiaddrStr = `/${isIp.v4(recipientIp) ? "ip4" : "ip6"}/${recipientIp}/udp/${recipientPort}`;
+    const multiaddrStr = `/${isIPv4(recipientIp) ? "ip4" : "ip6"}/${recipientIp}/udp/${recipientPort}`;
 
     const prevVote = this.votes.get(voter);
     if (prevVote?.multiaddrStr === multiaddrStr) {
