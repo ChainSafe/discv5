@@ -1,6 +1,6 @@
 import * as RLP from "rlp";
 import { multiaddr } from "@multiformats/multiaddr";
-import isIp from "is-ip";
+import { isIPv4 } from "is-ip";
 
 import {
   IPingMessage,
@@ -56,7 +56,7 @@ export function encodePingMessage(m: IPingMessage): Buffer {
 }
 
 export function encodePongMessage(m: IPongMessage): Buffer {
-  const ipMultiaddr = multiaddr(`/${isIp.v4(m.recipientIp) ? "ip4" : "ip6"}/${m.recipientIp}`);
+  const ipMultiaddr = multiaddr(`/${isIPv4(m.recipientIp) ? "ip4" : "ip6"}/${m.recipientIp}`);
   const tuple = ipMultiaddr.tuples()[0][1];
   if (!tuple) {
     throw new Error("invalid address for encoding");
