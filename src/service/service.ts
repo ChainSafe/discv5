@@ -50,6 +50,7 @@ import {
   IDiscv5Metrics,
   INodesResponse,
 } from "./types.js";
+import { RateLimiter, RateLimiterOpts } from "../rateLimit/index.js";
 
 const log = debug("discv5:service");
 
@@ -75,6 +76,10 @@ export interface IDiscv5CreateOptions {
   config?: Partial<IDiscv5Config>;
   metrics?: IDiscv5Metrics;
   transport?: ITransportService;
+  /**
+   * Enable optional packet rate limiter with opts
+   */
+  rateLimiterOpts?: RateLimiterOpts;
 }
 
 /**
@@ -184,15 +189,16 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * @param peerId the PeerId with the keypair that identifies the enr
    * @param multiaddr The multiaddr which contains the the network interface and port to which the UDP server binds
    */
-  public static create({ enr, peerId, multiaddr, config = {}, metrics, transport }: IDiscv5CreateOptions): Discv5 {
+  public static create(opts: IDiscv5CreateOptions): Discv5 {
+    const { enr, peerId, multiaddr, config = {}, metrics, transport } = opts;
     const fullConfig = { ...defaultConfig, ...config };
     const decodedEnr = typeof enr === "string" ? ENR.decodeTxt(enr) : enr;
-    const sessionService = new SessionService(
-      fullConfig,
-      decodedEnr,
-      createKeypairFromPeerId(peerId),
-      transport ?? new UDPTransportService(multiaddr, decodedEnr.nodeId)
-    );
+    const rateLimiter = opts.rateLimiterOpts && new RateLimiter(opts.rateLimiterOpts, metrics ?? null);
+    const sessionService = new SessionService(fullConfig, {
+      enr: decodedEnr,
+      keypair: createKeypairFromPeerId(peerId),
+      transport: transport ?? new UDPTransportService(multiaddr, decodedEnr.nodeId, rateLimiter),
+    });
     return new Discv5(fullConfig, sessionService, metrics);
   }
 

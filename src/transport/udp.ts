@@ -4,6 +4,7 @@ import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
 
 import { decodePacket, encodePacket, IPacket, MAX_PACKET_SIZE } from "../packet/index.js";
 import { IRemoteInfo, ITransportService, TransportEventEmitter } from "./types.js";
+import { IRateLimiter } from "../rateLimit/index.js";
 
 /**
  * This class is responsible for encoding outgoing Packets and decoding incoming Packets over UDP
@@ -12,18 +13,18 @@ export class UDPTransportService
   extends (EventEmitter as { new (): TransportEventEmitter })
   implements ITransportService
 {
-  public multiaddr: Multiaddr;
   private socket!: dgram.Socket;
-  private srcId: string;
 
-  public constructor(multiaddr: Multiaddr, srcId: string) {
+  public constructor(
+    readonly multiaddr: Multiaddr,
+    private readonly srcId: string,
+    private readonly rateLimiter?: IRateLimiter
+  ) {
     super();
     const opts = multiaddr.toOptions();
     if (opts.transport !== "udp") {
       throw new Error("Local multiaddr must use UDP");
     }
-    this.multiaddr = multiaddr;
-    this.srcId = srcId;
   }
 
   public async start(): Promise<void> {
@@ -49,13 +50,29 @@ export class UDPTransportService
     );
   }
 
-  public handleIncoming = (data: Buffer, rinfo: IRemoteInfo): void => {
+  addExpectedResponse(ipAddress: string): void {
+    this.rateLimiter?.addExpectedResponse(ipAddress);
+  }
+
+  removeExpectedResponse(ipAddress: string): void {
+    this.rateLimiter?.removeExpectedResponse(ipAddress);
+  }
+
+  private handleIncoming = (data: Buffer, rinfo: IRemoteInfo): void => {
+    if (this.rateLimiter && !this.rateLimiter.allowEncodedPacket(rinfo.address)) {
+      return;
+    }
+
     const mu = multiaddr(`/${String(rinfo.family).endsWith("4") ? "ip4" : "ip6"}/${rinfo.address}/udp/${rinfo.port}`);
+
+    let packet: IPacket;
     try {
-      const packet = decodePacket(this.srcId, data);
-      this.emit("packet", mu, packet);
+      packet = decodePacket(this.srcId, data);
     } catch (e: unknown) {
       this.emit("decodeError", e as Error, mu);
+      return;
     }
+
+    this.emit("packet", mu, packet);
   };
 }
