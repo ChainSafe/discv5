@@ -134,10 +134,8 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    */
   private sessions: LRUCache<NodeAddressString, Session>;
 
-  constructor(config: ISessionConfig, opts: SessionServiceOpts) {
+  constructor(config: ISessionConfig, enr: ENR, keypair: IKeypair, transport: ITransportService) {
     super();
-
-    const { enr, keypair, transport } = opts;
 
     // ensure the keypair matches the one that signed the ENR
     if (!keypair.publicKey.equals(enr.publicKey)) {
@@ -758,11 +756,11 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   }
 
   private removeExpectedResponse(socketAddr: Multiaddr): void {
-    this.transport.addExpectedResponse(socketAddr.toOptions().host);
+    this.transport.addExpectedResponse?.(socketAddr.toOptions().host);
   }
 
   private addExpectedResponse(socketAddr: Multiaddr): void {
-    this.transport.removeExpectedResponse(socketAddr.toOptions().host);
+    this.transport.removeExpectedResponse?.(socketAddr.toOptions().host);
   }
 
   private handleRequestTimeout(nodeAddr: INodeAddress, requestCall: IRequestCall): void {

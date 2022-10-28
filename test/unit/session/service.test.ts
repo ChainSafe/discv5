@@ -42,8 +42,8 @@ describe("session service", () => {
     transport0 = new UDPTransportService(addr0, enr0.nodeId);
     transport1 = new UDPTransportService(addr1, enr1.nodeId);
 
-    service0 = new SessionService(defaultConfig, { enr: enr0, keypair: kp0, transport: transport0 });
-    service1 = new SessionService(defaultConfig, { enr: enr1, keypair: kp1, transport: transport1 });
+    service0 = new SessionService(defaultConfig, enr0, kp0, transport0);
+    service1 = new SessionService(defaultConfig, enr1, kp1, transport1);
 
     await service0.start();
     await service1.start();

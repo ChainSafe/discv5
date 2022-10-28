@@ -194,11 +194,12 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     const fullConfig = { ...defaultConfig, ...config };
     const decodedEnr = typeof enr === "string" ? ENR.decodeTxt(enr) : enr;
     const rateLimiter = opts.rateLimiterOpts && new RateLimiter(opts.rateLimiterOpts, metrics ?? null);
-    const sessionService = new SessionService(fullConfig, {
-      enr: decodedEnr,
-      keypair: createKeypairFromPeerId(peerId),
-      transport: transport ?? new UDPTransportService(multiaddr, decodedEnr.nodeId, rateLimiter),
-    });
+    const sessionService = new SessionService(
+      fullConfig,
+      decodedEnr,
+      createKeypairFromPeerId(peerId),
+      transport ?? new UDPTransportService(multiaddr, decodedEnr.nodeId, rateLimiter)
+    );
     return new Discv5(fullConfig, sessionService, metrics);
   }
 
