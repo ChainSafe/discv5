@@ -1,7 +1,5 @@
 import * as RLP from "rlp";
-import { convertToString } from "@multiformats/multiaddr/convert";
 import { toBigIntBE } from "bigint-buffer";
-import * as ip6addr from "ip6addr";
 import {
   IPingMessage,
   IPongMessage,
@@ -17,7 +15,7 @@ import {
   ITalkRespMessage,
 } from "./types.js";
 import { ENR } from "../enr/index.js";
-import { toNewUint8Array } from "../util/index.js";
+import { ipFromBytes } from "../util/ip.js";
 
 const ERR_INVALID_MESSAGE = "invalid message";
 
@@ -66,20 +64,13 @@ function decodePong(data: Buffer): IPongMessage {
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 4) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
-  const stringIpAddr = convertToString("ip4", toNewUint8Array(rlpRaw[2]));
-  // let stringIpAddr = ipBufferToString(rlpRaw[2]);
-  const parsedIp = ip6addr.parse(stringIpAddr);
 
   return {
     type: MessageType.PONG,
     id: toBigIntBE(rlpRaw[0]),
     enrSeq: toBigIntBE(rlpRaw[1]),
-    recipient: {
-      family: parsedIp.kind() === "ipv4" ? 4 : 6,
-      // Note: this is some weird code, existing before. Doesn't make much sense to me.
-      address: parsedIp.kind() === "ipv4" ? parsedIp.toString({ format: "v4" }) : stringIpAddr,
-      port: rlpRaw[3].length ? rlpRaw[3].readUIntBE(0, rlpRaw[3].length) : 0,
-    },
+    ip: ipFromBytes(rlpRaw[2]),
+    port: rlpRaw[3].length ? rlpRaw[3].readUIntBE(0, rlpRaw[3].length) : 0,
   };
 }
 

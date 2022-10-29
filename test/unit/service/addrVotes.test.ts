@@ -1,7 +1,7 @@
 import { expect } from "chai";
-import { multiaddr, NodeAddress } from "@multiformats/multiaddr";
 import { createNodeId } from "../../../src/enr/index.js";
 import { AddrVotes } from "../../../src/service/addrVotes.js";
+import { IP } from "../../../src/util/ip.js";
 
 describe("AddrVotes", () => {
   let addVotes: AddrVotes;
@@ -11,38 +11,32 @@ describe("AddrVotes", () => {
   });
 
   it("should return winning vote after 3 same votes", () => {
-    const recipientIp = "127.0.0.1";
-    const recipientPort = 30303;
-    const multi0 = multiaddr(`/ip4/${recipientIp}/udp/${recipientPort}`);
+    const ip: IP = { type: 4, octets: new Uint8Array([127, 0, 0, 1]) };
+    const port = 30303;
     const nodeId = createNodeId(Buffer.alloc(32));
-    const vote: NodeAddress = { family: 4, address: recipientIp, port: recipientPort };
-    expect(addVotes.addVote(nodeId, vote)).to.be.undefined;
+    expect(addVotes.addVote(nodeId, ip, port)).equals(false);
     // same vote, no effect
     for (let i = 0; i < 100; i++) {
-      expect(addVotes.addVote(nodeId, vote)).to.be.undefined;
+      expect(addVotes.addVote(nodeId, ip, port)).equals(false);
     }
     // 1 more vote, return undefined
-    expect(addVotes.addVote(createNodeId(Buffer.alloc(32, 2)), vote)).to.be.undefined;
+    expect(addVotes.addVote(createNodeId(Buffer.alloc(32, 2)), ip, port)).equals(false);
     // winning vote
-    const winningVote = addVotes.addVote(createNodeId(Buffer.alloc(32, 3)), vote);
-    expect(winningVote?.multiaddrStr).to.be.equal(multi0.toString(), "incorrect winning vote");
+    expect(addVotes.addVote(createNodeId(Buffer.alloc(32, 3)), ip, port)).equals(true);
   });
 
   it("1 node adds 2 different vote", () => {
-    const recipientIp = "127.0.0.1";
-    const recipientPort = 30303;
-    const multi0 = multiaddr(`/ip4/${recipientIp}/udp/${recipientPort}`);
+    const ip: IP = { type: 4, octets: new Uint8Array([127, 0, 0, 1]) };
+    const port = 30303;
     const nodeId = createNodeId(Buffer.alloc(32));
-    const vote: NodeAddress = { family: 4, address: recipientIp, port: recipientPort };
-    expect(addVotes.addVote(nodeId, vote)).to.be.undefined;
+    expect(addVotes.addVote(nodeId, ip, port)).equals(false);
     // new vote, strange one => 1st vote is deleted
-    expect(addVotes.addVote(nodeId, { ...vote, port: 30304 })).to.be.undefined;
+    expect(addVotes.addVote(nodeId, ip, 30304)).equals(false);
 
     // need 3 more votes to win
-    expect(addVotes.addVote(createNodeId(Buffer.alloc(32, 1)), vote)).to.be.undefined;
-    expect(addVotes.addVote(createNodeId(Buffer.alloc(32, 2)), vote)).to.be.undefined;
+    expect(addVotes.addVote(createNodeId(Buffer.alloc(32, 1)), ip, port)).equals(false);
+    expect(addVotes.addVote(createNodeId(Buffer.alloc(32, 2)), ip, port)).equals(false);
     // winning vote
-    const winningVote = addVotes.addVote(createNodeId(Buffer.alloc(32, 3)), vote);
-    expect(winningVote?.multiaddrStr).to.be.equal(multi0.toString(), "incorrect winning vote");
+    expect(addVotes.addVote(createNodeId(Buffer.alloc(32, 3)), ip, port)).equals(true);
   });
 });

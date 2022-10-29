@@ -1,4 +1,5 @@
 import * as RLP from "rlp";
+import { ipToBytes } from "../util/ip.js";
 
 import {
   IPingMessage,
@@ -14,7 +15,6 @@ import {
   ITalkReqMessage,
   ITalkRespMessage,
 } from "./types.js";
-import { ipToBuffer } from "./util.js";
 
 export function encode(message: Message): Buffer {
   switch (message.type) {
@@ -61,8 +61,8 @@ export function encodePongMessage(m: IPongMessage): Buffer {
       //
       toBuffer(m.id),
       toBuffer(m.enrSeq),
-      ipToBuffer(m.recipient),
-      m.recipient.port,
+      ipToBytes(m.ip),
+      m.port,
     ]),
   ]);
 }
