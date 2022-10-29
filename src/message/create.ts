@@ -12,6 +12,7 @@ import {
   ITalkRespMessage,
 } from "./types.js";
 import { SequenceNumber, ENR } from "../enr/index.js";
+import { NodeAddress } from "@multiformats/multiaddr";
 
 export function createRequestId(): RequestId {
   return toBigIntBE(randomBytes(8));
@@ -25,18 +26,12 @@ export function createPingMessage(enrSeq: SequenceNumber): IPingMessage {
   };
 }
 
-export function createPongMessage(
-  id: RequestId,
-  enrSeq: SequenceNumber,
-  recipientIp: string,
-  recipientPort: number
-): IPongMessage {
+export function createPongMessage(id: RequestId, enrSeq: SequenceNumber, recipient: NodeAddress): IPongMessage {
   return {
     type: MessageType.PONG,
     id,
     enrSeq,
-    recipientIp,
-    recipientPort,
+    recipient,
   };
 }
 

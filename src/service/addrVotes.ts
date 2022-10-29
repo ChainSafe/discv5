@@ -1,4 +1,4 @@
-import { isIPv4 } from "is-ip";
+import { NodeAddress } from "@multiformats/multiaddr";
 import { NodeId } from "../enr/index.js";
 
 type MultiaddrStr = string;
@@ -17,11 +17,11 @@ export class AddrVotes {
    * Adds vote to a given `recipientIp` and `recipientPort`. If the votes for this addr are greater than `votesToWin`,
    * this function returns the winning `multiaddrStr` and clears existing votes, restarting the process.
    */
-  addVote(
-    voter: NodeId,
-    { recipientIp, recipientPort }: { recipientIp: string; recipientPort: number }
-  ): { multiaddrStr: string } | undefined {
-    const multiaddrStr = `/${isIPv4(recipientIp) ? "ip4" : "ip6"}/${recipientIp}/udp/${recipientPort}`;
+  addVote(voter: NodeId, nodeAddress: NodeAddress): { multiaddrStr: string } | undefined {
+    const multiaddrStr =
+      nodeAddress.family === 4
+        ? `/ip4/${nodeAddress.address}/udp/${nodeAddress.port}`
+        : `/ip6/${nodeAddress.address}/udp/${nodeAddress.port}`;
 
     const prevVote = this.votes.get(voter);
     if (prevVote?.multiaddrStr === multiaddrStr) {

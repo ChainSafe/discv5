@@ -1,3 +1,4 @@
+import { NodeAddress } from "@multiformats/multiaddr";
 import { SequenceNumber, ENR } from "../enr/index.js";
 
 export type RequestId = bigint;
@@ -46,8 +47,7 @@ export interface IPongMessage {
   type: MessageType.PONG;
   id: RequestId;
   enrSeq: SequenceNumber;
-  recipientIp: string;
-  recipientPort: number;
+  recipient: NodeAddress;
 }
 
 export interface IFindNodeMessage {

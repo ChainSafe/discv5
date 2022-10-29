@@ -721,10 +721,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     // build the Pong response
     log("Sending PONG response to node: %o", nodeAddr);
     try {
-      const srcOpts = nodeAddr.socketAddr.toOptions();
       this.sessionService.sendResponse(
         nodeAddr,
-        createPongMessage(message.id, this.enr.seq, srcOpts.host, srcOpts.port)
+        createPongMessage(message.id, this.enr.seq, nodeAddr.socketAddr.nodeAddress())
       );
       this.metrics?.sentMessageCount.inc({ type: MessageType[MessageType.PONG] });
     } catch (e) {
@@ -841,7 +840,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     log("Received a PONG response from %o", nodeAddr);
 
     if (this.config.enrUpdate) {
-      const winningVote = this.addrVotes.addVote(nodeAddr.nodeId, message);
+      const winningVote = this.addrVotes.addVote(nodeAddr.nodeId, message.recipient);
       const currentAddr = this.enr.getLocationMultiaddr("udp");
       if (winningVote && (!currentAddr || winningVote.multiaddrStr !== currentAddr.toString())) {
         log("Local ENR (IP & UDP) updated: %s", winningVote.multiaddrStr);

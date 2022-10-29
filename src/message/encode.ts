@@ -1,6 +1,4 @@
 import * as RLP from "rlp";
-import { multiaddr } from "@multiformats/multiaddr";
-import { isIPv4 } from "is-ip";
 
 import {
   IPingMessage,
@@ -16,6 +14,7 @@ import {
   ITalkReqMessage,
   ITalkRespMessage,
 } from "./types.js";
+import { ipToBuffer } from "./util.js";
 
 export function encode(message: Message): Buffer {
   switch (message.type) {
@@ -56,14 +55,15 @@ export function encodePingMessage(m: IPingMessage): Buffer {
 }
 
 export function encodePongMessage(m: IPongMessage): Buffer {
-  const ipMultiaddr = multiaddr(`/${isIPv4(m.recipientIp) ? "ip4" : "ip6"}/${m.recipientIp}`);
-  const tuple = ipMultiaddr.tuples()[0][1];
-  if (!tuple) {
-    throw new Error("invalid address for encoding");
-  }
   return Buffer.concat([
     Buffer.from([MessageType.PONG]),
-    RLP.encode([toBuffer(m.id), toBuffer(m.enrSeq), tuple, m.recipientPort]),
+    RLP.encode([
+      //
+      toBuffer(m.id),
+      toBuffer(m.enrSeq),
+      ipToBuffer(m.recipient),
+      m.recipient.port,
+    ]),
   ]);
 }
 

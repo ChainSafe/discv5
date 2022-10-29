@@ -1,3 +1,4 @@
+import { multiaddr, NodeAddress } from "@multiformats/multiaddr";
 import { MessageType, RequestMessage, ResponseMessage } from "./types.js";
 
 export function requestMatchesResponse(req: RequestMessage, res: ResponseMessage): boolean {
@@ -13,4 +14,13 @@ export function requestMatchesResponse(req: RequestMessage, res: ResponseMessage
     default:
       return false;
   }
+}
+
+export function ipToBuffer({ family, address }: Pick<NodeAddress, "family" | "address">): Buffer {
+  // TODO: Improve, drop use of multiaddr
+  const ipMultiaddr = multiaddr(`/${family === 4 ? "ip4" : "ip6"}/${address}`);
+  const tuple = ipMultiaddr.tuples()[0][1];
+  if (!tuple) throw Error(`Invalid IP ${address}`);
+
+  return Buffer.from(tuple);
 }

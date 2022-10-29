@@ -66,18 +66,20 @@ function decodePong(data: Buffer): IPongMessage {
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 4) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
-  let stringIpAddr = convertToString("ip4", toNewUint8Array(rlpRaw[2]));
+  const stringIpAddr = convertToString("ip4", toNewUint8Array(rlpRaw[2]));
   // let stringIpAddr = ipBufferToString(rlpRaw[2]);
   const parsedIp = ip6addr.parse(stringIpAddr);
-  if (parsedIp.kind() === "ipv4") {
-    stringIpAddr = parsedIp.toString({ format: "v4" });
-  }
+
   return {
     type: MessageType.PONG,
     id: toBigIntBE(rlpRaw[0]),
     enrSeq: toBigIntBE(rlpRaw[1]),
-    recipientIp: stringIpAddr,
-    recipientPort: rlpRaw[3].length ? rlpRaw[3].readUIntBE(0, rlpRaw[3].length) : 0,
+    recipient: {
+      family: parsedIp.kind() === "ipv4" ? 4 : 6,
+      // Note: this is some weird code, existing before. Doesn't make much sense to me.
+      address: parsedIp.kind() === "ipv4" ? parsedIp.toString({ format: "v4" }) : stringIpAddr,
+      port: rlpRaw[3].length ? rlpRaw[3].readUIntBE(0, rlpRaw[3].length) : 0,
+    },
   };
 }
 
