@@ -93,7 +93,7 @@ export class KademliaRoutingTable extends (EventEmitter as { new (): BucketEvent
     const updateResult = bucket.updateValue(value);
     switch (updateResult) {
       case UpdateResult.FailedBucketFull:
-      case UpdateResult.FailedKeyNonExistant:
+      case UpdateResult.FailedKeyNonExistent:
         return updateResult;
     }
 
@@ -104,7 +104,7 @@ export class KademliaRoutingTable extends (EventEmitter as { new (): BucketEvent
     const statusResult = bucket.updateStatus(value.nodeId, status);
     switch (statusResult) {
       case UpdateResult.FailedBucketFull:
-      case UpdateResult.FailedKeyNonExistant:
+      case UpdateResult.FailedKeyNonExistent:
       case UpdateResult.UpdatedAndPromoted:
       case UpdateResult.UpdatedPending:
         return statusResult;
