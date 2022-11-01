@@ -740,7 +740,12 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   private handleFindNode(nodeAddr: INodeAddress, message: IFindNodeMessage): void {
     const { id, distances } = message;
     let nodes: ENR[] = [];
-    distances.forEach((distance) => {
+    let distinctDistances = distances.filter((n, i) => distances.indexOf(n) === i);
+    distinctDistances.forEach((distance) => {
+      // filter out invalid distances
+      if (distance < 0 || distance > 256) {
+        return;
+      }
       // if the distance is 0, send our local ENR
       if (distance === 0) {
         this.enr.encodeToValues(this.keypair.privateKey);
@@ -749,11 +754,12 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
         nodes.push(...this.kbuckets.valuesOfDistance(distance));
       }
     });
-    nodes = nodes.slice(0, 15);
+    // limit response to 16 nodes
+    nodes = nodes.slice(0, 16);
     if (nodes.length === 0) {
       log("Sending empty NODES response to %o", nodeAddr);
       try {
-        this.sessionService.sendResponse(nodeAddr, createNodesMessage(id, 0, nodes));
+        this.sessionService.sendResponse(nodeAddr, createNodesMessage(id, 1, nodes));
         this.metrics?.sentMessageCount.inc({ type: MessageType[MessageType.NODES] });
       } catch (e) {
         log("Failed to send a NODES response. Error: %s", (e as Error).message);
