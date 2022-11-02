@@ -152,6 +152,18 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [1.3.0](https://github.com/ChainSafe/discv5/compare/v1.2.1...v1.3.0) (2022-11-02)
+
+
+### Features
+
+* limit nodes response to 16 packets ([#219](https://github.com/ChainSafe/discv5/issues/219)) ([6fdc96d](https://github.com/ChainSafe/discv5/commit/6fdc96de9418792e0920a9a5b4b53512e3b61183))
+
+
+### Bug Fixes
+
+* throw error when encoding/decoding PONG with invalid port ([#218](https://github.com/ChainSafe/discv5/issues/218)) ([cfc3c3c](https://github.com/ChainSafe/discv5/commit/cfc3c3cdae7a4672c8bb4b3990fd7963fea04c13))
+
 ## [1.2.1](https://github.com/ChainSafe/discv5/compare/v1.2.0...v1.2.1) (2022-11-02)
 
 
