@@ -740,8 +740,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   private handleFindNode(nodeAddr: INodeAddress, message: IFindNodeMessage): void {
     const { id, distances } = message;
     let nodes: ENR[] = [];
-    let distinctDistances = distances.filter((n, i) => distances.indexOf(n) === i);
-    distinctDistances.forEach((distance) => {
+    for (const distance of new Set(distances)) {
       // filter out invalid distances
       if (distance < 0 || distance > 256) {
         return;
@@ -753,7 +752,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       } else {
         nodes.push(...this.kbuckets.valuesOfDistance(distance));
       }
-    });
+    }
     // limit response to 16 nodes
     nodes = nodes.slice(0, 16);
     if (nodes.length === 0) {
