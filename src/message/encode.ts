@@ -61,6 +61,9 @@ export function encodePongMessage(m: IPongMessage): Buffer {
   if (!tuple) {
     throw new Error("invalid address for encoding");
   }
+  if (m.recipientPort < 0 || m.recipientPort > 65535) {
+    throw new Error("invalid port for encoding");
+  }
   return Buffer.concat([
     Buffer.from([MessageType.PONG]),
     RLP.encode([toBuffer(m.id), toBuffer(m.enrSeq), tuple, m.recipientPort]),
