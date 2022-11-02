@@ -743,7 +743,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     for (const distance of new Set(distances)) {
       // filter out invalid distances
       if (distance < 0 || distance > 256) {
-        return;
+        continue;
       }
       // if the distance is 0, send our local ENR
       if (distance === 0) {
