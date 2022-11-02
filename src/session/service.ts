@@ -42,6 +42,7 @@ import { getNodeAddress, INodeAddress, INodeContactType, nodeAddressToString, No
 import LRUCache from "lru-cache";
 import { TimeoutMap } from "../util/index.js";
 import { IDiscv5Metrics } from "../service/types.js";
+import { MAX_NODES_TOTAL_PACKETS } from "./constants.js";
 
 const log = debug("discv5:sessionService");
 
@@ -701,8 +702,13 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       if (response.total > 1) {
         // This is a multi-response Nodes response
         if (requestCall.remainingResponses === undefined) {
-          // This is the first nodes response
-          requestCall.remainingResponses = response.total - 1;
+          if (response.total > MAX_NODES_TOTAL_PACKETS) {
+            log("Will ignore some packets, total: %d", response.total);
+            return;
+          }
+          // This is the first nodes response, initialize & decrement
+          requestCall.remainingResponses = Math.min(response.total, MAX_NODES_TOTAL_PACKETS);
+          requestCall.remainingResponses--;
           // add back the request and send the response
           this.activeRequests.set(nodeAddrStr, requestCall);
           this.emit("response", nodeAddr, response);
