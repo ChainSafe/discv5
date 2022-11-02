@@ -23,7 +23,7 @@ export type BucketEventEmitter = StrictEventEmitter<EventEmitter, IBucketEvents>
 
 /** The result of inserting an entry into a bucket. */
 export enum InsertResult {
-  /** The entry has been sucessfully inserted */
+  /** The entry has been successfully inserted */
   Inserted,
   /**
    * The entry is pending insertion because the relevant bucket is currently full.
@@ -56,12 +56,12 @@ export enum InsertResult {
 export enum UpdateResult {
   /** The node was updated successfully */
   Updated,
-  /** The update promited the node to a connected state from a disconnected state. */
+  /** The update promoted the node to a connected state from a disconnected state. */
   UpdatedAndPromoted,
   /** The pending entry was updated. */
   UpdatedPending,
   /** The update removed the node. The node didn't exist. */
-  FailedKeyNonExistant,
+  FailedKeyNonExistent,
   /** The update removed the node. The bucket was full. */
   FailedBucketFull,
   /** There were no changes made to the value of the node. */

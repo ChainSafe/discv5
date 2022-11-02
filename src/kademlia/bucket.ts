@@ -145,7 +145,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
       this.pending.value = value;
       return UpdateResult.UpdatedPending;
     } else {
-      return UpdateResult.FailedKeyNonExistant;
+      return UpdateResult.FailedKeyNonExistent;
     }
   }
 
@@ -196,7 +196,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
       this.pending.status = status;
       return UpdateResult.UpdatedPending;
     } else {
-      return UpdateResult.FailedKeyNonExistant;
+      return UpdateResult.FailedKeyNonExistent;
     }
   }
 
