@@ -67,10 +67,13 @@ function decodePong(data: Buffer): IPongMessage {
     throw new Error(ERR_INVALID_MESSAGE);
   }
   let stringIpAddr = convertToString("ip4", toNewUint8Array(rlpRaw[2]));
-  // let stringIpAddr = ipBufferToString(rlpRaw[2]);
   const parsedIp = ip6addr.parse(stringIpAddr);
   if (parsedIp.kind() === "ipv4") {
     stringIpAddr = parsedIp.toString({ format: "v4" });
+  }
+  // recipientPort is a uint16 (2 bytes)
+  if (rlpRaw[3].length > 2) {
+    throw new Error(ERR_INVALID_MESSAGE);
   }
   return {
     type: MessageType.PONG,

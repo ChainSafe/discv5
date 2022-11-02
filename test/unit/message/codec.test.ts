@@ -29,6 +29,16 @@ describe("message", () => {
         id: 1n,
         enrSeq: 1n,
         recipientIp: "127.0.0.1",
+        recipientPort: 255, // 1 byte
+      },
+      expected: Buffer.from("02c90101847f00000181ff", "hex"),
+    },
+    {
+      message: {
+        type: MessageType.PONG,
+        id: 1n,
+        enrSeq: 1n,
+        recipientIp: "127.0.0.1",
         recipientPort: 5000,
       },
       expected: Buffer.from("02ca0101847f000001821388", "hex"),
@@ -39,7 +49,7 @@ describe("message", () => {
         id: 1n,
         enrSeq: 1n,
         recipientIp: "aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa",
-        recipientPort: 5000,
+        recipientPort: 5000, // 2 bytes
       },
       expected: Buffer.from("02d6010190aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa821388", "hex"),
     },
@@ -85,6 +95,43 @@ describe("message", () => {
       const actual = encode(message);
       expect(actual).to.deep.equal(expected);
       expect(decode(actual)).to.deep.equal(message);
+    });
+  }
+});
+
+describe("invalid messages", () => {
+  const testCases: {
+    message: Message;
+    expected: Error;
+  }[] = [
+    {
+      message: {
+        type: MessageType.PONG,
+        id: 1n,
+        enrSeq: 1n,
+        recipientIp: "127.0.0.1",
+        // Negative values are invalid.
+        recipientPort: -1,
+      },
+      expected: new Error("invalid port for encoding"),
+    },
+    {
+      message: {
+        type: MessageType.PONG,
+        id: 1n,
+        enrSeq: 1n,
+        recipientIp: "127.0.0.1",
+        // This value is greater than 16 bits.
+        recipientPort: 65536,
+      },
+      expected: new Error("invalid port for encoding"),
+    },
+  ];
+  for (const { message, expected } of testCases) {
+    it(`should fail to encode/decode message type ${MessageType[message.type]}`, () => {
+      expect(() => {
+        encode(message);
+      }).throws(expected.message);
     });
   }
 });
