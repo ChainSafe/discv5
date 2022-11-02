@@ -152,6 +152,14 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [1.2.1](https://github.com/ChainSafe/discv5/compare/v1.2.0...v1.2.1) (2022-11-02)
+
+
+### Bug Fixes
+
+* add more checks to handleFindNode ([#216](https://github.com/ChainSafe/discv5/issues/216)) ([b8a09bf](https://github.com/ChainSafe/discv5/commit/b8a09bf5e23ca66a9cfb496520a3955684be6be4))
+* miscellaneous typos ([#215](https://github.com/ChainSafe/discv5/issues/215)) ([0a1c2b4](https://github.com/ChainSafe/discv5/commit/0a1c2b443520392dad15eea698b7481a3f5fd0c4))
+
 ## [1.2.0](https://github.com/ChainSafe/discv5/compare/v1.1.2...v1.2.0) (2022-10-28)
 
 
