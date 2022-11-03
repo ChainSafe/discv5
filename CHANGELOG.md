@@ -152,6 +152,13 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [1.3.1](https://github.com/ChainSafe/discv5/compare/v1.3.0...v1.3.1) (2022-11-03)
+
+
+### Bug Fixes
+
+* revert limit to nodes response ([#222](https://github.com/ChainSafe/discv5/issues/222)) ([a628308](https://github.com/ChainSafe/discv5/commit/a6283082e069c0afac0e06cd7eb26e6b17ee5310))
+
 ## [1.3.0](https://github.com/ChainSafe/discv5/compare/v1.2.1...v1.3.0) (2022-11-02)
 
 
