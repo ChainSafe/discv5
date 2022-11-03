@@ -704,7 +704,6 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
         if (requestCall.remainingResponses === undefined) {
           if (response.total > MAX_NODES_TOTAL_PACKETS) {
             log("Will ignore some packets, total: %d", response.total);
-            return;
           }
           // This is the first nodes response, initialize & decrement
           requestCall.remainingResponses = Math.min(response.total, MAX_NODES_TOTAL_PACKETS);
