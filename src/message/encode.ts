@@ -55,6 +55,9 @@ export function encodePingMessage(m: IPingMessage): Buffer {
 }
 
 export function encodePongMessage(m: IPongMessage): Buffer {
+  if (m.port < 0 || m.port > 65535) {
+    throw new Error("invalid port for encoding");
+  }
   return Buffer.concat([
     Buffer.from([MessageType.PONG]),
     RLP.encode([

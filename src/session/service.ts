@@ -56,7 +56,7 @@ export interface SessionServiceOpts {
  * Session management for the Discv5 Discovery service.
  *
  * The `SessionService` is responsible for establishing and maintaining sessions with
- * connected/discovered nodes. Each node, identified by it's [`NodeId`] is associated with a
+ * connected/discovered nodes. Each node, identified by its [`NodeId`] is associated with a
  * [`Session`]. This service drives the handshakes for establishing the sessions and associated
  * logic for sending/requesting initial connections/ENR's from unknown peers.
  *
@@ -266,7 +266,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
 
   /**
    * This is called in response to a "whoAreYouRequest" event.
-   * The applications finds the highest known ENR for a node then we respond to the node with a WHOAREYOU packet.
+   * The application finds the highest known ENR for a node then we respond to the node with a WHOAREYOU packet.
    */
   public sendChallenge(nodeAddr: INodeAddress, nonce: Buffer, remoteEnr: ENR | null): void {
     const nodeAddrStr = nodeAddressToString(nodeAddr);
@@ -422,7 +422,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
         // NOTE: Here we decide if the session is outgoing or ingoing. The condition for an
         // outgoing session is that we originally sent a RANDOM packet (signifying we did
         // not have a session for a request) and the packet is not a PING (we are not
-        // trying to update an old session that may have expired.
+        // trying to update an old session that may have expired).
         let connectionDirection;
         if (requestCall.initiatingSession) {
           if (requestCall.request.type === MessageType.PING) {
@@ -495,7 +495,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     try {
       authdata = decodeHandshakeAuthdata(packet.header.authdata);
     } catch (e) {
-      log("Unable to decode handkshake authdata: %s", e);
+      log("Unable to decode handshake authdata: %s", e);
       return;
     }
     const nodeAddr = {
@@ -808,7 +808,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * A request has failed
    */
   private failRequest(requestCall: IRequestCall, error: RequestErrorType, removeSession: boolean): void {
-    // The request has expored, remove the session.
+    // The request has exported, remove the session.
     // Remove the associated nonce mapping.
     this.activeRequestsNonceMapping.delete(requestCall.packet.header.nonce.toString("hex"));
 

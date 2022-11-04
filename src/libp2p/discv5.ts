@@ -10,7 +10,7 @@ import { IDiscv5Config } from "../config/index.js";
 
 // Default to 0ms between automatic searches
 // 0ms is 'backwards compatible' with the prior behavior (always be searching)
-// Furthere analysis should be done to determine a good number
+// Further analysis should be done to determine a good number
 const DEFAULT_SEARCH_INTERVAL_MS = 0;
 
 export interface IDiscv5DiscoveryInputOptions extends Partial<IDiscv5Config> {
@@ -52,7 +52,7 @@ export interface IDiscv5DiscoveryOptions extends IDiscv5DiscoveryInputOptions {
 }
 
 /**
- * Discv5Discovery is a libp2p peer-discovery compatable module
+ * Discv5Discovery is a libp2p peer-discovery compatible module
  */
 export class Discv5Discovery extends EventEmitter<PeerDiscoveryEvents> implements PeerDiscovery {
   [Symbol.toStringTag] = "discv5";

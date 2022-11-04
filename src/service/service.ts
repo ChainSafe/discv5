@@ -187,7 +187,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    *
    * @param enr the ENR record identifying the current node.
    * @param peerId the PeerId with the keypair that identifies the enr
-   * @param multiaddr The multiaddr which contains the the network interface and port to which the UDP server binds
+   * @param multiaddr The multiaddr which contains the network interface and port to which the UDP server binds
    */
   public static create(opts: IDiscv5CreateOptions): Discv5 {
     const { enr, peerId, multiaddr, config = {}, metrics, transport } = opts;
@@ -497,7 +497,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   }
 
   /**
-   * Update the conection status of a node in the routing table.
+   * Update the connection status of a node in the routing table.
    * This tracks whether or not we should be pinging peers.
    * Disconnected peers are removed from the queue and
    * newly added peers to the routing table are added to the queue.
@@ -560,7 +560,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       case ConnectionStatusType.PongReceived: {
         switch (this.kbuckets.update(newStatus.enr, EntryStatus.Connected)) {
           case UpdateResult.FailedBucketFull:
-          case UpdateResult.FailedKeyNonExistant: {
+          case UpdateResult.FailedKeyNonExistent: {
             log("Could not update ENR from pong. Node: %s", nodeId);
             clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout);
             this.connectedPeers.delete(nodeId);
@@ -574,7 +574,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
         // If the node has disconnected, remove any ping timer for the node.
         switch (this.kbuckets.updateStatus(nodeId, EntryStatus.Disconnected)) {
           case UpdateResult.FailedBucketFull:
-          case UpdateResult.FailedKeyNonExistant: {
+          case UpdateResult.FailedKeyNonExistent: {
             log("Could not update node to disconnected, Node: %s", nodeId);
             break;
           }
@@ -615,7 +615,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
         if (entry.value.seq < enr.seq) {
           switch (this.kbuckets.update(enr)) {
             case UpdateResult.FailedBucketFull:
-            case UpdateResult.FailedKeyNonExistant: {
+            case UpdateResult.FailedKeyNonExistent: {
               clearInterval(this.connectedPeers.get(enr.nodeId) as NodeJS.Timeout);
               this.connectedPeers.delete(enr.nodeId);
               log("Failed to update discovered ENR. Node: %s", enr.nodeId);
@@ -745,7 +745,11 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   private handleFindNode(nodeAddr: INodeAddress, message: IFindNodeMessage): void {
     const { id, distances } = message;
     let nodes: ENR[] = [];
-    distances.forEach((distance) => {
+    for (const distance of new Set(distances)) {
+      // filter out invalid distances
+      if (distance < 0 || distance > 256) {
+        continue;
+      }
       // if the distance is 0, send our local ENR
       if (distance === 0) {
         this.enr.encodeToValues(this.keypair.privateKey);
@@ -753,19 +757,20 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       } else {
         nodes.push(...this.kbuckets.valuesOfDistance(distance));
       }
-    });
-    nodes = nodes.slice(0, 15);
+    }
+    // limit response to 16 nodes
+    nodes = nodes.slice(0, 16);
     if (nodes.length === 0) {
       log("Sending empty NODES response to %o", nodeAddr);
       try {
-        this.sessionService.sendResponse(nodeAddr, createNodesMessage(id, 0, nodes));
+        this.sessionService.sendResponse(nodeAddr, createNodesMessage(id, 1, nodes));
         this.metrics?.sentMessageCount.inc({ type: MessageType[MessageType.NODES] });
       } catch (e) {
         log("Failed to send a NODES response. Error: %s", (e as Error).message);
       }
       return;
     }
-    // Repsonses assume that a session is established.
+    // Responses assume that a session is established.
     // Thus, on top of the encoded ENRs the packet should be a regular message.
     // A regular message has a tag (32 bytes), an authTag (12 bytes)
     // and the NODES response has an ID (8 bytes) and a total (8 bytes).

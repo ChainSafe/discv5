@@ -132,7 +132,7 @@
 ### Bugfixes
 
 - Fix IPv4-as-IPv6 handling ([d8d0d1](https://github.com/ChainSafe/discv5/commit/d8d0d1))
-- Fix ethemeral pubkey encoding ([a774fc](https://github.com/ChainSafe/discv5/commit/a774fc))
+- Fix ephemeral pubkey encoding ([a774fc](https://github.com/ChainSafe/discv5/commit/a774fc))
 
 # 0.2.5 - (2020-07-06)
 
@@ -151,6 +151,33 @@
 ### Bugfixes
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
+
+## [1.3.1](https://github.com/ChainSafe/discv5/compare/v1.3.0...v1.3.1) (2022-11-03)
+
+
+### Bug Fixes
+
+* revert limit to nodes response ([#222](https://github.com/ChainSafe/discv5/issues/222)) ([a628308](https://github.com/ChainSafe/discv5/commit/a6283082e069c0afac0e06cd7eb26e6b17ee5310))
+
+## [1.3.0](https://github.com/ChainSafe/discv5/compare/v1.2.1...v1.3.0) (2022-11-02)
+
+
+### Features
+
+* limit nodes response to 16 packets ([#219](https://github.com/ChainSafe/discv5/issues/219)) ([6fdc96d](https://github.com/ChainSafe/discv5/commit/6fdc96de9418792e0920a9a5b4b53512e3b61183))
+
+
+### Bug Fixes
+
+* throw error when encoding/decoding PONG with invalid port ([#218](https://github.com/ChainSafe/discv5/issues/218)) ([cfc3c3c](https://github.com/ChainSafe/discv5/commit/cfc3c3cdae7a4672c8bb4b3990fd7963fea04c13))
+
+## [1.2.1](https://github.com/ChainSafe/discv5/compare/v1.2.0...v1.2.1) (2022-11-02)
+
+
+### Bug Fixes
+
+* add more checks to handleFindNode ([#216](https://github.com/ChainSafe/discv5/issues/216)) ([b8a09bf](https://github.com/ChainSafe/discv5/commit/b8a09bf5e23ca66a9cfb496520a3955684be6be4))
+* miscellaneous typos ([#215](https://github.com/ChainSafe/discv5/issues/215)) ([0a1c2b4](https://github.com/ChainSafe/discv5/commit/0a1c2b443520392dad15eea698b7481a3f5fd0c4))
 
 ## [1.2.0](https://github.com/ChainSafe/discv5/compare/v1.1.2...v1.2.0) (2022-10-28)
 

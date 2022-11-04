@@ -65,6 +65,10 @@ function decodePong(data: Buffer): IPongMessage {
     throw new Error(ERR_INVALID_MESSAGE);
   }
 
+  // recipientPort is a uint16 (2 bytes)
+  if (rlpRaw[3].length > 2) {
+    throw new Error(ERR_INVALID_MESSAGE);
+  }
   return {
     type: MessageType.PONG,
     id: toBigIntBE(rlpRaw[0]),

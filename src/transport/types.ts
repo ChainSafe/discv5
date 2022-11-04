@@ -30,7 +30,7 @@ export interface ITransportService extends TransportEventEmitter {
   stop(): Promise<void>;
   send(to: Multiaddr, toId: string, packet: IPacket): Promise<void>;
 
-  /** Add 1 expected response of unknown lenght from IP for rate limiter */
+  /** Add 1 expected response of unknown length from IP for rate limiter */
   addExpectedResponse?(ipAddress: string): void;
   /** Remove 1 expected response from IP added with addExpectedResponse */
   removeExpectedResponse?(ipAddress: string): void;
