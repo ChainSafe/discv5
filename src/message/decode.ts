@@ -65,6 +65,12 @@ function decodePong(data: Buffer): IPongMessage {
     throw new Error(ERR_INVALID_MESSAGE);
   }
 
+  const ip = ipFromBytes(rlpRaw[2]);
+  // IP must be 4 or 16 bytes
+  if (ip === undefined) {
+    throw new Error(ERR_INVALID_MESSAGE);
+  }
+
   // recipientPort is a uint16 (2 bytes)
   if (rlpRaw[3].length > 2) {
     throw new Error(ERR_INVALID_MESSAGE);
@@ -73,7 +79,7 @@ function decodePong(data: Buffer): IPongMessage {
     type: MessageType.PONG,
     id: toBigIntBE(rlpRaw[0]),
     enrSeq: toBigIntBE(rlpRaw[1]),
-    ip: ipFromBytes(rlpRaw[2]),
+    ip,
     port: rlpRaw[3].length ? rlpRaw[3].readUIntBE(0, rlpRaw[3].length) : 0,
   };
 }

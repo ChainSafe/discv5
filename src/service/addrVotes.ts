@@ -69,5 +69,5 @@ export class AddrVotes {
 
 /** Arbitrary serialization of SocketAddr, used only to tally votes */
 function serializeSocketAddr(ip: IP, port: number): string {
-  return `${ip.type}-${Buffer.from(ip).toString("hex")}:${port}`;
+  return `${ip.type}-${Buffer.from(ip.octets).toString("hex")}:${port}`;
 }

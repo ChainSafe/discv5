@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import debug from "debug";
 import { randomBytes } from "@libp2p/crypto";
-import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
+import { Multiaddr } from "@multiformats/multiaddr";
 import { PeerId } from "@libp2p/interface-peer-id";
 
 import { ITransportService, UDPTransportService } from "../transport/index.js";
@@ -50,7 +50,7 @@ import {
   INodesResponse,
 } from "./types.js";
 import { RateLimiter, RateLimiterOpts } from "../rateLimit/index.js";
-import { multiaddrToIP, multiaddrToUDP } from "../util/ip.js";
+import { getIPUDPOnENR, multiaddrFromIPUDP, isEqualIPUDP, multiaddrToIPUDP, setIPUDPOnENR } from "../util/ip.js";
 
 const log = debug("discv5:service");
 
@@ -718,13 +718,14 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       }
     }
 
+    const ipUDP = multiaddrToIPUDP(nodeAddr.socketAddr);
+
     const pongMessage: IPongMessage = {
       type: MessageType.PONG,
       id: message.id,
       enrSeq: this.enr.seq,
-      // TODO: Combine multiaddrToIP and multiaddrToUDP into one .tuples() call
-      ip: multiaddrToIP(nodeAddr.socketAddr),
-      port: multiaddrToUDP(nodeAddr.socketAddr),
+      ip: ipUDP,
+      port: ipUDP.udp,
     };
 
     // build the Pong response
@@ -854,14 +855,13 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       const isWinningVote = this.addrVotes.addVote(nodeAddr.nodeId, message.ip, message.port);
 
       if (isWinningVote) {
-        const currentIP = this.enr.get("ip");
-        const currentUdp = this.enr.udp;
-        if (!currentIP || currentUdp == undefined || !isEqualIP(currentIP, message.ip) || currentUdp !== message.port) {
+        const currentIPUDP = getIPUDPOnENR(this.enr);
+        const winningIPUDP = { ...message.ip, udp: message.port };
+        if (!currentIPUDP || !isEqualIPUDP(currentIPUDP, winningIPUDP)) {
           log("Local ENR (IP & UDP) updated: %s", isWinningVote);
           // Set new IP and port
-          this.enr.set("ip", message.ip.octets);
-          this.enr.udp = message.port;
-          this.emit("multiaddrUpdated", multiaddr(message.ip, message.port));
+          setIPUDPOnENR(this.enr, winningIPUDP);
+          this.emit("multiaddrUpdated", multiaddrFromIPUDP(winningIPUDP));
 
           // publish update to all connected peers
           this.pingConnectedPeers();
