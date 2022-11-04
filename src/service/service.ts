@@ -725,7 +725,6 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       id: message.id,
       enrSeq: this.enr.seq,
       ip: ipUDP,
-      port: ipUDP.udp,
     };
 
     // build the Pong response
@@ -852,11 +851,11 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     log("Received a PONG response from %o", nodeAddr);
 
     if (this.config.enrUpdate) {
-      const isWinningVote = this.addrVotes.addVote(nodeAddr.nodeId, message.ip, message.port);
+      const isWinningVote = this.addrVotes.addVote(nodeAddr.nodeId, message.ip);
 
       if (isWinningVote) {
         const currentIPUDP = getIPUDPOnENR(this.enr);
-        const winningIPUDP = { ...message.ip, udp: message.port };
+        const winningIPUDP = message.ip;
         if (!currentIPUDP || !isEqualIPUDP(currentIPUDP, winningIPUDP)) {
           log("Local ENR (IP & UDP) updated: %s", isWinningVote);
           // Set new IP and port

@@ -1,5 +1,5 @@
 import { NodeId } from "../enr/index.js";
-import { IP } from "../util/ip.js";
+import { IPUDP } from "../util/ip.js";
 
 /** Serialized representation of the IP:port vote from the Pong message */
 type VoteID = string;
@@ -18,8 +18,8 @@ export class AddrVotes {
    * Adds vote to a given IP:port tuple from a Pong message. If the votes for this addr are greater than `votesToWin`,
    * @returns true if the added vote is the winning vote. In that case clears all existing votes.
    */
-  addVote(voter: NodeId, ip: IP, port: number): boolean {
-    const socketAddrStr = serializeSocketAddr(ip, port);
+  addVote(voter: NodeId, ip: IPUDP): boolean {
+    const socketAddrStr = serializeSocketAddr(ip);
 
     const prevVote = this.votes.get(voter);
     if (prevVote?.socketAddrStr === socketAddrStr) {
@@ -68,6 +68,6 @@ export class AddrVotes {
 }
 
 /** Arbitrary serialization of SocketAddr, used only to tally votes */
-function serializeSocketAddr(ip: IP, port: number): string {
-  return `${ip.type}-${Buffer.from(ip.octets).toString("hex")}:${port}`;
+function serializeSocketAddr(ip: IPUDP): string {
+  return `${ip.type}-${Buffer.from(ip.octets).toString("hex")}:${ip.udp}`;
 }
