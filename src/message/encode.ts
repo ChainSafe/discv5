@@ -55,7 +55,7 @@ export function encodePingMessage(m: IPingMessage): Buffer {
 }
 
 export function encodePongMessage(m: IPongMessage): Buffer {
-  if (m.ip.udp < 0 || m.ip.udp > 65535) {
+  if (m.addr.port < 0 || m.addr.port > 65535) {
     throw new Error("invalid port for encoding");
   }
   return Buffer.concat([
@@ -64,8 +64,8 @@ export function encodePongMessage(m: IPongMessage): Buffer {
       //
       toBuffer(m.id),
       toBuffer(m.enrSeq),
-      ipToBytes(m.ip),
-      m.ip.udp,
+      ipToBytes(m.addr.ip),
+      m.addr.port,
     ]),
   ]);
 }

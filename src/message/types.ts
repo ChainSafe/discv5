@@ -1,5 +1,5 @@
 import { SequenceNumber, ENR } from "../enr/index.js";
-import { IPUDP } from "../util/ip.js";
+import { SocketAddress } from "../util/ip.js";
 
 export type RequestId = bigint;
 
@@ -53,7 +53,7 @@ export interface IPongMessage {
   type: MessageType.PONG;
   id: RequestId;
   enrSeq: SequenceNumber;
-  ip: IPUDP;
+  addr: SocketAddress;
 }
 
 export interface IFindNodeMessage {

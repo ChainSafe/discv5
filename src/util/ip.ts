@@ -2,7 +2,10 @@ import { multiaddr, Multiaddr } from "@multiformats/multiaddr";
 import { ENR } from "../enr/index.js";
 
 export type IP = { type: 4 | 6; octets: Uint8Array };
-export type IPUDP = IP & { udp: number };
+export type SocketAddress = {
+  ip: IP;
+  port: number;
+};
 
 export function ipFromBytes(bytes: Uint8Array): IP | undefined {
   // https://github.com/sigp/discv5/blob/517eb3f0c5e5b347d8fe6c2973e1698f89e83524/src/rpc.rs#L429
@@ -20,49 +23,53 @@ export function ipToBytes(ip: IP): Uint8Array {
   return ip.octets;
 }
 
-export function isEqualIPUDP(ip1: IPUDP, ip2: IPUDP): boolean {
-  if (ip1.type !== ip2.type) {
+export function isEqualSocketAddress(s1: SocketAddress, s2: SocketAddress): boolean {
+  if (s1.ip.type !== s2.ip.type) {
     return false;
   }
-  for (let i = 0; i < ip1.octets.length; i++) {
-    if (ip1.octets[i] !== ip2.octets[i]) {
+  for (let i = 0; i < s1.ip.octets.length; i++) {
+    if (s1.ip.octets[i] !== s2.ip.octets[i]) {
       return false;
     }
   }
-  return ip1.udp === ip2.udp;
+  return s1.port === s2.port;
 }
 
-export function getIPUDPOnENR(enr: ENR): IPUDP | undefined {
+export function getSocketAddressOnENR(enr: ENR): SocketAddress | undefined {
   const ip4Octets = enr.get("ip");
   const udp4 = enr.udp;
   if (ip4Octets !== undefined && udp4 !== undefined) {
-    const ip = ipFromBytes(ip4Octets) as IPUDP | undefined;
+    const ip = ipFromBytes(ip4Octets);
     if (ip !== undefined) {
-      ip.udp = udp4;
+      return {
+        ip,
+        port: udp4,
+      };
     }
-    return ip;
   }
 
   const ip6Octets = enr.get("ip6");
   const udp6 = enr.udp6;
   if (ip6Octets !== undefined && udp6 !== undefined) {
-    const ip = ipFromBytes(ip6Octets) as IPUDP | undefined;
+    const ip = ipFromBytes(ip6Octets);
     if (ip !== undefined) {
-      ip.udp = udp6;
+      return {
+        ip,
+        port: udp6,
+      };
     }
-    return ip;
   }
 }
 
-export function setIPUDPOnENR(enr: ENR, ip: IPUDP): void {
-  switch (ip.type) {
+export function setSocketAddressOnENR(enr: ENR, s: SocketAddress): void {
+  switch (s.ip.type) {
     case 4:
-      enr.set("ip", ip.octets);
-      enr.udp = ip.udp;
+      enr.set("ip", s.ip.octets);
+      enr.udp = s.port;
       break;
     case 6:
-      enr.set("ip6", ip.octets);
-      enr.udp6 = ip.udp;
+      enr.set("ip6", s.ip.octets);
+      enr.udp6 = s.port;
       break;
   }
 }
@@ -82,21 +89,21 @@ const Protocol = {
 const udpProto0 = 145;
 const udpProto1 = 2;
 
-export function multiaddrFromIPUDP(ip: IPUDP): Multiaddr {
+export function multiaddrFromSocketAddress(s: SocketAddress): Multiaddr {
   // ipProto(1) + octets(4 or 16) + udpProto(2) + udpPort(2)
-  const multiaddrBuf = new Uint8Array(ip.octets.length + 5);
-  multiaddrBuf[0] = Protocol[ip.type];
-  multiaddrBuf.set(ip.octets, 1);
+  const multiaddrBuf = new Uint8Array(s.ip.octets.length + 5);
+  multiaddrBuf[0] = Protocol[s.ip.type];
+  multiaddrBuf.set(s.ip.octets, 1);
   multiaddrBuf[multiaddrBuf.length - 4] = udpProto0;
   multiaddrBuf[multiaddrBuf.length - 3] = udpProto1;
-  multiaddrBuf[multiaddrBuf.length - 2] = ip.udp >> 8;
-  multiaddrBuf[multiaddrBuf.length - 1] = ip.udp & 255;
+  multiaddrBuf[multiaddrBuf.length - 2] = s.port >> 8;
+  multiaddrBuf[multiaddrBuf.length - 1] = s.port & 255;
   return multiaddr(multiaddrBuf);
 }
 
-export function multiaddrToIPUDP(multiaddr: Multiaddr): IPUDP {
-  let ip: IP | IPUDP | undefined;
-  let udp: number | undefined;
+export function multiaddrToSocketAddress(multiaddr: Multiaddr): SocketAddress {
+  let ip: IP | undefined;
+  let port: number | undefined;
   for (const tuple of multiaddr.tuples()) {
     switch (tuple[0]) {
       case Protocol["4"]:
@@ -106,7 +113,7 @@ export function multiaddrToIPUDP(multiaddr: Multiaddr): IPUDP {
         ip = { type: 6, octets: tuple[1]! };
         break;
       case Protocol.udp: {
-        udp = (tuple[1]![0] << 8) + tuple[1]![1];
+        port = (tuple[1]![0] << 8) + tuple[1]![1];
         break;
       }
     }
@@ -114,9 +121,11 @@ export function multiaddrToIPUDP(multiaddr: Multiaddr): IPUDP {
   if (ip === undefined) {
     throw Error("multiaddr does not have ip4 or ip6 protocols");
   }
-  if (udp === undefined) {
+  if (port === undefined) {
     throw Error("multiaddr does not have udp protocol");
   }
-  (ip as IPUDP).udp = udp;
-  return ip as IPUDP;
+  return {
+    ip,
+    port,
+  };
 }

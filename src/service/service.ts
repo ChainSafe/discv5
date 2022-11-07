@@ -50,7 +50,13 @@ import {
   INodesResponse,
 } from "./types.js";
 import { RateLimiter, RateLimiterOpts } from "../rateLimit/index.js";
-import { getIPUDPOnENR, multiaddrFromIPUDP, isEqualIPUDP, multiaddrToIPUDP, setIPUDPOnENR } from "../util/ip.js";
+import {
+  getSocketAddressOnENR,
+  multiaddrFromSocketAddress,
+  isEqualSocketAddress,
+  multiaddrToSocketAddress,
+  setSocketAddressOnENR,
+} from "../util/ip.js";
 
 const log = debug("discv5:service");
 
@@ -718,13 +724,13 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       }
     }
 
-    const ipUDP = multiaddrToIPUDP(nodeAddr.socketAddr);
+    const ipUDP = multiaddrToSocketAddress(nodeAddr.socketAddr);
 
     const pongMessage: IPongMessage = {
       type: MessageType.PONG,
       id: message.id,
       enrSeq: this.enr.seq,
-      ip: ipUDP,
+      addr: ipUDP,
     };
 
     // build the Pong response
@@ -851,16 +857,16 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     log("Received a PONG response from %o", nodeAddr);
 
     if (this.config.enrUpdate) {
-      const isWinningVote = this.addrVotes.addVote(nodeAddr.nodeId, message.ip);
+      const isWinningVote = this.addrVotes.addVote(nodeAddr.nodeId, message.addr);
 
       if (isWinningVote) {
-        const currentIPUDP = getIPUDPOnENR(this.enr);
-        const winningIPUDP = message.ip;
-        if (!currentIPUDP || !isEqualIPUDP(currentIPUDP, winningIPUDP)) {
+        const currentAddr = getSocketAddressOnENR(this.enr);
+        const winningAddr = message.addr;
+        if (!currentAddr || !isEqualSocketAddress(currentAddr, winningAddr)) {
           log("Local ENR (IP & UDP) updated: %s", isWinningVote);
           // Set new IP and port
-          setIPUDPOnENR(this.enr, winningIPUDP);
-          this.emit("multiaddrUpdated", multiaddrFromIPUDP(winningIPUDP));
+          setSocketAddressOnENR(this.enr, winningAddr);
+          this.emit("multiaddrUpdated", multiaddrFromSocketAddress(winningAddr));
 
           // publish update to all connected peers
           this.pingConnectedPeers();

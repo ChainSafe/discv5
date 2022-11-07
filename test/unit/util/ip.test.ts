@@ -2,127 +2,155 @@ import { multiaddr } from "@multiformats/multiaddr";
 import { expect } from "chai";
 import { ENR } from "../../../src/index.js";
 import {
-  getIPUDPOnENR,
-  IPUDP,
-  isEqualIPUDP,
-  multiaddrFromIPUDP,
-  multiaddrToIPUDP,
-  setIPUDPOnENR,
+  getSocketAddressOnENR,
+  SocketAddress,
+  isEqualSocketAddress,
+  multiaddrFromSocketAddress,
+  multiaddrToSocketAddress,
+  setSocketAddressOnENR,
 } from "../../../src/util/ip.js";
 
-describe("isEqualIPUDP", () => {
+describe("isEqualSocketAddress", () => {
   it("equal", () => {
-    const testCases: { ip1: IPUDP; ip2: IPUDP }[] = [
+    const testCases: { addr1: SocketAddress; addr2: SocketAddress }[] = [
       {
-        ip1: {
-          type: 4,
-          octets: new Uint8Array(4),
-          udp: 0,
+        addr1: {
+          ip: {
+            type: 4,
+            octets: new Uint8Array(4),
+          },
+          port: 0,
         },
-        ip2: {
-          type: 4,
-          octets: new Uint8Array(4),
-          udp: 0,
+        addr2: {
+          ip: {
+            type: 4,
+            octets: new Uint8Array(4),
+          },
+          port: 0,
         },
       },
       {
-        ip1: {
-          type: 6,
-          octets: new Uint8Array(16),
-          udp: 0,
+        addr1: {
+          ip: {
+            type: 6,
+            octets: new Uint8Array(16),
+          },
+          port: 0,
         },
-        ip2: {
-          type: 6,
-          octets: new Uint8Array(16),
-          udp: 0,
+        addr2: {
+          ip: {
+            type: 6,
+            octets: new Uint8Array(16),
+          },
+          port: 0,
         },
       },
       {
-        ip1: {
-          type: 4,
-          octets: new Uint8Array(4),
-          udp: 1,
+        addr1: {
+          ip: {
+            type: 4,
+            octets: new Uint8Array(4),
+          },
+          port: 1,
         },
-        ip2: {
-          type: 4,
-          octets: new Uint8Array(4),
-          udp: 1,
+        addr2: {
+          ip: {
+            type: 4,
+            octets: new Uint8Array(4),
+          },
+          port: 1,
         },
       },
     ];
-    for (const { ip1, ip2 } of testCases) {
-      expect(isEqualIPUDP(ip1, ip2), `isEqualIPUDP(${ip1}, ${ip2}) should be true`).to.be.equal(true);
+    for (const { addr1: ip1, addr2: ip2 } of testCases) {
+      expect(isEqualSocketAddress(ip1, ip2), `isEqualSocketAddress(${ip1}, ${ip2}) should be true`).to.be.equal(true);
     }
   });
 
   it("not equal", () => {
-    const testCases: { ip1: IPUDP; ip2: IPUDP }[] = [
+    const testCases: { ip1: SocketAddress; ip2: SocketAddress }[] = [
       {
         ip1: {
-          type: 4,
-          octets: new Uint8Array(4),
-          udp: 0,
+          ip: {
+            type: 4,
+            octets: new Uint8Array(4),
+          },
+          port: 0,
         },
         ip2: {
-          type: 6,
-          octets: new Uint8Array(4),
-          udp: 0,
+          ip: {
+            type: 6,
+            octets: new Uint8Array(4),
+          },
+          port: 0,
         },
       },
       {
         ip1: {
-          type: 4,
-          octets: Uint8Array.from([0, 0, 0, 0]),
-          udp: 0,
+          ip: {
+            type: 4,
+            octets: Uint8Array.from([0, 0, 0, 0]),
+          },
+          port: 0,
         },
         ip2: {
-          type: 4,
-          octets: Uint8Array.from([0, 0, 0, 1]),
-          udp: 0,
+          ip: {
+            type: 4,
+            octets: Uint8Array.from([0, 0, 0, 1]),
+          },
+          port: 0,
         },
       },
       {
         ip1: {
-          type: 4,
-          octets: new Uint8Array(4),
-          udp: 0,
+          ip: {
+            type: 4,
+            octets: new Uint8Array(4),
+          },
+          port: 0,
         },
         ip2: {
-          type: 4,
-          octets: new Uint8Array(4),
-          udp: 1,
+          ip: {
+            type: 4,
+            octets: new Uint8Array(4),
+          },
+          port: 1,
         },
       },
     ];
     for (const { ip1, ip2 } of testCases) {
-      expect(isEqualIPUDP(ip1, ip2), `isEqualIPUDP(${ip1}, ${ip2}) should be false`).to.be.equal(false);
+      expect(isEqualSocketAddress(ip1, ip2), `isEqualSocketAddress(${ip1}, ${ip2}) should be false`).to.be.equal(false);
     }
   });
 });
 
-describe("get/set IPUDP on ENR", () => {
+describe("get/set SocketAddress on ENR", () => {
   it("roundtrip", () => {
-    const ip: IPUDP = {
-      type: 4,
-      octets: Uint8Array.from([127, 0, 0, 1]),
-      udp: 53,
+    const addr: SocketAddress = {
+      ip: {
+        type: 4,
+        octets: Uint8Array.from([127, 0, 0, 1]),
+      },
+      port: 53,
     };
     const enr = new ENR();
-    expect(getIPUDPOnENR(enr)).to.equal(undefined);
+    expect(getSocketAddressOnENR(enr)).to.equal(undefined);
 
-    setIPUDPOnENR(enr, ip);
-    expect(getIPUDPOnENR(enr)).to.deep.equal(ip);
+    setSocketAddressOnENR(enr, addr);
+    expect(getSocketAddressOnENR(enr)).to.deep.equal(addr);
   });
 });
 
-describe("multiaddr to/from IPUDP", () => {
+describe("multiaddr to/from SocketAddress", () => {
   it("roundtrip", () => {
-    const ip: IPUDP = {
-      type: 4,
-      octets: Uint8Array.from([127, 0, 0, 1]),
-      udp: 53,
+    const addr: SocketAddress = {
+      ip: {
+        type: 4,
+        octets: Uint8Array.from([127, 0, 0, 1]),
+      },
+      port: 53,
     };
-    expect(multiaddrToIPUDP(multiaddrFromIPUDP(ip))).to.deep.equal(ip);
+    expect(multiaddrToSocketAddress(multiaddrFromSocketAddress(addr))).to.deep.equal(addr);
   });
 
   it("different implementations yield same results", () => {
@@ -145,27 +173,31 @@ describe("multiaddr to/from IPUDP", () => {
         .join(":");
 
     for (let i = 0; i < numTries; i++) {
-      let ip: IPUDP;
+      let addr: SocketAddress;
       let multiaddrStr: string;
       if (i % 2 === 0) {
-        ip = {
-          type: 4,
-          octets: randIp4(),
-          udp: randPort(),
+        addr = {
+          ip: {
+            type: 4,
+            octets: randIp4(),
+          },
+          port: randPort(),
         };
-        multiaddrStr = `/ip4/${ip4ToStr(ip.octets)}/udp/${ip.udp}`;
+        multiaddrStr = `/ip4/${ip4ToStr(addr.ip.octets)}/udp/${addr.port}`;
       } else {
-        ip = {
-          type: 6,
-          octets: randIp6(),
-          udp: randPort(),
+        addr = {
+          ip: {
+            type: 6,
+            octets: randIp6(),
+          },
+          port: randPort(),
         };
-        multiaddrStr = `/ip6/${ip6ToStr(ip.octets)}/udp/${ip.udp}`;
+        multiaddrStr = `/ip6/${ip6ToStr(addr.ip.octets)}/udp/${addr.port}`;
       }
       // test against upstream (generic but slow) implementation
-      expect(multiaddrFromIPUDP(ip)).to.deep.equal(multiaddr(multiaddrStr));
+      expect(multiaddrFromSocketAddress(addr)).to.deep.equal(multiaddr(multiaddrStr));
       // also test roundtrip
-      expect(multiaddrToIPUDP(multiaddrFromIPUDP(ip))).to.deep.equal(ip);
+      expect(multiaddrToSocketAddress(multiaddrFromSocketAddress(addr))).to.deep.equal(addr);
     }
   });
 });
