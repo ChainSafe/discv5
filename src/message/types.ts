@@ -1,6 +1,13 @@
 import { SequenceNumber, ENR } from "../enr/index.js";
+import { SocketAddress } from "../util/ip.js";
 
 export type RequestId = bigint;
+
+export type NodeAddressIP = {
+  family: 4 | 6;
+  octets: number[];
+  port: number;
+};
 
 export enum MessageType {
   PING = 1,
@@ -46,8 +53,7 @@ export interface IPongMessage {
   type: MessageType.PONG;
   id: RequestId;
   enrSeq: SequenceNumber;
-  recipientIp: string;
-  recipientPort: number;
+  addr: SocketAddress;
 }
 
 export interface IFindNodeMessage {

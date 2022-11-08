@@ -28,8 +28,7 @@ describe("message", () => {
         type: MessageType.PONG,
         id: 1n,
         enrSeq: 1n,
-        recipientIp: "127.0.0.1",
-        recipientPort: 255, // 1 byte
+        addr: { ip: { type: 4, octets: new Uint8Array([127, 0, 0, 1]) }, port: 255 }, // 1 byte
       },
       expected: Buffer.from("02c90101847f00000181ff", "hex"),
     },
@@ -38,8 +37,7 @@ describe("message", () => {
         type: MessageType.PONG,
         id: 1n,
         enrSeq: 1n,
-        recipientIp: "127.0.0.1",
-        recipientPort: 5000,
+        addr: { ip: { type: 4, octets: new Uint8Array([127, 0, 0, 1]) }, port: 5000 },
       },
       expected: Buffer.from("02ca0101847f000001821388", "hex"),
     },
@@ -48,8 +46,7 @@ describe("message", () => {
         type: MessageType.PONG,
         id: 1n,
         enrSeq: 1n,
-        recipientIp: "aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa",
-        recipientPort: 5000, // 2 bytes
+        addr: { ip: { type: 6, octets: Buffer.alloc(16, 0xaa) }, port: 5000 }, // 2 bytes
       },
       expected: Buffer.from("02d6010190aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa821388", "hex"),
     },
@@ -109,9 +106,8 @@ describe("invalid messages", () => {
         type: MessageType.PONG,
         id: 1n,
         enrSeq: 1n,
-        recipientIp: "127.0.0.1",
-        // Negative values are invalid.
-        recipientPort: -1,
+        // Negative port is invalid.
+        addr: { ip: { type: 4, octets: new Uint8Array([127, 0, 0, 1]) }, port: -1 },
       },
       expected: new Error("invalid port for encoding"),
     },
@@ -120,9 +116,8 @@ describe("invalid messages", () => {
         type: MessageType.PONG,
         id: 1n,
         enrSeq: 1n,
-        recipientIp: "127.0.0.1",
-        // This value is greater than 16 bits.
-        recipientPort: 65536,
+        // This port is greater than 16 bits.
+        addr: { ip: { type: 4, octets: new Uint8Array([127, 0, 0, 1]) }, port: 65536 },
       },
       expected: new Error("invalid port for encoding"),
     },

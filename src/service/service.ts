@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import debug from "debug";
 import { randomBytes } from "@libp2p/crypto";
-import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
+import { Multiaddr } from "@multiformats/multiaddr";
 import { PeerId } from "@libp2p/interface-peer-id";
 
 import { ITransportService, UDPTransportService } from "../transport/index.js";
@@ -29,7 +29,6 @@ import {
   IPongMessage,
   IPingMessage,
   requestMatchesResponse,
-  createPongMessage,
   ITalkReqMessage,
   ITalkRespMessage,
   createTalkRequestMessage,
@@ -51,6 +50,13 @@ import {
   INodesResponse,
 } from "./types.js";
 import { RateLimiter, RateLimiterOpts } from "../rateLimit/index.js";
+import {
+  getSocketAddressOnENR,
+  multiaddrFromSocketAddress,
+  isEqualSocketAddress,
+  multiaddrToSocketAddress,
+  setSocketAddressOnENR,
+} from "../util/ip.js";
 
 const log = debug("discv5:service");
 
@@ -718,14 +724,19 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       }
     }
 
+    const ipUDP = multiaddrToSocketAddress(nodeAddr.socketAddr);
+
+    const pongMessage: IPongMessage = {
+      type: MessageType.PONG,
+      id: message.id,
+      enrSeq: this.enr.seq,
+      addr: ipUDP,
+    };
+
     // build the Pong response
     log("Sending PONG response to node: %o", nodeAddr);
     try {
-      const srcOpts = nodeAddr.socketAddr.toOptions();
-      this.sessionService.sendResponse(
-        nodeAddr,
-        createPongMessage(message.id, this.enr.seq, srcOpts.host, srcOpts.port)
-      );
+      this.sessionService.sendResponse(nodeAddr, pongMessage);
       this.metrics?.sentMessageCount.inc({ type: MessageType[MessageType.PONG] });
     } catch (e) {
       log("Failed to send Pong. Error %s", (e as Error).message);
@@ -846,16 +857,20 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     log("Received a PONG response from %o", nodeAddr);
 
     if (this.config.enrUpdate) {
-      const winningVote = this.addrVotes.addVote(nodeAddr.nodeId, message);
-      const currentAddr = this.enr.getLocationMultiaddr("udp");
-      if (winningVote && (!currentAddr || winningVote.multiaddrStr !== currentAddr.toString())) {
-        log("Local ENR (IP & UDP) updated: %s", winningVote.multiaddrStr);
-        const votedAddr = multiaddr(winningVote.multiaddrStr);
-        this.enr.setLocationMultiaddr(votedAddr);
-        this.emit("multiaddrUpdated", votedAddr);
+      const isWinningVote = this.addrVotes.addVote(nodeAddr.nodeId, message.addr);
 
-        // publish update to all connected peers
-        this.pingConnectedPeers();
+      if (isWinningVote) {
+        const currentAddr = getSocketAddressOnENR(this.enr);
+        const winningAddr = message.addr;
+        if (!currentAddr || !isEqualSocketAddress(currentAddr, winningAddr)) {
+          log("Local ENR (IP & UDP) updated: %s", isWinningVote);
+          // Set new IP and port
+          setSocketAddressOnENR(this.enr, winningAddr);
+          this.emit("multiaddrUpdated", multiaddrFromSocketAddress(winningAddr));
+
+          // publish update to all connected peers
+          this.pingConnectedPeers();
+        }
       }
     }
 

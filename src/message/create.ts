@@ -5,7 +5,6 @@ import {
   RequestId,
   IPingMessage,
   MessageType,
-  IPongMessage,
   IFindNodeMessage,
   INodesMessage,
   ITalkReqMessage,
@@ -22,21 +21,6 @@ export function createPingMessage(enrSeq: SequenceNumber): IPingMessage {
     type: MessageType.PING,
     id: createRequestId(),
     enrSeq,
-  };
-}
-
-export function createPongMessage(
-  id: RequestId,
-  enrSeq: SequenceNumber,
-  recipientIp: string,
-  recipientPort: number
-): IPongMessage {
-  return {
-    type: MessageType.PONG,
-    id,
-    enrSeq,
-    recipientIp,
-    recipientPort,
   };
 }
 
