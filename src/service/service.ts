@@ -48,6 +48,7 @@ import {
   IActiveRequest,
   IDiscv5Metrics,
   INodesResponse,
+  PongResponse,
 } from "./types.js";
 import { RateLimiter, RateLimiterOpts } from "../rateLimit/index.js";
 import {
@@ -368,6 +369,25 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   }
 
   /**
+   * Send FINDNODE message to remote and returns response
+   */
+  public async sendFindNode(remote: ENR | Multiaddr, distances: number[]): Promise<ENR[]> {
+    return await new Promise((resolve, reject) => {
+      this.sendRpcRequest({
+        contact: createNodeContact(remote),
+        request: createFindNodeMessage(distances),
+        callback: (err: RequestErrorType | null, res: ENR[] | null): void => {
+          if (err !== null) {
+            reject(err);
+            return;
+          }
+          resolve(res as ENR[]);
+        },
+      });
+    });
+  }
+
+  /**
    * Broadcast TALKREQ message to all nodes in routing table and returns response
    */
   public async broadcastTalkReq(payload: Buffer, protocol: string | Uint8Array): Promise<Buffer> {
@@ -427,10 +447,22 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   }
 
   /**
-   * Sends a PING request to a node
+   * Sends a PING request to a node and returns response
    */
-  public sendPing(nodeAddr: ENR | Multiaddr): void {
-    this.sendRpcRequest({ contact: createNodeContact(nodeAddr), request: createPingMessage(this.enr.seq) });
+  public async sendPing(nodeAddr: ENR | Multiaddr): Promise<PongResponse> {
+    return await new Promise((resolve, reject) => {
+      this.sendRpcRequest({
+        contact: createNodeContact(nodeAddr),
+        request: createPingMessage(this.enr.seq),
+        callback: (err: RequestErrorType | null, res: PongResponse | null): void => {
+          if (err !== null) {
+            reject(err);
+            return;
+          }
+          resolve(res as PongResponse);
+        },
+      });
+    });
   }
 
   /**
@@ -447,7 +479,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Request an external node's ENR
    */
-  private requestEnr(contact: NodeContact, callback?: (err: RequestErrorType | null, res: ENR | null) => void): void {
+  private requestEnr(contact: NodeContact, callback?: (err: RequestErrorType | null, res: ENR[] | null) => void): void {
     this.sendRpcRequest({ request: createFindNodeMessage([0]), contact, callback });
   }
 

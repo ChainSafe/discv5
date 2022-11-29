@@ -2,10 +2,11 @@ import { EventEmitter } from "events";
 import StrictEventEmitter from "strict-event-emitter-types";
 import { Multiaddr } from "@multiformats/multiaddr";
 
-import { ENR } from "../enr/index.js";
+import { ENR, SequenceNumber } from "../enr/index.js";
 import { ITalkReqMessage, ITalkRespMessage, RequestMessage } from "../message/index.js";
 import { INodeAddress, NodeContact } from "../session/nodeInfo.js";
 import { ConnectionDirection, RequestErrorType } from "../session/index.js";
+import { SocketAddress } from "../util/ip.js";
 
 export interface IDiscv5Events {
   /**
@@ -76,8 +77,13 @@ export interface IActiveRequest<T extends RequestMessage = RequestMessage, U ext
 }
 
 export type BufferCallback = (err: RequestErrorType | null, res: Buffer | null) => void;
-export type ENRCallback = (err: RequestErrorType | null, res: ENR | null) => void;
-export type Callback = BufferCallback | ENRCallback;
+export type ENRCallback = (err: RequestErrorType | null, res: ENR[] | null) => void;
+export type PongResponse = {
+  enrSeq: SequenceNumber;
+  addr: SocketAddress;
+};
+export type PongCallback = (err: RequestErrorType | null, res: PongResponse | null) => void;
+export type Callback = BufferCallback | ENRCallback | PongCallback;
 
 export type CallbackResponseType = Buffer | ENR;
 
