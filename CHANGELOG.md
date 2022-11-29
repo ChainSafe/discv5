@@ -152,6 +152,13 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [1.5.0](https://github.com/ChainSafe/discv5/compare/v1.4.0...v1.5.0) (2022-11-29)
+
+
+### Features
+
+* expose find node and ping ([#226](https://github.com/ChainSafe/discv5/issues/226)) ([57fdbcc](https://github.com/ChainSafe/discv5/commit/57fdbcc81d87ef63c9f13e7cb7886c32f4616188))
+
 ## [1.4.0](https://github.com/ChainSafe/discv5/compare/v1.3.1...v1.4.0) (2022-11-08)
 
 
