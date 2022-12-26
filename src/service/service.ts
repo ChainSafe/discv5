@@ -790,7 +790,10 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       }
       // if the distance is 0, send our local ENR
       if (distance === 0) {
-        this.enr.encodeToValues(this.keypair.privateKey);
+        // ensure our enr has signature before sending response
+        if (!this.enr.signature) {
+          this.enr.encodeToValues(this.keypair.privateKey);
+        }
         nodes.push(this.enr);
       } else {
         nodes.push(...this.kbuckets.valuesOfDistance(distance));
