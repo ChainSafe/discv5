@@ -4,7 +4,7 @@ import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
 
 import { createKeypair, KeypairType } from "../../../src/keypair/index.js";
 import { ENR, v4 } from "../../../src/enr/index.js";
-import { createWhoAreYouPacket, IPacket, PacketType } from "../../../src/packet/index.js";
+import { createWhoAreYouPacket, encodePacket, IPacket, PacketType } from "../../../src/packet/index.js";
 import { UDPTransportService } from "../../../src/transport/index.js";
 import { SessionService } from "../../../src/session/index.js";
 import { createFindNodeMessage, createNodesMessage, encode } from "../../../src/message/index.js";
@@ -120,7 +120,8 @@ describe("session service", function () {
 
     const count = 100_000_000;
     for (let i = 0; i < count; i++) {
-      session.encryptMessage(enr0.nodeId, nodeAddr.nodeId, encode(nodesMessage));
+      const packet = session.encryptMessage(enr0.nodeId, nodeAddr.nodeId, encode(nodesMessage));
+      encodePacket(enr1.nodeId, packet);
       if (i % 10_000 === 0) {
         await new Promise((resolve) => setTimeout(resolve, 100));
         console.log("Memory usage", Math.floor((i * 100) / count) + "%", toMem(process.memoryUsage().heapTotal));
