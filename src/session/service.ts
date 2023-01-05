@@ -132,7 +132,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    *
    * Keyed by NodeAddressString
    */
-  private sessions: LRUCache<NodeAddressString, Session>;
+  public sessions: LRUCache<NodeAddressString, Session>;
 
   constructor(config: ISessionConfig, enr: ENR, keypair: IKeypair, transport: ITransportService) {
     super();
