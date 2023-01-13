@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
 import debug from "debug";
+import { Registry } from "prom-client";
 import { randomBytes } from "@libp2p/crypto";
 import { Multiaddr } from "@multiformats/multiaddr";
 import { PeerId } from "@libp2p/interface-peer-id";
@@ -46,7 +47,6 @@ import {
   Discv5EventEmitter,
   ENRInput,
   IActiveRequest,
-  IDiscv5Metrics,
   INodesResponse,
   PongResponse,
 } from "./types.js";
@@ -58,6 +58,7 @@ import {
   multiaddrToSocketAddress,
   setSocketAddressOnENR,
 } from "../util/ip.js";
+import { createDiscv5Metrics, IDiscv5Metrics } from "../metrics.js";
 
 const log = debug("discv5:service");
 
@@ -81,7 +82,7 @@ export interface IDiscv5CreateOptions {
   peerId: PeerId;
   multiaddr: Multiaddr;
   config?: Partial<IDiscv5Config>;
-  metrics?: IDiscv5Metrics;
+  metricsRegistry?: Registry | null;
   transport?: ITransportService;
   /**
    * Enable optional packet rate limiter with opts
@@ -197,8 +198,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * @param multiaddr The multiaddr which contains the network interface and port to which the UDP server binds
    */
   public static create(opts: IDiscv5CreateOptions): Discv5 {
-    const { enr, peerId, multiaddr, config = {}, metrics, transport } = opts;
+    const { enr, peerId, multiaddr, config = {}, metricsRegistry, transport } = opts;
     const fullConfig = { ...defaultConfig, ...config };
+    const metrics = metricsRegistry ? createDiscv5Metrics(metricsRegistry) : undefined;
     const decodedEnr = typeof enr === "string" ? ENR.decodeTxt(enr) : enr;
     const rateLimiter = opts.rateLimiterOpts && new RateLimiter(opts.rateLimiterOpts, metrics ?? null);
     const sessionService = new SessionService(

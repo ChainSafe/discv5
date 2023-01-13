@@ -105,6 +105,7 @@
     "debug": "^4.3.1",
     "dgram": "^1.0.1",
     "err-code": "^3.0.1",
+    "prom-client": "^14.1.0",
     "rlp": "^2.2.6",
     "strict-event-emitter-types": "^2.0.0",
     "varint": "^6.0.0"

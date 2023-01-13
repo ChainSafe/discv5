@@ -41,7 +41,7 @@ import {
 import { getNodeAddress, INodeAddress, INodeContactType, nodeAddressToString, NodeContact } from "./nodeInfo.js";
 import LRUCache from "lru-cache";
 import { TimeoutMap } from "../util/index.js";
-import { IDiscv5Metrics } from "../service/types.js";
+import { IDiscv5Metrics } from "../metrics.js";
 
 const log = debug("discv5:sessionService");
 

@@ -1,10 +1,11 @@
+import { Registry } from "prom-client";
 import { PeerId } from "@libp2p/interface-peer-id";
 import { PeerDiscovery, PeerDiscoveryEvents, symbol as peerDiscoverySymbol } from "@libp2p/interface-peer-discovery";
 import { PeerInfo } from "@libp2p/interface-peer-info";
 import { CustomEvent, EventEmitter } from "@libp2p/interfaces/events";
 import { multiaddr } from "@multiformats/multiaddr";
 
-import { Discv5, ENRInput, IDiscv5Metrics } from "../service/index.js";
+import { Discv5, ENRInput } from "../service/index.js";
 import { ENR } from "../enr/index.js";
 import { IDiscv5Config } from "../config/index.js";
 
@@ -39,7 +40,7 @@ export interface IDiscv5DiscoveryInputOptions extends Partial<IDiscv5Config> {
   /**
    * Optional metrics
    */
-  metrics?: IDiscv5Metrics;
+  metricsRegistry?: Registry;
   /**
    * Enable/disable discv5
    * Note: this option is handled within libp2p, not within discv5
@@ -70,7 +71,7 @@ export class Discv5Discovery extends EventEmitter<PeerDiscoveryEvents> implement
       peerId: options.peerId,
       multiaddr: multiaddr(options.bindAddr),
       config: options,
-      metrics: options.metrics,
+      metricsRegistry: options.metricsRegistry,
     });
     this.searchInterval = options.searchInterval ?? DEFAULT_SEARCH_INTERVAL_MS;
     this.started = false;
