@@ -108,35 +108,3 @@ export type ConnectionStatus =
     };
 
 export type ENRInput = ENR | string;
-
-// Metrics
-
-type Labels<T extends string> = Partial<Record<T, string | number>>;
-interface IGauge<T extends string = string> {
-  inc(value?: number): void;
-  inc(labels: Labels<T>, value?: number): void;
-  set(value: number): void;
-  set(labels: Labels<T>, value: number): void;
-  collect(): void;
-}
-
-export interface IDiscv5Metrics {
-  /** Total size of the kad table */
-  kadTableSize: IGauge;
-  /** Total number of active sessions */
-  activeSessionCount: IGauge;
-  /** Total number of connected peers */
-  connectedPeerCount: IGauge;
-  /** Total number of attempted lookups */
-  lookupCount: IGauge;
-
-  /** Total number messages sent by message type */
-  sentMessageCount: IGauge<"type">;
-  /** Total number messages received by message type */
-  rcvdMessageCount: IGauge<"type">;
-
-  /** Total count of rate limit hits by IP */
-  rateLimitHitIP: IGauge;
-  /** Total count of rate limit hits by total requests */
-  rateLimitHitTotal: IGauge;
-}

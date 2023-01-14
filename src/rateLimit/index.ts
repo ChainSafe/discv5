@@ -1,4 +1,4 @@
-import { IDiscv5Metrics } from "../service/index.js";
+import { IDiscv5Metrics } from "../metrics.js";
 import { RateLimiterGRCA, RateLimiterQuota } from "./rateLimiterGRCA.js";
 
 type IPAddress = string;
