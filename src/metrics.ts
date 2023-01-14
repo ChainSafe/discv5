@@ -1,4 +1,12 @@
-import { Gauge, GaugeConfiguration, Registry } from "prom-client";
+export interface MetricsRegister {
+  gauge<T extends string>(config: GaugeConfig<T>): IGauge<T>;
+}
+
+type GaugeConfig<T extends string> = {
+  name: string;
+  help: string;
+  labelNames?: T[] | readonly T[];
+};
 
 type Labels<T extends string> = Partial<Record<T, string | number>>;
 interface IGauge<T extends string = string> {
@@ -28,12 +36,7 @@ export type Metrics = ReturnType<typeof createDiscv5Metrics>;
  * Discv5 metrics
  */
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/explicit-function-return-type
-export function createDiscv5Metrics(r: Registry) {
-  const register = {
-    gauge<T extends string>(configuration: GaugeConfiguration<T>): IGauge<T> {
-      return new Gauge<T>({ ...configuration, registers: [r] }) as unknown as IGauge<T>;
-    },
-  };
+export function createDiscv5Metrics(register: MetricsRegister) {
   return {
     /** Total size of the kad table */
     kadTableSize: register.gauge({

@@ -1,6 +1,5 @@
 import { EventEmitter } from "events";
 import debug from "debug";
-import { Registry } from "prom-client";
 import { randomBytes } from "@libp2p/crypto";
 import { Multiaddr } from "@multiformats/multiaddr";
 import { PeerId } from "@libp2p/interface-peer-id";
@@ -58,7 +57,7 @@ import {
   multiaddrToSocketAddress,
   setSocketAddressOnENR,
 } from "../util/ip.js";
-import { createDiscv5Metrics, IDiscv5Metrics } from "../metrics.js";
+import { createDiscv5Metrics, IDiscv5Metrics, MetricsRegister } from "../metrics.js";
 
 const log = debug("discv5:service");
 
@@ -82,7 +81,7 @@ export interface IDiscv5CreateOptions {
   peerId: PeerId;
   multiaddr: Multiaddr;
   config?: Partial<IDiscv5Config>;
-  metricsRegistry?: Registry | null;
+  metricsRegistry?: MetricsRegister | null;
   transport?: ITransportService;
   /**
    * Enable optional packet rate limiter with opts

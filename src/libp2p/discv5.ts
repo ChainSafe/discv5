@@ -1,4 +1,3 @@
-import { Registry } from "prom-client";
 import { PeerId } from "@libp2p/interface-peer-id";
 import { PeerDiscovery, PeerDiscoveryEvents, symbol as peerDiscoverySymbol } from "@libp2p/interface-peer-discovery";
 import { PeerInfo } from "@libp2p/interface-peer-info";
@@ -8,6 +7,7 @@ import { multiaddr } from "@multiformats/multiaddr";
 import { Discv5, ENRInput } from "../service/index.js";
 import { ENR } from "../enr/index.js";
 import { IDiscv5Config } from "../config/index.js";
+import { MetricsRegister } from "../metrics.js";
 
 // Default to 0ms between automatic searches
 // 0ms is 'backwards compatible' with the prior behavior (always be searching)
@@ -40,7 +40,7 @@ export interface IDiscv5DiscoveryInputOptions extends Partial<IDiscv5Config> {
   /**
    * Optional metrics
    */
-  metricsRegistry?: Registry;
+  metricsRegistry?: MetricsRegister;
   /**
    * Enable/disable discv5
    * Note: this option is handled within libp2p, not within discv5
