@@ -152,6 +152,22 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [2.0.0](https://github.com/ChainSafe/discv5/compare/v1.5.0...v2.0.0) (2023-01-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* switch to metrics generator pattern ([#233](https://github.com/ChainSafe/discv5/issues/233))
+
+### Features
+
+* switch to metrics generator pattern ([#233](https://github.com/ChainSafe/discv5/issues/233)) ([1751192](https://github.com/ChainSafe/discv5/commit/1751192e32ffde419947504d4beb7fd626f808e2))
+
+
+### Bug Fixes
+
+* ensure our enr has signature in INodesMessage response ([#229](https://github.com/ChainSafe/discv5/issues/229)) ([71a917f](https://github.com/ChainSafe/discv5/commit/71a917f2d505d93c1c24044c820810cc9349ea1f))
+
 ## [1.5.0](https://github.com/ChainSafe/discv5/compare/v1.4.0...v1.5.0) (2022-11-29)
 
 
