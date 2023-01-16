@@ -783,8 +783,8 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    */
   private handleFindNode(nodeAddr: INodeAddress, message: IFindNodeMessage): void {
     const { id, distances } = message;
-    let nodes: ENR[] = [];
-    for (const distance of new Set(distances)) {
+    const nodes: ENR[] = [];
+    topLoop: for (const distance of new Set(distances)) {
       // filter out invalid distances
       if (distance < 0 || distance > 256) {
         continue;
@@ -796,22 +796,19 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
           this.enr.encodeToValues(this.keypair.privateKey);
         }
         nodes.push(this.enr);
+        if (nodes.length >= 16) {
+          break topLoop;
+        }
       } else {
-        nodes.push(...this.kbuckets.valuesOfDistance(distance));
+        for (const node of this.kbuckets.valuesOfDistance(distance)) {
+          nodes.push(node);
+          if (nodes.length >= 16) {
+            break topLoop;
+          }
+        }
       }
     }
-    // limit response to 16 nodes
-    nodes = nodes.slice(0, 16);
-    if (nodes.length === 0) {
-      log("Sending empty NODES response to %o", nodeAddr);
-      try {
-        this.sessionService.sendResponse(nodeAddr, createNodesMessage(id, 1, nodes));
-        this.metrics?.sentMessageCount.inc({ type: MessageType[MessageType.NODES] });
-      } catch (e) {
-        log("Failed to send a NODES response. Error: %s", (e as Error).message);
-      }
-      return;
-    }
+
     // Responses assume that a session is established.
     // Thus, on top of the encoded ENRs the packet should be a regular message.
     // A regular message has a tag (32 bytes), an authTag (12 bytes)
@@ -819,10 +816,10 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     // The encryption adds the HMAC (16 bytes) and can be at most 16 bytes larger
     // So, the total empty packet size can be at most 92
     const nodesPerPacket = Math.floor((MAX_PACKET_SIZE - 92) / MAX_RECORD_SIZE);
-    const total = Math.ceil(nodes.length / nodesPerPacket);
+    const nodesChunks = chunkify(nodes, nodesPerPacket);
+    const total = nodesChunks.length;
     log("Sending %d NODES responses to %o", total, nodeAddr);
-    for (let i = 0; i < nodes.length; i += nodesPerPacket) {
-      const _nodes = nodes.slice(i, i + nodesPerPacket);
+    for (const _nodes of nodesChunks) {
       try {
         this.sessionService.sendResponse(nodeAddr, createNodesMessage(id, total, _nodes));
         this.metrics?.sentMessageCount.inc({ type: MessageType[MessageType.NODES] });
@@ -1032,4 +1029,19 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     // report the node as being disconnected
     this.connectionUpdated(nodeId, { type: ConnectionStatusType.Disconnected });
   };
+}
+
+export function chunkify<T>(arr: T[], itemsPerChunk: number): T[][] {
+  const chunkCount = Math.ceil(arr.length / itemsPerChunk);
+  if (chunkCount <= 1) {
+    return [arr];
+  }
+
+  const result: T[][] = [];
+
+  for (let i = 0; i < arr.length; i += itemsPerChunk) {
+    result.push(arr.slice(i, Math.min(arr.length, i + itemsPerChunk)));
+  }
+
+  return result;
 }

@@ -2,7 +2,7 @@
 import { expect } from "chai";
 import { multiaddr } from "@multiformats/multiaddr";
 
-import { Discv5 } from "../../../src/service/service.js";
+import { chunkify, Discv5 } from "../../../src/service/service.js";
 import { ENR } from "../../../src/enr/index.js";
 import { generateKeypair, KeypairType, createPeerIdFromKeypair } from "../../../src/keypair/index.js";
 
@@ -65,4 +65,109 @@ describe("Discv5", async () => {
     await service0.findNode(Buffer.alloc(32).toString("hex"));
     await service1.stop();
   });
+});
+
+describe("chunkify", function () {
+  const itemsPerChunk = 3;
+  const testCases: { arrLength: number; expected: number[][] }[] = [
+    { arrLength: 0, expected: [[]] },
+    { arrLength: 1, expected: [[0]] },
+    { arrLength: 2, expected: [[0, 1]] },
+    { arrLength: 3, expected: [[0, 1, 2]] },
+    { arrLength: 4, expected: [[0, 1, 2], [3]] },
+    {
+      arrLength: 5,
+      expected: [
+        [0, 1, 2],
+        [3, 4],
+      ],
+    },
+    {
+      arrLength: 6,
+      expected: [
+        [0, 1, 2],
+        [3, 4, 5],
+      ],
+    },
+    {
+      arrLength: 7,
+      expected: [[0, 1, 2], [3, 4, 5], [6]],
+    },
+    {
+      arrLength: 8,
+      expected: [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7],
+      ],
+    },
+    {
+      arrLength: 9,
+      expected: [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+      ],
+    },
+    {
+      arrLength: 10,
+      expected: [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]],
+    },
+    {
+      arrLength: 11,
+      expected: [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [9, 10],
+      ],
+    },
+    {
+      arrLength: 12,
+      expected: [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [9, 10, 11],
+      ],
+    },
+    {
+      arrLength: 13,
+      expected: [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [12]],
+    },
+    {
+      arrLength: 14,
+      expected: [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [9, 10, 11],
+        [12, 13],
+      ],
+    },
+    {
+      arrLength: 15,
+      expected: [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [9, 10, 11],
+        [12, 13, 14],
+      ],
+    },
+    {
+      arrLength: 16,
+      expected: [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [12, 13, 14], [15]],
+    },
+  ];
+  for (const { arrLength, expected } of testCases) {
+    it(`array ${arrLength} length`, () => {
+      expect(
+        chunkify(
+          Array.from({ length: arrLength }, (_, i) => i),
+          itemsPerChunk
+        )
+      ).to.be.deep.equal(expected);
+    });
+  }
 });
