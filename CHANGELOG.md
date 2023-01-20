@@ -152,6 +152,13 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [2.1.0](https://github.com/ChainSafe/discv5/compare/v2.0.0...v2.1.0) (2023-01-20)
+
+
+### Features
+
+* update peer-id dependencies ([#234](https://github.com/ChainSafe/discv5/issues/234)) ([7cb42a8](https://github.com/ChainSafe/discv5/commit/7cb42a8a63f2d298cab3650b7e89be0993739b8b))
+
 ## [2.0.0](https://github.com/ChainSafe/discv5/compare/v1.5.0...v2.0.0) (2023-01-14)
 
 
