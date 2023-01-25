@@ -93,6 +93,19 @@ describe("ENR Multiformats support", () => {
     expect(record.get("tcp")).to.deep.equal(tuples1[1][1]);
   });
 
+  it("should properly handle enr key set", () => {
+    record.encode(privateKey);
+    record.set("tcp", Uint8Array.from([0, 1]));
+    expect(() => record.encode()).to.throw();
+  });
+
+  it("should properly handle enr key delete", () => {
+    record.set("tcp", Uint8Array.from([0, 1]));
+    record.encode(privateKey);
+    record.delete("tcp");
+    expect(() => record.encode()).to.throw();
+  });
+
   describe("location multiaddr", async () => {
     const ip4 = "127.0.0.1";
     const ip6 = "::1";

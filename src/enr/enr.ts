@@ -92,6 +92,14 @@ export class ENR extends Map<ENRKey, ENRValue> {
     }
     return super.set(k, v);
   }
+  delete(k: ENRKey): boolean {
+    this.signature = null;
+    this.seq++;
+    if (k === "secp256k1" && this.id === "v4") {
+      delete this._nodeId;
+    }
+    return super.delete(k);
+  }
   get id(): string {
     const id = this.get("id") as Buffer;
     if (!id) throw new Error("id not found.");
