@@ -200,7 +200,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     const { enr, peerId, multiaddr, config = {}, metricsRegistry, transport } = opts;
     const fullConfig = { ...defaultConfig, ...config };
     const metrics = metricsRegistry ? createDiscv5Metrics(metricsRegistry) : undefined;
-    const decodedEnr = typeof enr === "string" ? ENR.decodeTxt(enr) : enr;
+    const decodedEnr = decodeENR(enr);
     const rateLimiter = opts.rateLimiterOpts && new RateLimiter(opts.rateLimiterOpts, metrics ?? null);
     const sessionService = new SessionService(
       fullConfig,
@@ -272,14 +272,8 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * without having to dial them upfront.
    */
   public addEnr(enr: ENRInput): void {
-    let decodedEnr: ENR;
-    try {
-      decodedEnr = typeof enr === "string" ? ENR.decodeTxt(enr) : enr;
-      decodedEnr.encode();
-    } catch (e) {
-      log("Unable to add enr: %o", enr);
-      return;
-    }
+    const decodedEnr = decodeENR(enr);
+
     if (this.kbuckets.insertOrUpdate(decodedEnr, EntryStatus.Disconnected) === InsertResult.Inserted) {
       this.emit("enrAdded", decodedEnr);
     }
@@ -1032,4 +1026,17 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     // report the node as being disconnected
     this.connectionUpdated(nodeId, { type: ConnectionStatusType.Disconnected });
   };
+}
+
+function decodeENR(enr: ENRInput): ENR {
+  if (typeof enr === "string") {
+    try {
+      return ENR.decodeTxt(enr);
+    } catch (e) {
+      (e as Error).message = `Ìnvalid ENR ${enr}: ${(e as Error).message}`;
+      throw e;
+    }
+  } else {
+    return enr;
+  }
 }
