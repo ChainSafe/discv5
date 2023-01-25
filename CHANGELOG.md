@@ -152,6 +152,13 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [2.1.1](https://github.com/ChainSafe/discv5/compare/v2.1.0...v2.1.1) (2023-01-25)
+
+
+### Bug Fixes
+
+* delete signature on enr.delete ([#238](https://github.com/ChainSafe/discv5/issues/238)) ([3c30fc8](https://github.com/ChainSafe/discv5/commit/3c30fc83b293869f0f350ac6bc5b471a084d9566))
+
 ## [2.1.0](https://github.com/ChainSafe/discv5/compare/v2.0.0...v2.1.0) (2023-01-20)
 
 
