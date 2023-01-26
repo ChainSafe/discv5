@@ -79,7 +79,7 @@ export class Session {
     challenge: IChallenge,
     idSignature: Buffer,
     ephPubkey: Buffer,
-    enrRecord?: Buffer
+    enrRecord?: Uint8Array
   ): [Session, ENR] {
     let enr: ENR;
     // check and verify a potential ENR update
@@ -122,7 +122,7 @@ export class Session {
     remoteContact: NodeContact,
     localKey: IKeypair,
     localNodeId: NodeId,
-    updatedEnr: Buffer | null,
+    updatedEnr: Uint8Array | null,
     challengeData: Buffer,
     message: Buffer
   ): [IPacket, Session] {

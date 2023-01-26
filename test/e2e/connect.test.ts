@@ -4,7 +4,7 @@ import { multiaddr } from "@multiformats/multiaddr";
 import { PeerId } from "@libp2p/interface-peer-id";
 import { createFromPrivKey } from "@libp2p/peer-id-factory";
 import { unmarshalPrivateKey } from "@libp2p/crypto/keys";
-import { createKeypairFromPeerId, Discv5, ENR } from "../../src/index.js";
+import { Discv5, SignableENR } from "../../src/index.js";
 
 let nodeIdx = 0;
 const portBase = 10000;
@@ -14,14 +14,14 @@ describe("discv5 integration test", function () {
 
   type Node = {
     peerId: PeerId;
-    enr: ENR;
+    enr: SignableENR;
     discv5: Discv5;
   };
   async function getDiscv5Node(): Promise<Node> {
     const idx = nodeIdx++;
     const port = portBase + idx;
     const peerId = await getPeerId(idx);
-    const enr = ENR.createFromPeerId(peerId);
+    const enr = SignableENR.createFromPeerId(peerId);
 
     const bindAddrUdp = `/ip4/127.0.0.1/udp/${port}`;
     const multiAddrUdp = multiaddr(bindAddrUdp);
@@ -40,9 +40,6 @@ describe("discv5 integration test", function () {
 
     await discv5.start();
 
-    // ensure the signature is cached
-    enr.encode(createKeypairFromPeerId(peerId).privateKey);
-
     return { peerId, enr, discv5 };
   }
 
@@ -59,8 +56,8 @@ describe("discv5 integration test", function () {
     const node1 = await getDiscv5Node();
     const node2 = await getDiscv5Node();
 
-    node0.discv5.addEnr(node1.enr);
-    node1.discv5.addEnr(node2.enr);
+    node0.discv5.addEnr(node1.enr.toENR());
+    node1.discv5.addEnr(node2.enr.toENR());
     const nodes = await node0.discv5.findNode(node2.enr.nodeId);
     expect(nodes.map((n) => n.nodeId)).to.deep.equal([node2.enr.nodeId, node1.enr.nodeId], "Should find ENR of node2");
   });
@@ -69,11 +66,11 @@ describe("discv5 integration test", function () {
     const node0 = await getDiscv5Node();
     const node1 = await getDiscv5Node();
 
-    node0.discv5.addEnr(node1.enr);
+    node0.discv5.addEnr(node1.enr.toENR());
 
     // test a TALKRESP with no response
     try {
-      await node0.discv5.sendTalkReq(node1.enr, Buffer.from([0, 1, 2, 3]), "foo");
+      await node0.discv5.sendTalkReq(node1.enr.toENR(), Buffer.from([0, 1, 2, 3]), "foo");
       expect.fail("TALKREQ response should throw when no response is given");
     } catch (e) {
       // expected
@@ -84,7 +81,7 @@ describe("discv5 integration test", function () {
     node1.discv5.on("talkReqReceived", (nodeAddr, enr, request) => {
       node1.discv5.sendTalkResp(nodeAddr, request.id, expectedResp);
     });
-    const resp = await node0.discv5.sendTalkReq(node1.enr, Buffer.from([0, 1, 2, 3]), "foo");
+    const resp = await node0.discv5.sendTalkReq(node1.enr.toENR(), Buffer.from([0, 1, 2, 3]), "foo");
     expect(resp).to.deep.equal(expectedResp);
   });
 });

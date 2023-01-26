@@ -1,5 +1,5 @@
 import { multiaddr, Multiaddr } from "@multiformats/multiaddr";
-import { ENR } from "../enr/index.js";
+import { BaseENR, SignableENR } from "../enr/index.js";
 
 export type IP = { type: 4 | 6; octets: Uint8Array };
 export type SocketAddress = {
@@ -35,8 +35,8 @@ export function isEqualSocketAddress(s1: SocketAddress, s2: SocketAddress): bool
   return s1.port === s2.port;
 }
 
-export function getSocketAddressOnENR(enr: ENR): SocketAddress | undefined {
-  const ip4Octets = enr.get("ip");
+export function getSocketAddressOnENR(enr: BaseENR): SocketAddress | undefined {
+  const ip4Octets = enr.kvs.get("ip");
   const udp4 = enr.udp;
   if (ip4Octets !== undefined && udp4 !== undefined) {
     const ip = ipFromBytes(ip4Octets);
@@ -48,7 +48,7 @@ export function getSocketAddressOnENR(enr: ENR): SocketAddress | undefined {
     }
   }
 
-  const ip6Octets = enr.get("ip6");
+  const ip6Octets = enr.kvs.get("ip6");
   const udp6 = enr.udp6;
   if (ip6Octets !== undefined && udp6 !== undefined) {
     const ip = ipFromBytes(ip6Octets);
@@ -61,7 +61,7 @@ export function getSocketAddressOnENR(enr: ENR): SocketAddress | undefined {
   }
 }
 
-export function setSocketAddressOnENR(enr: ENR, s: SocketAddress): void {
+export function setSocketAddressOnENR(enr: SignableENR, s: SocketAddress): void {
   switch (s.ip.type) {
     case 4:
       enr.set("ip", s.ip.octets);

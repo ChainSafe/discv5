@@ -74,7 +74,7 @@ export interface IHandshakeAuthdata {
   idSignature: Buffer;
   ephPubkey: Buffer;
   // pre-encoded ENR
-  record?: Buffer;
+  record?: Uint8Array;
 }
 
 export interface IPacket {

@@ -16,7 +16,7 @@ import {
   createRandomPacket,
   createWhoAreYouPacket,
 } from "../packet/index.js";
-import { ENR } from "../enr/index.js";
+import { ENR, SignableENR } from "../enr/index.js";
 import { ERR_INVALID_SIG, Session } from "./session.js";
 import { IKeypair } from "../keypair/index.js";
 import {
@@ -73,7 +73,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   /**
    * The local ENR
    */
-  public enr: ENR;
+  public enr: SignableENR;
   /**
    * The keypair to sign the ENR and set up encrypted communication with peers
    */
@@ -134,7 +134,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    */
   private sessions: LRUCache<NodeAddressString, Session>;
 
-  constructor(config: ISessionConfig, enr: ENR, keypair: IKeypair, transport: ITransportService) {
+  constructor(config: ISessionConfig, enr: SignableENR, keypair: IKeypair, transport: ITransportService) {
     super();
 
     // ensure the keypair matches the one that signed the ENR
@@ -391,7 +391,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     // Encrypt the message with an auth header and respond
 
     // First if a new version of our ENR is requested, obtain it for the header
-    const updatedEnr = authdata.enrSeq < this.enr.seq ? this.enr.encode(this.keypair.privateKey) : null;
+    const updatedEnr = authdata.enrSeq < this.enr.seq ? this.enr.encode() : null;
 
     // Generate a new session and authentication packet
     const [authPacket, session] = Session.encryptWithHeader(

@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { multiaddr } from "@multiformats/multiaddr";
 import { createSecp256k1PeerId, createFromPrivKey } from "@libp2p/peer-id-factory";
 import { unmarshalPrivateKey } from "@libp2p/crypto/keys";
-import { Discv5, ENR } from "../../src/index.js";
+import { Discv5, ENR, SignableENR } from "../../src/index.js";
 
 let port = 9000;
 
@@ -23,7 +23,7 @@ describe("discv5 integration test", function () {
             )
           );
 
-      const enr = ENR.createFromPeerId(peerId);
+      const enr = SignableENR.createFromPeerId(peerId);
 
       const bindAddrUdp = `/ip4/0.0.0.0/udp/${port++}`;
       const multiAddrUdp = multiaddr(bindAddrUdp);

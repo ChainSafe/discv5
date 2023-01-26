@@ -4,7 +4,7 @@ import { PeerInfo } from "@libp2p/interface-peer-info";
 import { CustomEvent, EventEmitter } from "@libp2p/interfaces/events";
 import { multiaddr } from "@multiformats/multiaddr";
 
-import { Discv5, ENRInput } from "../service/index.js";
+import { Discv5, ENRInput, SignableENRInput } from "../service/index.js";
 import { ENR } from "../enr/index.js";
 import { IDiscv5Config } from "../config/index.js";
 import { MetricsRegister } from "../metrics.js";
@@ -18,7 +18,7 @@ export interface IDiscv5DiscoveryInputOptions extends Partial<IDiscv5Config> {
   /**
    * Local ENR associated with the local libp2p peer id
    */
-  enr: ENRInput;
+  enr: SignableENRInput;
   /**
    * The bind multiaddr for the discv5 UDP server
    *
