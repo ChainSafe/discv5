@@ -7,7 +7,7 @@ import { PeerId } from "@libp2p/interface-peer-id";
 import { ITransportService, UDPTransportService } from "../transport/index.js";
 import { MAX_PACKET_SIZE } from "../packet/index.js";
 import { ConnectionDirection, RequestErrorType, SessionService } from "../session/index.js";
-import { ENR, NodeId, MAX_RECORD_SIZE, createNodeId } from "../enr/index.js";
+import { ENR, NodeId, MAX_RECORD_SIZE, createNodeId, SignableENR } from "../enr/index.js";
 import { IKeypair, createKeypairFromPeerId, createPeerIdFromKeypair } from "../keypair/index.js";
 import {
   EntryStatus,
@@ -48,6 +48,7 @@ import {
   IActiveRequest,
   INodesResponse,
   PongResponse,
+  SignableENRInput,
 } from "./types.js";
 import { RateLimiter, RateLimiterOpts } from "../rateLimit/index.js";
 import {
@@ -77,7 +78,7 @@ const log = debug("discv5:service");
  */
 
 export interface IDiscv5CreateOptions {
-  enr: ENRInput;
+  enr: SignableENRInput;
   peerId: PeerId;
   multiaddr: Multiaddr;
   config?: Partial<IDiscv5Config>;
@@ -200,12 +201,13 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     const { enr, peerId, multiaddr, config = {}, metricsRegistry, transport } = opts;
     const fullConfig = { ...defaultConfig, ...config };
     const metrics = metricsRegistry ? createDiscv5Metrics(metricsRegistry) : undefined;
-    const decodedEnr = typeof enr === "string" ? ENR.decodeTxt(enr) : enr;
+    const keypair = createKeypairFromPeerId(peerId);
+    const decodedEnr = typeof enr === "string" ? SignableENR.decodeTxt(enr, keypair) : enr;
     const rateLimiter = opts.rateLimiterOpts && new RateLimiter(opts.rateLimiterOpts, metrics ?? null);
     const sessionService = new SessionService(
       fullConfig,
       decodedEnr,
-      createKeypairFromPeerId(peerId),
+      keypair,
       transport ?? new UDPTransportService(multiaddr, decodedEnr.nodeId, rateLimiter)
     );
     return new Discv5(fullConfig, sessionService, metrics);
@@ -297,7 +299,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     return createPeerIdFromKeypair(this.keypair);
   }
 
-  public get enr(): ENR {
+  public get enr(): SignableENR {
     return this.sessionService.enr;
   }
 
@@ -791,11 +793,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       }
       // if the distance is 0, send our local ENR
       if (distance === 0) {
-        // ensure our enr has signature before sending response
-        if (!this.enr.signature) {
-          this.enr.encodeToValues(this.keypair.privateKey);
-        }
-        nodes.push(this.enr);
+        nodes.push(this.enr.toENR());
       } else {
         nodes.push(...this.kbuckets.valuesOfDistance(distance));
       }

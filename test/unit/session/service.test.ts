@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
 
 import { createKeypair, KeypairType } from "../../../src/keypair/index.js";
-import { ENR } from "../../../src/enr/index.js";
+import { SignableENR } from "../../../src/enr/index.js";
 import { createWhoAreYouPacket, IPacket, PacketType } from "../../../src/packet/index.js";
 import { UDPTransportService } from "../../../src/transport/index.js";
 import { SessionService } from "../../../src/session/index.js";
@@ -26,8 +26,8 @@ describe("session service", () => {
   const addr0 = multiaddr("/ip4/127.0.0.1/udp/49020");
   const addr1 = multiaddr("/ip4/127.0.0.1/udp/49021");
 
-  const enr0 = ENR.createV4(kp0.publicKey);
-  const enr1 = ENR.createV4(kp1.publicKey);
+  const enr0 = SignableENR.createV4(kp0);
+  const enr1 = SignableENR.createV4(kp1);
 
   enr0.setLocationMultiaddr(addr0);
   enr1.setLocationMultiaddr(addr1);
@@ -71,11 +71,11 @@ describe("session service", () => {
     );
     // send a who are you when requested
     service1.on("whoAreYouRequest", (nodeAddr, authTag) => {
-      service1.sendChallenge(nodeAddr, authTag, enr0);
+      service1.sendChallenge(nodeAddr, authTag, enr0.toENR());
     });
     const establishedSession = new Promise<void>((resolve) =>
       service1.once("established", (_, enr) => {
-        expect(enr).to.deep.equal(enr0);
+        expect(enr.encode()).to.deep.equal(enr0.encode());
         resolve();
       })
     );
@@ -84,7 +84,7 @@ describe("session service", () => {
         resolve();
       })
     );
-    service0.sendRequest(createNodeContact(enr1), createFindNodeMessage([0]));
+    service0.sendRequest(createNodeContact(enr1.toENR()), createFindNodeMessage([0]));
     await Promise.all([receivedRandom, receivedWhoAreYou, establishedSession, receivedMsg]);
   });
   it("receiver should drop WhoAreYou packets from destinations without existing pending requests", async () => {

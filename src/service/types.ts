@@ -2,7 +2,7 @@ import { EventEmitter } from "events";
 import StrictEventEmitter from "strict-event-emitter-types";
 import { Multiaddr } from "@multiformats/multiaddr";
 
-import { ENR, SequenceNumber } from "../enr/index.js";
+import { ENR, SequenceNumber, SignableENR } from "../enr/index.js";
 import { ITalkReqMessage, ITalkRespMessage, RequestMessage } from "../message/index.js";
 import { INodeAddress, NodeContact } from "../session/nodeInfo.js";
 import { ConnectionDirection, RequestErrorType } from "../session/index.js";
@@ -108,3 +108,4 @@ export type ConnectionStatus =
     };
 
 export type ENRInput = ENR | string;
+export type SignableENRInput = SignableENR | string;

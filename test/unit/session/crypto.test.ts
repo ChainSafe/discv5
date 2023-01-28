@@ -12,8 +12,8 @@ import {
   encryptMessage,
   decryptMessage,
 } from "../../../src/session/index.js";
-import { v4, ENR } from "../../../src/enr/index.js";
-import { KeypairType, createKeypair } from "../../../src/keypair/index.js";
+import { v4, SignableENR } from "../../../src/enr/index.js";
+import { KeypairType, createKeypair, generateKeypair } from "../../../src/keypair/index.js";
 import { createNodeContact } from "../../../src/session/nodeInfo.js";
 
 describe("session crypto", () => {
@@ -50,14 +50,14 @@ describe("session crypto", () => {
   });
 
   it("symmetric keys should be derived correctly", () => {
-    const sk1 = v4.createPrivateKey();
-    const sk2 = v4.createPrivateKey();
-    const enr1 = ENR.createV4(v4.publicKey(sk1));
-    const enr2 = ENR.createV4(v4.publicKey(sk2));
+    const kp1 = generateKeypair(KeypairType.Secp256k1);
+    const kp2 = generateKeypair(KeypairType.Secp256k1);
+    const enr1 = SignableENR.createV4(kp1);
+    const enr2 = SignableENR.createV4(kp2);
     const nonce = randomBytes(32);
-    const [a1, b1, pk] = generateSessionKeys(enr1.nodeId, createNodeContact(enr2), nonce);
+    const [a1, b1, pk] = generateSessionKeys(enr1.nodeId, createNodeContact(enr2.toENR()), nonce);
     const [a2, b2] = deriveKeysFromPubkey(
-      createKeypair(KeypairType.Secp256k1, sk2),
+      createKeypair(KeypairType.Secp256k1, kp2.privateKey),
       enr2.nodeId,
       enr1.nodeId,
       pk,
