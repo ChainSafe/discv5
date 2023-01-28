@@ -91,7 +91,10 @@ describe("message", () => {
     it(`should encode/decode message type ${MessageType[message.type]}`, () => {
       const actual = encode(message);
       expect(actual).to.deep.equal(expected);
-      expect(decode(actual)).to.deep.equal(message);
+      const decoded = decode(actual);
+      // to allow for any cached inner objects to be populated
+      encode(decoded);
+      expect(decoded).to.deep.equal(message);
     });
   }
 });

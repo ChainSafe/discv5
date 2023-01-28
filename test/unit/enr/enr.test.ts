@@ -31,6 +31,13 @@ describe("ENR spec test vector", () => {
     expect(ENR.decodeTxt(text).encodeTxt()).to.equal(text);
     expect(SignableENR.decodeTxt(text, keypair).encodeTxt()).to.equal(text);
   });
+  it("should properly round trip to/from object", () => {
+    const enr = new ENR(kvs, seq, signature);
+    expect(ENR.fromObject(enr.toObject())).to.deep.equal(enr);
+
+    const signableEnr = new SignableENR(kvs, seq, keypair);
+    expect(SignableENR.fromObject(signableEnr.toObject())).to.deep.equal(signableEnr);
+  });
 
   it("should properly create and encode", () => {
     expect(new SignableENR(kvs, seq, keypair).encodeTxt()).to.equal(text);
