@@ -23,11 +23,18 @@ export enum IDScheme {
   v4 = "v4",
 }
 
-/** Raw data included in a serialized ENR */
-export type SerializedData = {
+/** Raw data included in an ENR */
+export type ENRData = {
   kvs: ReadonlyMap<ENRKey, ENRValue>;
   seq: SequenceNumber;
   signature: Uint8Array;
+};
+
+/** Raw data included in a read+write ENR */
+export type SignableENRData = {
+  kvs: ReadonlyMap<ENRKey, ENRValue>;
+  seq: SequenceNumber;
+  privateKey: Uint8Array;
 };
 
 export function id(kvs: ReadonlyMap<ENRKey, ENRValue>): IDScheme {
@@ -57,6 +64,14 @@ export function publicKey(id: IDScheme, kvs: ReadonlyMap<ENRKey, ENRValue>): Uin
       }
       return pubkey;
     }
+    default:
+      throw new Error(ERR_INVALID_ID);
+  }
+}
+export function keypairType(id: IDScheme): KeypairType {
+  switch (id) {
+    case "v4":
+      return KeypairType.Secp256k1;
     default:
       throw new Error(ERR_INVALID_ID);
   }
@@ -104,7 +119,7 @@ export function encode(kvs: ReadonlyMap<ENRKey, ENRValue>, seq: SequenceNumber, 
   return encoded;
 }
 
-export function decodeFromValues(decoded: Uint8Array[]): SerializedData {
+export function decodeFromValues(decoded: Uint8Array[]): ENRData {
   if (!Array.isArray(decoded)) {
     throw new Error("Decoded ENR must be an array");
   }
@@ -138,7 +153,7 @@ export function decodeFromValues(decoded: Uint8Array[]): SerializedData {
     signature,
   };
 }
-export function decode(encoded: Uint8Array): SerializedData {
+export function decode(encoded: Uint8Array): ENRData {
   return decodeFromValues(RLP.decode(encoded) as Uint8Array[]);
 }
 export function txtToBuf(encoded: string): Uint8Array {
@@ -147,7 +162,7 @@ export function txtToBuf(encoded: string): Uint8Array {
   }
   return base64url.toBuffer(encoded.slice(4));
 }
-export function decodeTxt(encoded: string): SerializedData {
+export function decodeTxt(encoded: string): ENRData {
   return decode(txtToBuf(encoded));
 }
 
@@ -202,12 +217,7 @@ export abstract class BaseENR {
     return id(this.kvs);
   }
   get keypairType(): KeypairType {
-    switch (this.id) {
-      case "v4":
-        return KeypairType.Secp256k1;
-      default:
-        throw new Error(ERR_INVALID_ID);
-    }
+    return keypairType(this.id);
   }
   async peerId(): Promise<PeerId> {
     return createPeerIdFromKeypair(this.keypair);
@@ -308,7 +318,7 @@ export class ENR extends BaseENR {
   public seq: SequenceNumber;
   public signature: Uint8Array;
   public nodeId: string;
-  private encoded: Uint8Array;
+  private encoded?: Uint8Array;
 
   constructor(
     kvs: ReadonlyMap<ENRKey, ENRValue> | Record<ENRKey, ENRValue>,
@@ -321,9 +331,12 @@ export class ENR extends BaseENR {
     this.seq = seq;
     this.signature = signature;
     this.nodeId = nodeId(this.id, Buffer.from(this.publicKey));
-    this.encoded = encoded ?? encode(this.kvs, seq, signature);
+    this.encoded = encoded;
   }
 
+  static fromObject(obj: ENRData): ENR {
+    return new ENR(obj.kvs, obj.seq, obj.signature);
+  }
   static decodeFromValues(encoded: Uint8Array[]): ENR {
     const { kvs, seq, signature } = decodeFromValues(encoded);
     return new ENR(kvs, seq, signature);
@@ -345,10 +358,21 @@ export class ENR extends BaseENR {
     return publicKey(this.id, this.kvs);
   }
 
+  toObject(): ENRData {
+    return {
+      kvs: this.kvs,
+      seq: this.seq,
+      signature: this.signature,
+    }
+  }
+
   encodeToValues(): Uint8Array[] {
-    return RLP.decode(this.encoded) as Uint8Array[];
+    return RLP.decode(this.encode()) as Uint8Array[];
   }
   encode(): Uint8Array {
+    if (!this.encoded) {
+      this.encoded = encode(this.kvs, this.seq, this.signature);
+    }
     return this.encoded;
   }
 }
@@ -385,6 +409,10 @@ export class SignableENR extends BaseENR {
     }
   }
 
+  static fromObject(obj: SignableENRData): SignableENR {
+    const _id = id(obj.kvs);
+    return new SignableENR(obj.kvs, obj.seq, createKeypair(keypairType(_id), Buffer.from(obj.privateKey), Buffer.from(publicKey(_id, obj.kvs))));
+  }
   static createV4(keypair: IKeypair, kvs: Record<ENRKey, ENRValue> = {}): SignableENR {
     return new SignableENR(
       {
@@ -534,6 +562,13 @@ export class SignableENR extends BaseENR {
     }
   }
 
+  toObject(): SignableENRData {
+    return {
+      kvs: this.kvs,
+      seq: this.seq,
+      privateKey: new Uint8Array(this.keypair.privateKey),
+    };
+  }
   encodeToValues(): (string | number | Uint8Array)[] {
     return encodeToValues(this.kvs, this.seq, this.signature);
   }
