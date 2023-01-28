@@ -152,6 +152,17 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [3.0.0](https://github.com/ChainSafe/discv5/compare/v2.1.1...v3.0.0) (2023-01-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* refactor ENR ([#241](https://github.com/ChainSafe/discv5/issues/241))
+
+### Features
+
+* refactor ENR ([#241](https://github.com/ChainSafe/discv5/issues/241)) ([3ec067d](https://github.com/ChainSafe/discv5/commit/3ec067d978b9aa1512d3ca142fb9cfe4c9e89cec))
+
 ## [2.1.1](https://github.com/ChainSafe/discv5/compare/v2.1.0...v2.1.1) (2023-01-25)
 
 
