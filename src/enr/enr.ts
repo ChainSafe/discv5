@@ -363,7 +363,7 @@ export class ENR extends BaseENR {
       kvs: this.kvs,
       seq: this.seq,
       signature: this.signature,
-    }
+    };
   }
 
   encodeToValues(): Uint8Array[] {
@@ -411,7 +411,11 @@ export class SignableENR extends BaseENR {
 
   static fromObject(obj: SignableENRData): SignableENR {
     const _id = id(obj.kvs);
-    return new SignableENR(obj.kvs, obj.seq, createKeypair(keypairType(_id), Buffer.from(obj.privateKey), Buffer.from(publicKey(_id, obj.kvs))));
+    return new SignableENR(
+      obj.kvs,
+      obj.seq,
+      createKeypair(keypairType(_id), Buffer.from(obj.privateKey), Buffer.from(publicKey(_id, obj.kvs)))
+    );
   }
   static createV4(keypair: IKeypair, kvs: Record<ENRKey, ENRValue> = {}): SignableENR {
     return new SignableENR(
