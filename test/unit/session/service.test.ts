@@ -39,8 +39,8 @@ describe("session service", () => {
   let service1: SessionService;
 
   beforeEach(async () => {
-    transport0 = new UDPTransportService(addr0, enr0.nodeId);
-    transport1 = new UDPTransportService(addr1, enr1.nodeId);
+    transport0 = new UDPTransportService({ ip4: addr0, nodeId: enr0.nodeId });
+    transport1 = new UDPTransportService({ ip4: addr1, nodeId: enr1.nodeId });
 
     service0 = new SessionService(defaultConfig, enr0, kp0, transport0);
     service1 = new SessionService(defaultConfig, enr1, kp1, transport1);

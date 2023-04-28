@@ -30,7 +30,7 @@ describe("discv5 integration test", function () {
     const discv5 = Discv5.create({
       enr,
       peerId,
-      multiaddr: multiAddrUdp,
+      bindAddrs: { ip4: multiAddrUdp },
       config: {
         lookupTimeout: 2000,
       },

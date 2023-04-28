@@ -12,7 +12,7 @@ describe("Discv5", async () => {
   const enr0 = SignableENR.createV4(kp0);
   const mu0 = multiaddr("/ip4/127.0.0.1/udp/40000");
 
-  const service0 = Discv5.create({ enr: enr0, peerId: peerId0, multiaddr: mu0 });
+  const service0 = Discv5.create({ enr: enr0, peerId: peerId0, bindAddrs: { ip4: mu0 } });
 
   beforeEach(async () => {
     await service0.start();
@@ -27,7 +27,7 @@ describe("Discv5", async () => {
   });
 
   it("should allow to pick a port and network interface as a multiaddr", async () => {
-    expect(service0.bindAddress.toString()).eq(mu0.toString());
+    expect(service0.bindAddrs[0].toString()).eq(mu0.toString());
   });
 
   it("should add new enrs", async () => {
@@ -53,7 +53,7 @@ describe("Discv5", async () => {
     enr1.set("ip", addr1[0][1]);
     enr1.set("udp", addr1[1][1]);
     enr1.encode();
-    const service1 = Discv5.create({ enr: enr1, peerId: peerId1, multiaddr: mu1 });
+    const service1 = Discv5.create({ enr: enr1, peerId: peerId1, bindAddrs: { ip4: mu1 } });
     await service1.start();
     for (let i = 0; i < 100; i++) {
       const kp = generateKeypair(KeypairType.Secp256k1);

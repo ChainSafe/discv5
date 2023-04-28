@@ -4,7 +4,7 @@ import { randomBytes } from "@libp2p/crypto";
 import { Multiaddr } from "@multiformats/multiaddr";
 import { PeerId } from "@libp2p/interface-peer-id";
 
-import { ITransportService, UDPTransportService } from "../transport/index.js";
+import { IPMode, ITransportService, UDPTransportService } from "../transport/index.js";
 import { MAX_PACKET_SIZE } from "../packet/index.js";
 import { ConnectionDirection, RequestErrorType, SessionService } from "../session/index.js";
 import { ENR, NodeId, MAX_RECORD_SIZE, createNodeId, SignableENR } from "../enr/index.js";
@@ -52,11 +52,12 @@ import {
 } from "./types.js";
 import { RateLimiter, RateLimiterOpts } from "../rateLimit/index.js";
 import {
-  getSocketAddressOnENR,
   multiaddrFromSocketAddress,
   isEqualSocketAddress,
   multiaddrToSocketAddress,
   setSocketAddressOnENR,
+  getSocketAddressOnENR,
+  getSocketAddressMultiaddrOnENR,
 } from "../util/ip.js";
 import { createDiscv5Metrics, IDiscv5Metrics, MetricsRegister } from "../metrics.js";
 
@@ -80,7 +81,10 @@ const log = debug("discv5:service");
 export interface IDiscv5CreateOptions {
   enr: SignableENRInput;
   peerId: PeerId;
-  multiaddr: Multiaddr;
+  bindAddrs: {
+    ip4?: Multiaddr;
+    ip6?: Multiaddr;
+  };
   config?: Partial<IDiscv5Config>;
   metricsRegistry?: MetricsRegister | null;
   transport?: ITransportService;
@@ -164,6 +168,8 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
 
   private metrics?: IDiscv5Metrics;
 
+  private ipMode: IPMode;
+
   /**
    * Default constructor.
    * @param sessionService the service managing sessions underneath.
@@ -188,6 +194,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       metrics.activeSessionCount.collect = () => metrics.activeSessionCount.set(discv5.sessionService.sessionsSize());
       metrics.lookupCount.collect = () => metrics.lookupCount.set(this.nextLookupId - 1);
     }
+    this.ipMode = this.sessionService.transport.ipMode;
   }
 
   /**
@@ -198,7 +205,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * @param multiaddr The multiaddr which contains the network interface and port to which the UDP server binds
    */
   public static create(opts: IDiscv5CreateOptions): Discv5 {
-    const { enr, peerId, multiaddr, config = {}, metricsRegistry, transport } = opts;
+    const { enr, peerId, bindAddrs, config = {}, metricsRegistry, transport } = opts;
     const fullConfig = { ...defaultConfig, ...config };
     const metrics = metricsRegistry ? createDiscv5Metrics(metricsRegistry) : undefined;
     const keypair = createKeypairFromPeerId(peerId);
@@ -208,7 +215,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       fullConfig,
       decodedEnr,
       keypair,
-      transport ?? new UDPTransportService(multiaddr, decodedEnr.nodeId, rateLimiter)
+      transport ?? new UDPTransportService({ ...bindAddrs, nodeId: decodedEnr.nodeId, rateLimiter })
     );
     return new Discv5(fullConfig, sessionService, metrics);
   }
@@ -287,8 +294,8 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     }
   }
 
-  public get bindAddress(): Multiaddr {
-    return this.sessionService.transport.multiaddr;
+  public get bindAddrs(): Multiaddr[] {
+    return this.sessionService.transport.bindAddrs;
   }
 
   public get keypair(): IKeypair {
@@ -491,7 +498,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    */
   private sendLookup(lookupId: number, peer: NodeId, request: RequestMessage): void {
     const enr = this.findEnr(peer);
-    if (!enr || !enr.getLocationMultiaddr("udp")) {
+    if (!enr || !getSocketAddressMultiaddrOnENR(enr, this.ipMode)) {
       log("Lookup %s requested an unknown ENR or ENR w/o UDP", lookupId);
       this.activeLookups.get(lookupId)?.onFailure(peer);
       return;
@@ -513,7 +520,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   private sendRpcRequest(activeRequest: IActiveRequest): void {
     this.activeRequests.set(activeRequest.request.id, activeRequest);
 
-    const nodeAddr = getNodeAddress(activeRequest.contact);
+    const nodeAddr = getNodeAddress(activeRequest.contact, this.ipMode);
     log("Sending %s to node: %o", MessageType[activeRequest.request.type], nodeAddr);
     try {
       this.sessionService.sendRequest(activeRequest.contact, activeRequest.request);
@@ -707,7 +714,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     verified: boolean
   ): void => {
     // Ignore sessions with unverified or non-contactable ENRs
-    if (!verified || !enr.getLocationMultiaddr("udp")) {
+    if (!verified || !getSocketAddressOnENR(enr, this.ipMode)) {
       return;
     }
 
@@ -853,7 +860,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.activeRequests.delete(response.id);
 
     // Check that the responder matches the expected request
-    const requestNodeAddr = getNodeAddress(activeRequest.contact);
+    const requestNodeAddr = getNodeAddress(activeRequest.contact, this.ipMode);
     if (requestNodeAddr.nodeId !== nodeAddr.nodeId || !requestNodeAddr.socketAddr.equals(nodeAddr.socketAddr)) {
       log(
         "Received a response from an unexpected address. Expected %o, received %o, request id: %s",
@@ -894,7 +901,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       const isWinningVote = this.addrVotes.addVote(nodeAddr.nodeId, message.addr);
 
       if (isWinningVote) {
-        const currentAddr = getSocketAddressOnENR(this.enr);
+        const currentAddr = getSocketAddressOnENR(this.enr, this.ipMode);
         const winningAddr = message.addr;
         if (!currentAddr || !isEqualSocketAddress(currentAddr, winningAddr)) {
           log("Local ENR (IP & UDP) updated: %s", isWinningVote);

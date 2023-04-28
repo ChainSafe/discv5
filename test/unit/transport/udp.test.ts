@@ -11,12 +11,12 @@ describe("UDP transport", () => {
   const nodeIdA = toHex(Buffer.alloc(32, 1));
   const portA = 49523;
   const multiaddrA = multiaddr(`/ip4/${address}/udp/${portA}`);
-  const a = new UDPTransportService(multiaddrA, nodeIdA);
+  const a = new UDPTransportService({ ip4: multiaddrA, nodeId: nodeIdA });
 
   const nodeIdB = toHex(Buffer.alloc(32, 2));
   const portB = portA + 1;
   const multiaddrB = multiaddr(`/ip4/${address}/udp/${portB}`);
-  const b = new UDPTransportService(multiaddrB, nodeIdB);
+  const b = new UDPTransportService({ ip4: multiaddrB, nodeId: nodeIdB });
 
   before(async () => {
     await a.start();
