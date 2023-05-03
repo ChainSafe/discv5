@@ -26,10 +26,33 @@ export interface ITransportEvents {
 }
 export type TransportEventEmitter = StrictEventEmitter<EventEmitter, ITransportEvents>;
 
-export type IPMode = {
-  ip4: boolean;
-  ip6: boolean;
-};
+export type IPMode =
+  | {
+      ip4: true;
+      ip6: false;
+    }
+  | {
+      ip4: false;
+      ip6: true;
+    }
+  | {
+      ip4: true;
+      ip6: true;
+    };
+
+export type BindAddrs =
+  | {
+      ip4: Multiaddr;
+      ip6?: undefined;
+    }
+  | {
+      ip4?: undefined;
+      ip6: Multiaddr;
+    }
+  | {
+      ip4: Multiaddr;
+      ip6: Multiaddr;
+    };
 
 export interface ITransportService extends TransportEventEmitter {
   bindAddrs: Multiaddr[];

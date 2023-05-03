@@ -4,7 +4,7 @@ import { randomBytes } from "@libp2p/crypto";
 import { Multiaddr } from "@multiformats/multiaddr";
 import { PeerId } from "@libp2p/interface-peer-id";
 
-import { IPMode, ITransportService, UDPTransportService } from "../transport/index.js";
+import { BindAddrs, IPMode, ITransportService, UDPTransportService } from "../transport/index.js";
 import { MAX_PACKET_SIZE } from "../packet/index.js";
 import { ConnectionDirection, RequestErrorType, SessionService } from "../session/index.js";
 import { ENR, NodeId, MAX_RECORD_SIZE, createNodeId, SignableENR } from "../enr/index.js";
@@ -81,10 +81,7 @@ const log = debug("discv5:service");
 export interface IDiscv5CreateOptions {
   enr: SignableENRInput;
   peerId: PeerId;
-  bindAddrs: {
-    ip4?: Multiaddr;
-    ip6?: Multiaddr;
-  };
+  bindAddrs: BindAddrs;
   config?: Partial<IDiscv5Config>;
   metricsRegistry?: MetricsRegister | null;
   transport?: ITransportService;
@@ -215,7 +212,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       fullConfig,
       decodedEnr,
       keypair,
-      transport ?? new UDPTransportService({ ...bindAddrs, nodeId: decodedEnr.nodeId, rateLimiter })
+      transport ?? new UDPTransportService({ bindAddrs, nodeId: decodedEnr.nodeId, rateLimiter })
     );
     return new Discv5(fullConfig, sessionService, metrics);
   }

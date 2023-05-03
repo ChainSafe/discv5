@@ -486,8 +486,8 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * Returns true if they match
    */
   private verifyEnr(enr: ENR, nodeAddr: INodeAddress): boolean {
-    const enrMultiaddrIP4 = getSocketAddressMultiaddrOnENR(enr, { ...this.ipMode, ip6: false });
-    const enrMultiaddrIP6 = getSocketAddressMultiaddrOnENR(enr, { ...this.ipMode, ip4: false });
+    const enrMultiaddrIP4 = getSocketAddressMultiaddrOnENR(enr, { ...this.ipMode, ip6: false } as IPMode);
+    const enrMultiaddrIP6 = getSocketAddressMultiaddrOnENR(enr, { ...this.ipMode, ip4: false } as IPMode);
     return (
       enr.nodeId === nodeAddr.nodeId &&
       (enrMultiaddrIP4?.equals(nodeAddr.socketAddr) ?? enrMultiaddrIP6?.equals(nodeAddr.socketAddr) ?? true)

@@ -3,14 +3,13 @@ import { EventEmitter } from "events";
 import { Multiaddr, multiaddr, MultiaddrObject } from "@multiformats/multiaddr";
 
 import { decodePacket, encodePacket, IPacket, MAX_PACKET_SIZE } from "../packet/index.js";
-import { IPMode, IRemoteInfo, ITransportService, TransportEventEmitter } from "./types.js";
+import { BindAddrs, IPMode, IRemoteInfo, ITransportService, TransportEventEmitter } from "./types.js";
 import { IRateLimiter } from "../rateLimit/index.js";
 import { ENR } from "../enr/enr.js";
 import { getSocketAddressOnENR, SocketAddress } from "../util/ip.js";
 
 export type UDPTransportServiceInit = {
-  ip4?: Multiaddr;
-  ip6?: Multiaddr;
+  bindAddrs: BindAddrs;
   nodeId: string;
   rateLimiter?: IRateLimiter;
 };
@@ -46,7 +45,7 @@ export class UDPTransportService
     super();
     this.srcId = init.nodeId;
     this.rateLimiter = init.rateLimiter;
-    if (!init.ip4 && !init.ip6) {
+    if (!init.bindAddrs.ip4 && !init.bindAddrs.ip6) {
       throw new Error("Must bind with an IPv4 and/or IPv6 multiaddr");
     }
     const toSocketOpts = (addr: Multiaddr): SocketOpts => {
@@ -61,18 +60,18 @@ export class UDPTransportService
     };
 
     this.bindAddrs = [];
-    this.ipMode = { ip4: false, ip6: false };
+    this.ipMode = { ip4: false, ip6: false } as unknown as IPMode;
 
-    if (init.ip4) {
-      this.ip4 = toSocketOpts(init.ip4);
+    if (init.bindAddrs.ip4) {
+      this.ip4 = toSocketOpts(init.bindAddrs.ip4);
       if (this.ip4.opts.family !== 4) {
         throw new Error("Configured IPv4 bind address must be IPv4");
       }
       this.bindAddrs.push(this.ip4.addr);
       this.ipMode.ip4 = true;
     }
-    if (init.ip6) {
-      this.ip6 = toSocketOpts(init.ip6);
+    if (init.bindAddrs.ip6) {
+      this.ip6 = toSocketOpts(init.bindAddrs.ip6);
       if (this.ip6.opts.family !== 6) {
         throw new Error("Configured IPv6 bind address must be IPv6");
       }

@@ -8,6 +8,7 @@ import { Discv5, ENRInput, SignableENRInput } from "../service/index.js";
 import { ENR } from "../enr/index.js";
 import { IDiscv5Config } from "../config/index.js";
 import { MetricsRegister } from "../metrics.js";
+import { BindAddrs } from "../transport/types.js";
 
 // Default to 0ms between automatic searches
 // 0ms is 'backwards compatible' with the prior behavior (always be searching)
@@ -75,7 +76,7 @@ export class Discv5Discovery extends EventEmitter<PeerDiscoveryEvents> implement
       bindAddrs: {
         ip4: options.bindAddrs.ip4 ? multiaddr(options.bindAddrs.ip4) : undefined,
         ip6: options.bindAddrs.ip6 ? multiaddr(options.bindAddrs.ip6) : undefined,
-      },
+      } as BindAddrs,
       config: options,
       metricsRegistry: options.metricsRegistry,
     });
