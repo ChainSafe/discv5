@@ -458,7 +458,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
         contact: createNodeContact(nodeAddr),
         request: createPingMessage(this.enr.seq),
         callback: (err: RequestErrorType | null, res: PongResponse | null): void => {
-          if (err !== null) {
+          if (err !== null && err !== RequestErrorType.Timeout) {
             reject(err);
             return;
           }
@@ -513,14 +513,15 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   private sendRpcRequest(activeRequest: IActiveRequest): void {
     this.activeRequests.set(activeRequest.request.id, activeRequest);
 
-    const nodeAddr = getNodeAddress(activeRequest.contact);
-    log("Sending %s to node: %o", MessageType[activeRequest.request.type], nodeAddr);
     try {
+      const nodeAddr = getNodeAddress(activeRequest.contact);
+      log("Sending %s to node: %o", MessageType[activeRequest.request.type], nodeAddr);
+
       this.sessionService.sendRequest(activeRequest.contact, activeRequest.request);
       this.metrics?.sentMessageCount.inc({ type: MessageType[activeRequest.request.type] });
     } catch (e) {
       this.activeRequests.delete(activeRequest.request.id);
-      log("Error sending RPC to node: %o, :Error: %s", nodeAddr, (e as Error).message);
+      log("Error sending RPC, :Error: %s", (e as Error).message);
     }
   }
 
@@ -853,15 +854,19 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.activeRequests.delete(response.id);
 
     // Check that the responder matches the expected request
-    const requestNodeAddr = getNodeAddress(activeRequest.contact);
-    if (requestNodeAddr.nodeId !== nodeAddr.nodeId || !requestNodeAddr.socketAddr.equals(nodeAddr.socketAddr)) {
-      log(
-        "Received a response from an unexpected address. Expected %o, received %o, request id: %s",
-        requestNodeAddr,
-        nodeAddr,
-        response.id
-      );
-      return;
+    try {
+      const requestNodeAddr = getNodeAddress(activeRequest.contact);
+      if (requestNodeAddr.nodeId !== nodeAddr.nodeId || !requestNodeAddr.socketAddr.equals(nodeAddr.socketAddr)) {
+        log(
+          "Received a response from an unexpected address. Expected %o, received %o, request id: %s",
+          requestNodeAddr,
+          nodeAddr,
+          response.id
+        );
+        return;
+      }
+    } catch (e) {
+      log("Error retrieving request node address, :Error: %s", (e as Error).message);
     }
 
     // Check that the response type matches the request

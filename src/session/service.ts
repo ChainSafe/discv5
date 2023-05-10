@@ -186,57 +186,61 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * Sends an RequestMessage to a node.
    */
   public sendRequest(contact: NodeContact, request: RequestMessage): void {
-    const nodeAddr = getNodeAddress(contact);
-    const nodeAddrStr = nodeAddressToString(nodeAddr);
+    try {
+      const nodeAddr = getNodeAddress(contact);
+      const nodeAddrStr = nodeAddressToString(nodeAddr);
 
-    if (nodeAddr.socketAddr.equals(this.transport.multiaddr)) {
-      log("Filtered request to self");
-      return;
-    }
-
-    // If there is already an active request for this node, add to the pending requests
-    if (this.activeRequests.get(nodeAddrStr)) {
-      log("Request queued for node: %o", nodeAddr);
-      let pendingRequests = this.pendingRequests.get(nodeAddrStr);
-      if (!pendingRequests) {
-        pendingRequests = [];
-        this.pendingRequests.set(nodeAddrStr, pendingRequests);
+      if (nodeAddr.socketAddr.equals(this.transport.multiaddr)) {
+        log("Filtered request to self");
+        return;
       }
-      pendingRequests.push([contact, request]);
-      return;
+
+      // If there is already an active request for this node, add to the pending requests
+      if (this.activeRequests.get(nodeAddrStr)) {
+        log("Request queued for node: %o", nodeAddr);
+        let pendingRequests = this.pendingRequests.get(nodeAddrStr);
+        if (!pendingRequests) {
+          pendingRequests = [];
+          this.pendingRequests.set(nodeAddrStr, pendingRequests);
+        }
+        pendingRequests.push([contact, request]);
+        return;
+      }
+
+      const session = this.sessions.get(nodeAddrStr);
+      let packet, initiatingSession;
+      if (session) {
+        // Encrypt the message and send
+        packet = session.encryptMessage(this.enr.nodeId, nodeAddr.nodeId, encode(request));
+        initiatingSession = false;
+      } else {
+        // No session exists, start a new handshake
+        log("No session established, sending a random packet to: %o", nodeAddr);
+
+        // We are initiating a new session
+        packet = createRandomPacket(this.enr.nodeId);
+        initiatingSession = true;
+      }
+
+      const call: IRequestCall = {
+        contact,
+        packet,
+        request,
+        initiatingSession,
+        handshakeSent: false,
+        retries: 1,
+      };
+
+      // let the filter know we are expecting a response
+      this.addExpectedResponse(nodeAddr.socketAddr);
+
+      this.send(nodeAddr, packet);
+
+      this.activeRequestsNonceMapping.set(packet.header.nonce.toString("hex"), nodeAddr);
+      this.activeRequests.set(nodeAddrStr, call);
+    } catch (e) {
+      log("Error sending rpc request :Error: %s", (e as Error).message);
     }
-
-    const session = this.sessions.get(nodeAddrStr);
-    let packet, initiatingSession;
-    if (session) {
-      // Encrypt the message and send
-      packet = session.encryptMessage(this.enr.nodeId, nodeAddr.nodeId, encode(request));
-      initiatingSession = false;
-    } else {
-      // No session exists, start a new handshake
-      log("No session established, sending a random packet to: %o", nodeAddr);
-
-      // We are initiating a new session
-      packet = createRandomPacket(this.enr.nodeId);
-      initiatingSession = true;
-    }
-
-    const call: IRequestCall = {
-      contact,
-      packet,
-      request,
-      initiatingSession,
-      handshakeSent: false,
-      retries: 1,
-    };
-
-    // let the filter know we are expecting a response
-    this.addExpectedResponse(nodeAddr.socketAddr);
-
-    this.send(nodeAddr, packet);
-
-    this.activeRequestsNonceMapping.set(packet.header.nonce.toString("hex"), nodeAddr);
-    this.activeRequests.set(nodeAddrStr, call);
   }
 
   /**
@@ -737,10 +741,14 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * Inserts a request and associated authTag mapping
    */
   private insertActiveRequest(requestCall: IRequestCall): void {
-    const nodeAddr = getNodeAddress(requestCall.contact);
-    const nodeAddrStr = nodeAddressToString(nodeAddr);
-    this.activeRequestsNonceMapping.set(requestCall.packet.header.nonce.toString("hex"), nodeAddr);
-    this.activeRequests.set(nodeAddrStr, requestCall);
+    try {
+      const nodeAddr = getNodeAddress(requestCall.contact);
+      const nodeAddrStr = nodeAddressToString(nodeAddr);
+      this.activeRequestsNonceMapping.set(requestCall.packet.header.nonce.toString("hex"), nodeAddr);
+      this.activeRequests.set(nodeAddrStr, requestCall);
+    } catch (e) {
+      log("Error inserting active request :Error: %s", (e as Error).message);
+    }
   }
 
   private newSession(nodeAddr: INodeAddress, session: Session): void {
@@ -815,8 +823,12 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     // Fail the current request
     this.emit("requestFailed", requestCall.request.id, error);
 
-    const nodeAddr = getNodeAddress(requestCall.contact);
-    this.failSession(nodeAddr, error, removeSession);
+    try {
+      const nodeAddr = getNodeAddress(requestCall.contact);
+      this.failSession(nodeAddr, error, removeSession);
+    } catch (e) {
+      log("Error retrieving node address: :Error: %s", (e as Error).message);
+    }
   }
 
   /**
