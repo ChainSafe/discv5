@@ -1,5 +1,9 @@
 import { PeerId } from "@libp2p/interface-peer-id";
-import { PeerDiscovery, PeerDiscoveryEvents, symbol as peerDiscoverySymbol } from "@libp2p/interface-peer-discovery";
+import {
+  PeerDiscovery,
+  PeerDiscoveryEvents,
+  peerDiscovery as peerDiscoverySymbol,
+} from "@libp2p/interface-peer-discovery";
 import { PeerInfo } from "@libp2p/interface-peer-info";
 import { CustomEvent, EventEmitter } from "@libp2p/interfaces/events";
 import { multiaddr } from "@multiformats/multiaddr";
