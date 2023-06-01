@@ -2,6 +2,7 @@ import { Multiaddr, isMultiaddr } from "@multiformats/multiaddr";
 import { peerIdFromString } from "@libp2p/peer-id";
 import { createKeypairFromPeerId, IKeypair } from "../keypair/index.js";
 import { ENR, NodeId, v4 } from "../enr/index.js";
+import { NodeAddressString } from "./types.js";
 
 /** A representation of an unsigned contactable node. */
 export interface INodeAddress {
@@ -9,14 +10,20 @@ export interface INodeAddress {
   socketAddr: Multiaddr;
   /** The destination Node Id. */
   nodeId: NodeId;
+  /** internal string to track sessions */
+  cachedStr?: NodeAddressString;
 }
 
-export function nodeAddressToString(nodeAddr: INodeAddress): string {
+export function nodeAddressToString(nodeAddr: INodeAddress): NodeAddressString {
   // Since the Discv5 service allows a Multiaddr in outbound message handlers and requires a multiaddr input to
   // have a peer ID specified, we remove any p2p portions of the multiaddr when generating the nodeAddressString
   // since only the UDP socket addr is included in the session cache key (e.g. /ip4/127.0.0.1/udp/9000/p2p/Qm...)
-  const normalizedAddr = nodeAddr.socketAddr.decapsulateCode(421);
-  return nodeAddr.nodeId + ":" + Buffer.from(normalizedAddr.bytes).toString("hex");
+  if (!nodeAddr.cachedStr) {
+    const normalizedAddr = nodeAddr.socketAddr.decapsulateCode(421);
+    nodeAddr.cachedStr = nodeAddr.nodeId + ":" + Buffer.from(normalizedAddr.bytes).toString("hex");
+  }
+
+  return nodeAddr.cachedStr;
 }
 
 /**
