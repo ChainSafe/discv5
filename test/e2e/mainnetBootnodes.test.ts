@@ -13,8 +13,19 @@ describe("discv5 integration test", function () {
   const RANDOM_PEER_ID = true; // Otherwise uses a fixed private key
   const bootnodesENRText = getMainnetBootnodesENRText();
 
-  for (const bootCount of [1, bootnodesENRText.length]) {
-    it("Connect to nodes from Mainnet bootnodes", async () => {
+  for (const bindAddrs of [
+    {
+      ip4: multiaddr(`/ip4/0.0.0.0/udp/${port++}`),
+    },
+    {
+      ip6: multiaddr(`/ip6/::/udp/${port++}`),
+    },
+    {
+      ip4: multiaddr(`/ip4/0.0.0.0/udp/${port++}`),
+      ip6: multiaddr(`/ip6/::/udp/${port++}`),
+    },
+  ]) {
+    it(`Connect to nodes from Mainnet bootnodes: ${Object.keys(bindAddrs)}`, async () => {
       const peerId = RANDOM_PEER_ID
         ? await createSecp256k1PeerId()
         : await createFromPrivKey(
@@ -25,13 +36,10 @@ describe("discv5 integration test", function () {
 
       const enr = SignableENR.createFromPeerId(peerId);
 
-      const bindAddrUdp = `/ip4/0.0.0.0/udp/${port++}`;
-      const multiAddrUdp = multiaddr(bindAddrUdp);
-
       const discv5 = Discv5.create({
         enr,
         peerId,
-        bindAddrs: { ip4: multiAddrUdp },
+        bindAddrs,
         config: {
           lookupTimeout: 2000,
         },
@@ -39,7 +47,7 @@ describe("discv5 integration test", function () {
 
       await discv5.start();
 
-      for (let i = 0; i < bootCount; i++) {
+      for (let i = 0; i < bootnodesENRText.length; i++) {
         const bootEnr = ENR.decodeTxt(bootnodesENRText[i]);
         discv5.addEnr(bootEnr);
         console.log("BOOTNODE", bootEnr.ip, bootEnr.udp);
@@ -69,8 +77,10 @@ function getMainnetBootnodesENRText(): string[] {
     "enr:-Ku4QPp9z1W4tAO8Ber_NQierYaOStqhDqQdOPY3bB3jDgkjcbk6YrEnVYIiCBbTxuar3CzS528d2iE7TdJsrL-dEKoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQMw5fqqkw2hHC4F5HZZDPsNmPdB1Gi8JPQK7pRc9XHh-oN1ZHCCKvg",
 
     // # Lighthouse team's bootnodes
-    "enr:-Jq4QN6_FzIYyfJET9hiLcGUsg_EVOwCQ4bwsBwe0S4ElrfXUXufSYLtQAHU9_LuO9uice7EAaLbDlMK8QEhtyg8Oh4BhGV0aDKQtTA_KgAAAAD__________4JpZIJ2NIJpcIQDGh4giXNlY3AyNTZrMaECSHaY_36GdNjF8-CLfMSg-8lB0wce5VRZ96HkT9tSkVeDdWRwgiMo",
-    "enr:-Jq4QMOjjkLYSN7GVAf_zBSS5c_MokSPMZZvmjLUYiuHrPLHInjeBtF1IfskuYlmhglGan2ECmPk89SRXr4FY1jVp5YBhGV0aDKQtTA_KgAAAAD__________4JpZIJ2NIJpcIQi8wB6iXNlY3AyNTZrMaEC0EiXxAB2QKZJuXnUwmf-KqbP9ZP7m9gsRxcYvoK9iTCDdWRwgiMo",
+    "enr:-Le4QPUXJS2BTORXxyx2Ia-9ae4YqA_JWX3ssj4E_J-3z1A-HmFGrU8BpvpqhNabayXeOZ2Nq_sbeDgtzMJpLLnXFgAChGV0aDKQtTA_KgEAAAAAIgEAAAAAAIJpZIJ2NIJpcISsaa0Zg2lwNpAkAIkHAAAAAPA8kv_-awoTiXNlY3AyNTZrMaEDHAD2JKYevx89W0CcFJFiskdcEzkH_Wdv9iW42qLK79ODdWRwgiMohHVkcDaCI4I",
+    "enr:-Le4QLHZDSvkLfqgEo8IWGG96h6mxwe_PsggC20CL3neLBjfXLGAQFOPSltZ7oP6ol54OvaNqO02Rnvb8YmDR274uq8ChGV0aDKQtTA_KgEAAAAAIgEAAAAAAIJpZIJ2NIJpcISLosQxg2lwNpAqAX4AAAAAAPA8kv_-ax65iXNlY3AyNTZrMaEDBJj7_dLFACaxBfaI8KZTh_SSJUjhyAyfshimvSqo22WDdWRwgiMohHVkcDaCI4I",
+    "enr:-Le4QH6LQrusDbAHPjU_HcKOuMeXfdEB5NJyXgHWFadfHgiySqeDyusQMvfphdYWOzuSZO9Uq2AMRJR5O4ip7OvVma8BhGV0aDKQtTA_KgEAAAAAIgEAAAAAAIJpZIJ2NIJpcISLY9ncg2lwNpAkAh8AgQIBAAAAAAAAAAmXiXNlY3AyNTZrMaECDYCZTZEksF-kmgPholqgVt8IXr-8L7Nu7YrZ7HUpgxmDdWRwgiMohHVkcDaCI4I",
+    "enr:-Le4QIqLuWybHNONr933Lk0dcMmAB5WgvGKRyDihy1wHDIVlNuuztX62W51voT4I8qD34GcTEOTmag1bcdZ_8aaT4NUBhGV0aDKQtTA_KgEAAAAAIgEAAAAAAIJpZIJ2NIJpcISLY04ng2lwNpAkAh8AgAIBAAAAAAAAAA-fiXNlY3AyNTZrMaEDscnRV6n1m-D9ID5UsURk0jsoKNXt1TIrj8uKOGW6iluDdWRwgiMohHVkcDaCI4I",
 
     // # EF bootnodes
     "enr:-Ku4QHqVeJ8PPICcWk1vSn_XcSkjOkNiTg6Fmii5j6vUQgvzMc9L1goFnLKgXqBJspJjIsB91LTOleFmyWWrFVATGngBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC1MD8qAAAAAP__________gmlkgnY0gmlwhAMRHkWJc2VjcDI1NmsxoQKLVXFOhp2uX6jeT0DvvDpPcU8FWMjQdR4wMuORMhpX24N1ZHCCIyg",
