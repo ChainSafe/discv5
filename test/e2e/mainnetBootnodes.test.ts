@@ -25,10 +25,10 @@ describe("discv5 integration test", function () {
       ip6: multiaddr(`/ip6/::/udp/${port++}`),
     },
   ]) {
-    // ip6 test fails in github runner
-    if (process.env.CI && bindAddrs.ip6) return;
+    it(`Connect to nodes from Mainnet bootnodes: ${Object.keys(bindAddrs)}`, async function () {
+      // ip6 test fails in github runner
+      if (process.env.CI && bindAddrs.ip6) this.skip();
 
-    it(`Connect to nodes from Mainnet bootnodes: ${Object.keys(bindAddrs)}`, async () => {
       const peerId = RANDOM_PEER_ID
         ? await createSecp256k1PeerId()
         : await createFromPrivKey(
