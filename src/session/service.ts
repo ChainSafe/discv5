@@ -3,7 +3,7 @@ import StrictEventEmitter from "strict-event-emitter-types";
 import debug from "debug";
 import { Multiaddr } from "@multiformats/multiaddr";
 
-import { ITransportService } from "../transport/index.js";
+import { IPMode, ITransportService } from "../transport/index.js";
 import {
   PacketType,
   IPacket,
@@ -42,6 +42,7 @@ import { getNodeAddress, INodeAddress, INodeContactType, nodeAddressToString, No
 import LRUCache from "lru-cache";
 import { TimeoutMap } from "../util/index.js";
 import { IDiscv5Metrics } from "../metrics.js";
+import { getSocketAddressMultiaddrOnENR } from "../util/ip.js";
 
 const log = debug("discv5:sessionService");
 
@@ -134,6 +135,8 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    */
   private sessions: LRUCache<NodeAddressString, Session>;
 
+  private ipMode: IPMode;
+
   constructor(config: ISessionConfig, enr: SignableENR, keypair: IKeypair, transport: ITransportService) {
     super();
 
@@ -147,12 +150,13 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     this.transport = transport;
 
     this.activeRequests = new TimeoutMap(config.requestTimeout, (k, v) =>
-      this.handleRequestTimeout(getNodeAddress(v.contact), v)
+      this.handleRequestTimeout(getNodeAddress(v.contact, this.ipMode), v)
     );
     this.activeRequestsNonceMapping = new Map();
     this.pendingRequests = new Map();
     this.activeChallenges = new LRUCache({ maxAge: config.requestTimeout * 2 });
     this.sessions = new LRUCache({ maxAge: config.sessionTimeout, max: config.sessionCacheCapacity });
+    this.ipMode = this.transport.ipMode;
   }
 
   /**
@@ -186,10 +190,10 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * Sends an RequestMessage to a node.
    */
   public sendRequest(contact: NodeContact, request: RequestMessage): void {
-    const nodeAddr = getNodeAddress(contact);
+    const nodeAddr = getNodeAddress(contact, this.ipMode);
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
-    if (nodeAddr.socketAddr.equals(this.transport.multiaddr)) {
+    if (this.transport.bindAddrs.some((bindAddr) => nodeAddr.socketAddr.equals(bindAddr))) {
       log("Filtered request to self");
       return;
     }
@@ -482,8 +486,12 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * Returns true if they match
    */
   private verifyEnr(enr: ENR, nodeAddr: INodeAddress): boolean {
-    const enrMultiaddr = enr.getLocationMultiaddr("udp");
-    return enr.nodeId === nodeAddr.nodeId && (enrMultiaddr?.equals(nodeAddr.socketAddr) ?? true);
+    const enrMultiaddrIP4 = getSocketAddressMultiaddrOnENR(enr, { ...this.ipMode, ip6: false } as IPMode);
+    const enrMultiaddrIP6 = getSocketAddressMultiaddrOnENR(enr, { ...this.ipMode, ip4: false } as IPMode);
+    return (
+      enr.nodeId === nodeAddr.nodeId &&
+      (enrMultiaddrIP4?.equals(nodeAddr.socketAddr) ?? enrMultiaddrIP6?.equals(nodeAddr.socketAddr) ?? true)
+    );
   }
 
   /** Handle a message that contains an authentication header */
@@ -737,7 +745,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * Inserts a request and associated authTag mapping
    */
   private insertActiveRequest(requestCall: IRequestCall): void {
-    const nodeAddr = getNodeAddress(requestCall.contact);
+    const nodeAddr = getNodeAddress(requestCall.contact, this.ipMode);
     const nodeAddrStr = nodeAddressToString(nodeAddr);
     this.activeRequestsNonceMapping.set(requestCall.packet.header.nonce.toString("hex"), nodeAddr);
     this.activeRequests.set(nodeAddrStr, requestCall);
@@ -815,7 +823,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     // Fail the current request
     this.emit("requestFailed", requestCall.request.id, error);
 
-    const nodeAddr = getNodeAddress(requestCall.contact);
+    const nodeAddr = getNodeAddress(requestCall.contact, this.ipMode);
     this.failSession(nodeAddr, error, removeSession);
   }
 

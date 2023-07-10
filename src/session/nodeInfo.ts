@@ -2,6 +2,8 @@ import { Multiaddr, isMultiaddr } from "@multiformats/multiaddr";
 import { peerIdFromString } from "@libp2p/peer-id";
 import { createKeypairFromPeerId, IKeypair } from "../keypair/index.js";
 import { ENR, NodeId, v4 } from "../enr/index.js";
+import { IPMode } from "../transport/types.js";
+import { getSocketAddressMultiaddrOnENR } from "../util/ip.js";
 
 /** A representation of an unsigned contactable node. */
 export interface INodeAddress {
@@ -88,10 +90,10 @@ export function getNodeId(contact: NodeContact): NodeId {
   }
 }
 
-export function getNodeAddress(contact: NodeContact): INodeAddress {
+export function getNodeAddress(contact: NodeContact, ipMode: IPMode): INodeAddress {
   switch (contact.type) {
     case INodeContactType.ENR: {
-      const socketAddr = contact.enr.getLocationMultiaddr("udp");
+      const socketAddr = getSocketAddressMultiaddrOnENR(contact.enr, ipMode);
       if (!socketAddr) {
         throw new Error("ENR has no udp multiaddr");
       }

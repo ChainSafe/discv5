@@ -134,10 +134,10 @@ describe("get/set SocketAddress on ENR", () => {
       port: 53,
     };
     const enr = SignableENR.createV4(generateKeypair(KeypairType.Secp256k1));
-    expect(getSocketAddressOnENR(enr)).to.equal(undefined);
+    expect(getSocketAddressOnENR(enr, { ip4: true, ip6: false })).to.equal(undefined);
 
     setSocketAddressOnENR(enr, addr);
-    expect(getSocketAddressOnENR(enr)).to.deep.equal(addr);
+    expect(getSocketAddressOnENR(enr, { ip4: true, ip6: false })).to.deep.equal(addr);
   });
 });
 

@@ -6,12 +6,13 @@ import {
 } from "@libp2p/interface-peer-discovery";
 import { PeerInfo } from "@libp2p/interface-peer-info";
 import { CustomEvent, EventEmitter } from "@libp2p/interfaces/events";
-import { multiaddr } from "@multiformats/multiaddr";
+import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
 
 import { Discv5, ENRInput, SignableENRInput } from "../service/index.js";
 import { ENR } from "../enr/index.js";
 import { IDiscv5Config } from "../config/index.js";
 import { MetricsRegister } from "../metrics.js";
+import { BindAddrs } from "../transport/types.js";
 
 // Default to 0ms between automatic searches
 // 0ms is 'backwards compatible' with the prior behavior (always be searching)
@@ -24,11 +25,14 @@ export interface IDiscv5DiscoveryInputOptions extends Partial<IDiscv5Config> {
    */
   enr: SignableENRInput;
   /**
-   * The bind multiaddr for the discv5 UDP server
+   * The bind multiaddrs for the discv5 UDP server
    *
-   * NOTE: This MUST be a udp multiaddr
+   * NOTE: These MUST be a udp multiaddrs
    */
-  bindAddr: string;
+  bindAddrs: {
+    ip4?: string;
+    ip6?: string;
+  };
   /**
    * Remote ENRs used to bootstrap the network
    */
@@ -73,7 +77,10 @@ export class Discv5Discovery extends EventEmitter<PeerDiscoveryEvents> implement
     this.discv5 = Discv5.create({
       enr: options.enr,
       peerId: options.peerId,
-      multiaddr: multiaddr(options.bindAddr),
+      bindAddrs: {
+        ip4: options.bindAddrs.ip4 ? multiaddr(options.bindAddrs.ip4) : undefined,
+        ip6: options.bindAddrs.ip6 ? multiaddr(options.bindAddrs.ip6) : undefined,
+      } as BindAddrs,
       config: options,
       metricsRegistry: options.metricsRegistry,
     });
@@ -126,19 +133,16 @@ export class Discv5Discovery extends EventEmitter<PeerDiscoveryEvents> implement
   }
 
   handleEnr = async (enr: ENR): Promise<void> => {
-    const multiaddrTCP = enr.getLocationMultiaddr("tcp");
-    if (!multiaddrTCP) {
-      return;
-    }
+    const multiaddrTCP4 = enr.getLocationMultiaddr("tcp4");
+    const multiaddrTCP6 = enr.getLocationMultiaddr("tcp6");
+    const multiaddrs: Multiaddr[] = [];
+    if (multiaddrTCP4) multiaddrs.push(multiaddrTCP4);
+    if (multiaddrTCP6) multiaddrs.push(multiaddrTCP6);
     this.dispatchEvent(
       new CustomEvent<PeerInfo>("peer", {
         detail: {
           id: await enr.peerId(),
-          multiaddrs: [
-            // TODO fix whatever type issue is happening here :(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            multiaddrTCP as any,
-          ],
+          multiaddrs,
           protocols: [],
         },
       })

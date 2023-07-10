@@ -1,5 +1,6 @@
 import { multiaddr, Multiaddr } from "@multiformats/multiaddr";
 import { BaseENR, SignableENR } from "../enr/index.js";
+import { IPMode } from "../transport/types.js";
 
 export type IP = { type: 4 | 6; octets: Uint8Array };
 export type SocketAddress = {
@@ -35,30 +36,45 @@ export function isEqualSocketAddress(s1: SocketAddress, s2: SocketAddress): bool
   return s1.port === s2.port;
 }
 
-export function getSocketAddressOnENR(enr: BaseENR): SocketAddress | undefined {
-  const ip4Octets = enr.kvs.get("ip");
-  const udp4 = enr.udp;
-  if (ip4Octets !== undefined && udp4 !== undefined) {
-    const ip = ipFromBytes(ip4Octets);
-    if (ip !== undefined) {
-      return {
-        ip,
-        port: udp4,
-      };
-    }
+export function getSocketAddressMultiaddrOnENR(enr: BaseENR, ipMode: IPMode): Multiaddr | undefined {
+  if (ipMode.ip6) {
+    const multiaddr = enr.getLocationMultiaddr("udp6");
+    if (multiaddr) return multiaddr;
   }
+  if (ipMode.ip4) {
+    const multiaddr = enr.getLocationMultiaddr("udp4");
+    if (multiaddr) return multiaddr;
+  }
+}
 
-  const ip6Octets = enr.kvs.get("ip6");
-  const udp6 = enr.udp6;
-  if (ip6Octets !== undefined && udp6 !== undefined) {
-    const ip = ipFromBytes(ip6Octets);
-    if (ip !== undefined) {
-      return {
-        ip,
-        port: udp6,
-      };
+export function getSocketAddressOnENR(enr: BaseENR, ipMode: IPMode): SocketAddress | undefined {
+  if (ipMode.ip6) {
+    const ip6Octets = enr.kvs.get("ip6");
+    const udp6 = enr.udp6;
+    if (ip6Octets !== undefined && udp6 !== undefined) {
+      const ip = ipFromBytes(ip6Octets);
+      if (ip !== undefined) {
+        return {
+          ip,
+          port: udp6,
+        };
+      }
     }
   }
+  if (ipMode.ip4) {
+    const ip4Octets = enr.kvs.get("ip");
+    const udp4 = enr.udp;
+    if (ip4Octets !== undefined && udp4 !== undefined) {
+      const ip = ipFromBytes(ip4Octets);
+      if (ip !== undefined) {
+        return {
+          ip,
+          port: udp4,
+        };
+      }
+    }
+  }
+  return undefined;
 }
 
 export function setSocketAddressOnENR(enr: SignableENR, s: SocketAddress): void {
