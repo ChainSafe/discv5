@@ -152,6 +152,17 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [5.0.0](https://github.com/ChainSafe/discv5/compare/v4.0.0...v5.0.0) (2023-07-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* add IPv6 support ([#245](https://github.com/ChainSafe/discv5/issues/245))
+
+### Features
+
+* add IPv6 support ([#245](https://github.com/ChainSafe/discv5/issues/245)) ([4ccc10f](https://github.com/ChainSafe/discv5/commit/4ccc10ffdefe07577b52a2494d713cec348145d8))
+
 ## [4.0.0](https://github.com/ChainSafe/discv5/compare/v3.0.0...v4.0.0) (2023-05-17)
 
 
