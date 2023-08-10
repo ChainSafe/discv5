@@ -152,6 +152,13 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [5.0.1](https://github.com/ChainSafe/discv5/compare/v5.0.0...v5.0.1) (2023-08-10)
+
+
+### Bug Fixes
+
+* Add lru-cache to deps ([#253](https://github.com/ChainSafe/discv5/issues/253)) ([768199e](https://github.com/ChainSafe/discv5/commit/768199e712b57980edb0e3290207de2ea6caea1a))
+
 ## [5.0.0](https://github.com/ChainSafe/discv5/compare/v4.0.0...v5.0.0) (2023-07-11)
 
 
