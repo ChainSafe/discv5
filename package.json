@@ -84,7 +84,6 @@
     "eslint": "^8.17.0",
     "eslint-plugin-prettier": "^4.0.0",
     "karma": "^4.3.0",
-    "lru-cache": "^6.0.0",
     "mocha": "^10.0.0",
     "nyc": "^14.1.1",
     "prettier": "^2.6.2",
@@ -105,6 +104,7 @@
     "debug": "^4.3.1",
     "dgram": "^1.0.1",
     "err-code": "^3.0.1",
+    "lru-cache": "^6.0.0",
     "rlp": "^2.2.6",
     "strict-event-emitter-types": "^2.0.0",
     "varint": "^6.0.0"
