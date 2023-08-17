@@ -71,16 +71,14 @@
   "devDependencies": {
     "@chainsafe/eslint-plugin-node": "^11.2.3",
     "@dapplion/benchmark": "^0.1.6",
-    "@libp2p/peer-id-factory": "^2.0.1",
+    "@libp2p/peer-id-factory": "^3.0.1",
     "@types/bn.js": "^4.11.5",
     "@types/chai": "^4.2.0",
     "@types/debug": "^4.1.5",
     "@types/eslint": "^6.1.3",
-    "@types/ip6addr": "^0.2.0",
     "@types/lru-cache": "^5.1.1",
     "@types/mocha": "^8.0.3",
     "@types/node": "^12.0.10",
-    "@types/varint": "^6.0.0",
     "@typescript-eslint/eslint-plugin": "^5.27.1",
     "@typescript-eslint/parser": "^5.27.1",
     "chai": "^4.3.6",
@@ -94,12 +92,9 @@
     "typescript": "^4.7.3"
   },
   "dependencies": {
-    "@libp2p/crypto": "^1.0.0",
-    "@libp2p/interface-peer-discovery": "^2.0.0",
-    "@libp2p/interface-peer-id": "^2.0.1",
-    "@libp2p/interface-peer-info": "^1.0.1",
-    "@libp2p/interfaces": "^3.0.2",
-    "@libp2p/peer-id": "^2.0.1",
+    "@libp2p/crypto": "^2.0.0",
+    "@libp2p/interface": "^0.1.2",
+    "@libp2p/peer-id": "^3.0.1",
     "@multiformats/multiaddr": "^12.1.3",
     "base64url": "^3.0.1",
     "bcrypto": "^5.4.0",
@@ -110,6 +105,6 @@
     "lru-cache": "^6.0.0",
     "rlp": "^2.2.6",
     "strict-event-emitter-types": "^2.0.0",
-    "varint": "^6.0.0"
+    "uint8-varint": "^2.0.1"
   }
 }

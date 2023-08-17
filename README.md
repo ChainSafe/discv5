@@ -1,7 +1,7 @@
 # discv5
 
 ![ES Version](https://img.shields.io/badge/ES-2020-yellow)
-![Node Version](https://img.shields.io/badge/node-12.x-green)
+![Node Version](https://img.shields.io/badge/node-18.x-green)
 
 A TypeScript implementation of the [DiscV5](https://github.com/ethereum/devp2p/blob/master/discv5/discv5.md) protocol
 
