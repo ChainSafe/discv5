@@ -152,6 +152,18 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [5.1.0](https://github.com/ChainSafe/discv5/compare/v5.0.1...v5.1.0) (2023-08-17)
+
+
+### Features
+
+* Add `util` to package exports ([#256](https://github.com/ChainSafe/discv5/issues/256)) ([9d10108](https://github.com/ChainSafe/discv5/commit/9d101087f93a7a123a4745792d005a2c226626c6))
+
+
+### Miscellaneous
+
+* update deps ([#258](https://github.com/ChainSafe/discv5/issues/258)) ([d3f75d5](https://github.com/ChainSafe/discv5/commit/d3f75d53714abb0265aad316fb338d1c459a454e))
+
 ## [5.0.1](https://github.com/ChainSafe/discv5/compare/v5.0.0...v5.0.1) (2023-08-10)
 
 
