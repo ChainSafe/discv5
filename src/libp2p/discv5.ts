@@ -1,11 +1,11 @@
-import { PeerId } from "@libp2p/interface-peer-id";
+import { PeerId } from "@libp2p/interface/peer-id";
 import {
   PeerDiscovery,
   PeerDiscoveryEvents,
   peerDiscovery as peerDiscoverySymbol,
-} from "@libp2p/interface-peer-discovery";
-import { PeerInfo } from "@libp2p/interface-peer-info";
-import { CustomEvent, EventEmitter } from "@libp2p/interfaces/events";
+} from "@libp2p/interface/peer-discovery";
+import { PeerInfo } from "@libp2p/interface/peer-info";
+import { CustomEvent, EventEmitter } from "@libp2p/interface/events";
 import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
 
 import { Discv5, ENRInput, SignableENRInput } from "../service/index.js";
@@ -65,7 +65,7 @@ export interface IDiscv5DiscoveryOptions extends IDiscv5DiscoveryInputOptions {
  */
 export class Discv5Discovery extends EventEmitter<PeerDiscoveryEvents> implements PeerDiscovery {
   [Symbol.toStringTag] = "discv5";
-  [peerDiscoverySymbol] = true as const;
+  [peerDiscoverySymbol] = this;
 
   public discv5: Discv5;
   public searchInterval: number;
