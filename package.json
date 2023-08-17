@@ -73,11 +73,9 @@
     "@types/chai": "^4.2.0",
     "@types/debug": "^4.1.5",
     "@types/eslint": "^6.1.3",
-    "@types/ip6addr": "^0.2.0",
     "@types/lru-cache": "^5.1.1",
     "@types/mocha": "^8.0.3",
     "@types/node": "^12.0.10",
-    "@types/varint": "^6.0.0",
     "@typescript-eslint/eslint-plugin": "^5.27.1",
     "@typescript-eslint/parser": "^5.27.1",
     "chai": "^4.3.6",
@@ -104,6 +102,6 @@
     "lru-cache": "^6.0.0",
     "rlp": "^2.2.6",
     "strict-event-emitter-types": "^2.0.0",
-    "varint": "^6.0.0"
+    "uint8-varint": "^2.0.1"
   }
 }

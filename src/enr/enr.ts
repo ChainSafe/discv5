@@ -4,7 +4,7 @@ import { toBigIntBE } from "bigint-buffer";
 import * as RLP from "rlp";
 import { PeerId } from "@libp2p/interface/peer-id";
 import { convertToString, convertToBytes } from "@multiformats/multiaddr/convert";
-import { encode as varintEncode } from "varint";
+import { encode as varintEncode } from "uint8-varint";
 
 import { ERR_INVALID_ID, MAX_RECORD_SIZE } from "./constants.js";
 import * as v4 from "./v4.js";
