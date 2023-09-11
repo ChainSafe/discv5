@@ -152,6 +152,13 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [5.1.2](https://github.com/ChainSafe/discv5/compare/v5.1.1...v5.1.2) (2023-09-11)
+
+
+### Miscellaneous
+
+* remove dgram from package.json ([#262](https://github.com/ChainSafe/discv5/issues/262)) ([3c4534c](https://github.com/ChainSafe/discv5/commit/3c4534c3a8c07c71317b92f7677b14ce191ab1a5))
+
 ## [5.1.1](https://github.com/ChainSafe/discv5/compare/v5.1.0...v5.1.1) (2023-08-17)
 
 
