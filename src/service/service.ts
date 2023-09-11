@@ -149,7 +149,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    *
    * BOUNDED: bounded by kad table size
    */
-  private connectedPeers: Map<NodeId, NodeJS.Timer>;
+  private connectedPeers: Map<NodeId, NodeJS.Timeout>;
 
   /**
    * Id for the next lookup that we start
