@@ -1,4 +1,4 @@
-import * as dgram from "dgram";
+import * as dgram from "node:dgram";
 import { EventEmitter } from "events";
 import { Multiaddr, multiaddr, MultiaddrObject } from "@multiformats/multiaddr";
 
