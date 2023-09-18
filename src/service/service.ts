@@ -922,6 +922,10 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
           request: createFindNodeMessage([0]),
         });
       }
+      // If sendPing was initiated by the user and callback function set, call it and resolve the promise
+      if (activeRequest.callback) {
+          activeRequest.callback(null, message)
+      }
       this.connectionUpdated(nodeAddr.nodeId, { type: ConnectionStatusType.PongReceived, enr });
     }
   }
