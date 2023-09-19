@@ -9,6 +9,8 @@ import {
   INodesMessage,
   ITalkReqMessage,
   ITalkRespMessage,
+  IRelayRequestMessage,
+  IRelayResponseMessage,
 } from "./types.js";
 import { SequenceNumber, ENR } from "../enr/index.js";
 
@@ -54,5 +56,22 @@ export function createTalkResponseMessage(requestId: RequestId, payload: Uint8Ar
     type: MessageType.TALKRESP,
     id: requestId,
     response: Buffer.from(payload),
+  };
+}
+
+export function createRelayRequestMessage(fromNodeId: bigint, toNodeId: bigint): IRelayRequestMessage {
+  return {
+    type: MessageType.RELAYREQUEST,
+    id: createRequestId(),
+    fromNodeId,
+    toNodeId,
+  };
+}
+
+export function createRelayResponseMessage(response: number): IRelayResponseMessage {
+  return {
+    type: MessageType.RELAYRESPONSE,
+    id: createRequestId(),
+    response,
   };
 }

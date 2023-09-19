@@ -20,6 +20,8 @@ export enum MessageType {
   TICKET = 8,
   REGCONFIRMATION = 9,
   TOPICQUERY = 10,
+  RELAYREQUEST = 11,
+  RELAYRESPONSE = 12,
 }
 
 export function isRequestType(type: MessageType): boolean {
@@ -34,14 +36,21 @@ export function isRequestType(type: MessageType): boolean {
 
 export type Message = RequestMessage | ResponseMessage;
 
-export type RequestMessage = IPingMessage | IFindNodeMessage | ITalkReqMessage | IRegTopicMessage | ITopicQueryMessage;
+export type RequestMessage =
+  | IPingMessage
+  | IFindNodeMessage
+  | ITalkReqMessage
+  | IRegTopicMessage
+  | ITopicQueryMessage
+  | IRelayResponseMessage;
 
 export type ResponseMessage =
   | IPongMessage
   | INodesMessage
   | ITalkRespMessage
   | ITicketMessage
-  | IRegConfirmationMessage;
+  | IRegConfirmationMessage
+  | IRelayResponseMessage;
 
 export interface IPingMessage {
   type: MessageType.PING;
@@ -107,4 +116,17 @@ export interface ITopicQueryMessage {
   type: MessageType.TOPICQUERY;
   id: RequestId;
   topic: Buffer;
+}
+
+export interface IRelayRequestMessage {
+  type: MessageType.RELAYREQUEST;
+  id: RequestId;
+  fromNodeId: bigint;
+  toNodeId: bigint;
+}
+
+export interface IRelayResponseMessage {
+  type: MessageType.RELAYRESPONSE;
+  id: RequestId;
+  response: number;
 }
