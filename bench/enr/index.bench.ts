@@ -1,12 +1,12 @@
 import {itBench, setBenchOpts} from "@dapplion/benchmark";
-import {generateKeypair, KeypairType} from "../../src/keypair";
-import {ENR} from "../../src/enr";
+import {generateKeypair} from "../../src/keypair";
+import {SignableENR} from "../../src/enr";
 
 describe("ENR", function() {
   setBenchOpts({runs: 50000});
 
-  const keypairWithPrivateKey = generateKeypair(KeypairType.secp256k1);
-  const enr = ENR.createV4(keypairWithPrivateKey.privateKey);
+  const keypairWithPrivateKey = generateKeypair("secp256k1");
+  const enr = SignableENR.createV4(keypairWithPrivateKey);
   enr.ip = "127.0.0.1";
   enr.tcp = 8080;
 

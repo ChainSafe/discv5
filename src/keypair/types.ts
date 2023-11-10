@@ -1,11 +1,7 @@
-export enum KeypairType {
-  RSA = 0,
-  Ed25519 = 1,
-  Secp256k1 = 2,
-}
+import { KeyType } from "@libp2p/interface/keys";
 
 export interface IKeypair {
-  type: KeypairType;
+  type: KeyType;
   privateKey: Buffer;
   publicKey: Buffer;
   privateKeyVerify(): boolean;

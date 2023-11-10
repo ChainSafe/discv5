@@ -2,7 +2,7 @@
 import { expect } from "chai";
 import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
 
-import { createKeypair, KeypairType } from "../../../src/keypair/index.js";
+import { createKeypair } from "../../../src/keypair/index.js";
 import { SignableENR } from "../../../src/enr/index.js";
 import { createWhoAreYouPacket, IPacket, PacketType } from "../../../src/packet/index.js";
 import { UDPTransportService } from "../../../src/transport/index.js";
@@ -13,12 +13,12 @@ import { createNodeContact } from "../../../src/session/nodeInfo.js";
 
 describe("session service", () => {
   const kp0 = createKeypair(
-    KeypairType.Secp256k1,
+    "secp256k1",
     Buffer.from("a93bedf04784c937059557c9dcb328f5f59fdb6e89295c30e918579250b7b01f", "hex"),
     Buffer.from("022663242e1092ea19e6bb41d67aa69850541a623b94bbea840ddceaab39789894", "hex")
   );
   const kp1 = createKeypair(
-    KeypairType.Secp256k1,
+    "secp256k1",
     Buffer.from("bd04e55f2a1424a4e69e96aad41cf763d2468d4358472e9f851569bdf47fb24c", "hex"),
     Buffer.from("03eae9945b354e9212566bc3f2740f3a62b3e1eb227dbed809f6dc2d3ea848c82e", "hex")
   );

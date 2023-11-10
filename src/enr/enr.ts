@@ -2,6 +2,7 @@ import { Multiaddr, multiaddr, protocols } from "@multiformats/multiaddr";
 import base64url from "base64url";
 import { toBigIntBE } from "bigint-buffer";
 import * as RLP from "rlp";
+import { KeyType } from "@libp2p/interface/keys";
 import { PeerId } from "@libp2p/interface/peer-id";
 import { convertToString, convertToBytes } from "@multiformats/multiaddr/convert";
 import { encode as varintEncode } from "uint8-varint";
@@ -9,13 +10,7 @@ import { encode as varintEncode } from "uint8-varint";
 import { ERR_INVALID_ID, MAX_RECORD_SIZE } from "./constants.js";
 import * as v4 from "./v4.js";
 import { ENRKey, ENRValue, SequenceNumber, NodeId } from "./types.js";
-import {
-  createKeypair,
-  KeypairType,
-  IKeypair,
-  createPeerIdFromKeypair,
-  createKeypairFromPeerId,
-} from "../keypair/index.js";
+import { createKeypair, IKeypair, createPeerIdFromKeypair, createKeypairFromPeerId } from "../keypair/index.js";
 import { toNewUint8Array } from "../util/index.js";
 
 /** ENR identity scheme */
@@ -68,10 +63,10 @@ export function publicKey(id: IDScheme, kvs: ReadonlyMap<ENRKey, ENRValue>): Uin
       throw new Error(ERR_INVALID_ID);
   }
 }
-export function keypairType(id: IDScheme): KeypairType {
+export function keyType(id: IDScheme): KeyType {
   switch (id) {
     case "v4":
-      return KeypairType.Secp256k1;
+      return "secp256k1";
     default:
       throw new Error(ERR_INVALID_ID);
   }
@@ -216,8 +211,8 @@ export abstract class BaseENR {
   get id(): IDScheme {
     return id(this.kvs);
   }
-  get keypairType(): KeypairType {
-    return keypairType(this.id);
+  get keypairType(): KeyType {
+    return keyType(this.id);
   }
   async peerId(): Promise<PeerId> {
     return createPeerIdFromKeypair(this.keypair);
@@ -414,7 +409,7 @@ export class SignableENR extends BaseENR {
     return new SignableENR(
       obj.kvs,
       obj.seq,
-      createKeypair(keypairType(_id), Buffer.from(obj.privateKey), Buffer.from(publicKey(_id, obj.kvs)))
+      createKeypair(keyType(_id), Buffer.from(obj.privateKey), Buffer.from(publicKey(_id, obj.kvs)))
     );
   }
   static createV4(keypair: IKeypair, kvs: Record<ENRKey, ENRValue> = {}): SignableENR {
@@ -431,7 +426,7 @@ export class SignableENR extends BaseENR {
   static createFromPeerId(peerId: PeerId, kvs: Record<ENRKey, ENRValue> = {}): SignableENR {
     const keypair = createKeypairFromPeerId(peerId);
     switch (keypair.type) {
-      case KeypairType.Secp256k1:
+      case "secp256k1":
         return SignableENR.createV4(keypair, kvs);
       default:
         throw new Error();

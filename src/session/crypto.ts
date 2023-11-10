@@ -33,7 +33,7 @@ export function generateSessionKeys(
   const secret = ephemKeypair.deriveSecret(remoteKeypair);
   /* TODO possibly not needed, check tests
   const ephemPubkey =
-    remoteKeypair.type === KeypairType.secp256k1
+    remoteKeypair.type === "secp256k1"
       ? secp256k1PublicKeyToCompressed(ephemKeypair.publicKey)
       : ephemKeypair.publicKey;
   */

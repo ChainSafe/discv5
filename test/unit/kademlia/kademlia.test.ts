@@ -5,7 +5,7 @@ import { ENR, createNodeId, SignableENR } from "../../../src/enr/index.js";
 import { EntryStatus, log2Distance } from "../../../src/kademlia/index.js";
 import { randomBytes } from "@libp2p/crypto";
 import { toBuffer } from "../../../src/util/index.js";
-import { generateKeypair, KeypairType } from "../../../src/index.js";
+import { generateKeypair } from "../../../src/index.js";
 
 describe("Kademlia routing table", () => {
   const nodeId = createNodeId(Buffer.alloc(32));
@@ -119,7 +119,7 @@ describe("Kademlia routing table", () => {
 });
 
 function randomENR(): ENR {
-  const keypair = generateKeypair(KeypairType.Secp256k1);
+  const keypair = generateKeypair("secp256k1");
   return SignableENR.createV4(keypair).toENR();
 }
 

@@ -1,6 +1,6 @@
 import { multiaddr } from "@multiformats/multiaddr";
 import { expect } from "chai";
-import { generateKeypair, KeypairType, SignableENR } from "../../../src/index.js";
+import { generateKeypair, SignableENR } from "../../../src/index.js";
 import {
   getSocketAddressOnENR,
   SocketAddress,
@@ -133,7 +133,7 @@ describe("get/set SocketAddress on ENR", () => {
       },
       port: 53,
     };
-    const enr = SignableENR.createV4(generateKeypair(KeypairType.Secp256k1));
+    const enr = SignableENR.createV4(generateKeypair("secp256k1"));
     expect(getSocketAddressOnENR(enr, { ip4: true, ip6: false })).to.equal(undefined);
 
     setSocketAddressOnENR(enr, addr);
