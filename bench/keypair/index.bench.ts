@@ -1,17 +1,16 @@
 import {itBench, setBenchOpts} from "@dapplion/benchmark";
-import {createPeerIdFromKeypair, generateKeypair} from "../../src/keypair";
+import {generateKeypair} from "../../src/keypair/index.js";
+import { createPeerIdFromPrivateKey, createPeerIdFromPublicKey } from "../../src/enr/index.js";
 
-describe("createPeerIdFromKeypair", function() {
+describe("createPeerIdFromPrivateKey", function() {
   setBenchOpts({runs: 4000});
 
-  const keypairWithPrivateKey = generateKeypair("secp256k1");
-  const keypairWithoutPrivateKey = generateKeypair("secp256k1");
-  delete (keypairWithoutPrivateKey as any)._privateKey;
+  const keypair = generateKeypair("secp256k1");
 
-  itBench("createPeerIdFromKeypair - private key", () => {
-    return createPeerIdFromKeypair(keypairWithPrivateKey);
+  itBench("createPeerIdFromPrivateKey", () => {
+    return createPeerIdFromPrivateKey(keypair.type, keypair.privateKey);
   });
-  itBench("createPeerIdFromKeypair - no private key", () => {
-    return createPeerIdFromKeypair(keypairWithoutPrivateKey);
+  itBench("createPeerIdFromPublicKey", () => {
+    return createPeerIdFromPublicKey(keypair.type, keypair.publicKey);
   });
 });

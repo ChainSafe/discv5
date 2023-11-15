@@ -12,7 +12,7 @@ import {
   encryptMessage,
   decryptMessage,
 } from "../../../src/session/index.js";
-import { v4, SignableENR } from "../../../src/enr/index.js";
+import { getV4Crypto, SignableENR } from "../../../src/enr/index.js";
 import { createKeypair, generateKeypair } from "../../../src/keypair/index.js";
 import { createNodeContact } from "../../../src/session/nodeInfo.js";
 
@@ -52,17 +52,11 @@ describe("session crypto", () => {
   it("symmetric keys should be derived correctly", () => {
     const kp1 = generateKeypair("secp256k1");
     const kp2 = generateKeypair("secp256k1");
-    const enr1 = SignableENR.createV4(kp1);
-    const enr2 = SignableENR.createV4(kp2);
+    const enr1 = SignableENR.createV4(kp1.privateKey);
+    const enr2 = SignableENR.createV4(kp2.privateKey);
     const nonce = randomBytes(32);
     const [a1, b1, pk] = generateSessionKeys(enr1.nodeId, createNodeContact(enr2.toENR()), nonce);
-    const [a2, b2] = deriveKeysFromPubkey(
-      createKeypair("secp256k1", kp2.privateKey),
-      enr2.nodeId,
-      enr1.nodeId,
-      pk,
-      nonce
-    );
+    const [a2, b2] = deriveKeysFromPubkey(kp2, enr2.nodeId, enr1.nodeId, pk, nonce);
 
     expect(a1).to.deep.equal(a2);
     expect(b1).to.deep.equal(b2);
@@ -82,10 +76,16 @@ describe("session crypto", () => {
     const ephemPK = Buffer.from("039961e4c2356d61bedb83052c115d311acb3a96f5777296dcf297351130266231", "hex");
     const nodeIdB = "bbbb9d047f0488c0b5a93c1c3f2d8bafc7c8ff337024a55434a0d0555de64db9";
 
-    const actual = idSign(createKeypair("secp256k1", localSK), challengeData, ephemPK, nodeIdB);
+    const actual = idSign(createKeypair({ type: "secp256k1", privateKey: localSK }), challengeData, ephemPK, nodeIdB);
     expect(actual).to.deep.equal(expected);
     expect(
-      idVerify(createKeypair("secp256k1", undefined, v4.publicKey(localSK)), challengeData, ephemPK, nodeIdB, actual)
+      idVerify(
+        createKeypair({ type: "secp256k1", publicKey: getV4Crypto().publicKey(localSK) }),
+        challengeData,
+        ephemPK,
+        nodeIdB,
+        actual
+      )
     ).to.be.true;
   });
 

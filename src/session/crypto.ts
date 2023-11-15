@@ -57,7 +57,7 @@ export function deriveKeysFromPubkey(
   ephemPK: Buffer,
   challengeData: Buffer
 ): [Buffer, Buffer] {
-  const secret = kpriv.deriveSecret(createKeypair(kpriv.type, undefined, ephemPK));
+  const secret = kpriv.deriveSecret(createKeypair({ type: kpriv.type, publicKey: ephemPK }));
   return deriveKey(secret, remoteId, localId, challengeData);
 }
 

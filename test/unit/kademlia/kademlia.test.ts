@@ -120,7 +120,7 @@ describe("Kademlia routing table", () => {
 
 function randomENR(): ENR {
   const keypair = generateKeypair("secp256k1");
-  return SignableENR.createV4(keypair).toENR();
+  return SignableENR.createV4(keypair.privateKey).toENR();
 }
 
 function randomNodeId(): string {

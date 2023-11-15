@@ -8,14 +8,33 @@ import { convertToString, convertToBytes } from "@multiformats/multiaddr/convert
 import { encode as varintEncode } from "uint8-varint";
 
 import { ERR_INVALID_ID, MAX_RECORD_SIZE } from "./constants.js";
-import * as v4 from "./v4.js";
+import * as bcryptoV4Crypto from "./v4.js";
 import { ENRKey, ENRValue, SequenceNumber, NodeId } from "./types.js";
-import { createKeypair, IKeypair, createPeerIdFromKeypair, createKeypairFromPeerId } from "../keypair/index.js";
-import { toNewUint8Array } from "../util/index.js";
+import { createPeerIdFromPublicKey, createPrivateKeyFromPeerId } from "./peerId.js";
+import { toNewUint8Array } from "./util.js";
 
 /** ENR identity scheme */
 export enum IDScheme {
   v4 = "v4",
+}
+
+// In order to support different environments (eg: browser vs high performance), a pluggable crypto interface is provided
+
+export type V4Crypto = {
+  publicKey(privKey: Uint8Array): Uint8Array;
+  sign(privKey: Uint8Array, msg: Uint8Array): Uint8Array;
+  verify(pubKey: Uint8Array, msg: Uint8Array, sig: Uint8Array): boolean;
+  nodeId(pubKey: Uint8Array): NodeId;
+};
+
+let v4: V4Crypto = bcryptoV4Crypto;
+
+export function setV4Crypto(crypto: V4Crypto): void {
+  v4 = crypto;
+}
+
+export function getV4Crypto(): V4Crypto {
+  return v4;
 }
 
 /** Raw data included in an ENR */
@@ -42,7 +61,7 @@ export function id(kvs: ReadonlyMap<ENRKey, ENRValue>): IDScheme {
   return id;
 }
 
-export function nodeId(id: IDScheme, publicKey: Buffer): NodeId {
+export function nodeId(id: IDScheme, publicKey: Uint8Array): NodeId {
   switch (id) {
     case IDScheme.v4:
       return v4.nodeId(publicKey);
@@ -72,18 +91,18 @@ export function keyType(id: IDScheme): KeyType {
   }
 }
 
-export function verify(id: IDScheme, data: Uint8Array, publicKey: Buffer, signature: Uint8Array): boolean {
+export function verify(id: IDScheme, data: Uint8Array, publicKey: Uint8Array, signature: Uint8Array): boolean {
   switch (id) {
     case IDScheme.v4:
-      return v4.verify(publicKey, Buffer.from(data), Buffer.from(signature));
+      return v4.verify(publicKey, data, signature);
     default:
       throw new Error(ERR_INVALID_ID);
   }
 }
-export function sign(id: IDScheme, data: Uint8Array, privateKey: Buffer): Buffer {
+export function sign(id: IDScheme, data: Uint8Array, privateKey: Uint8Array): Uint8Array {
   switch (id) {
     case IDScheme.v4:
-      return v4.sign(privateKey, Buffer.from(data));
+      return v4.sign(privateKey, data);
     default:
       throw new Error(ERR_INVALID_ID);
   }
@@ -139,7 +158,7 @@ export function decodeFromValues(decoded: Uint8Array[]): ENRData {
     signed.push(k, v);
   }
   const _id = id(kvs);
-  if (!verify(_id, RLP.encode(signed), Buffer.from(publicKey(_id, kvs)), signature)) {
+  if (!verify(_id, RLP.encode(signed), publicKey(_id, kvs), signature)) {
     throw new Error("Unable to verify enr signature");
   }
   return {
@@ -205,7 +224,6 @@ export abstract class BaseENR {
   /** Node identifier */
   public abstract nodeId: NodeId;
   public abstract publicKey: Uint8Array;
-  public abstract keypair: IKeypair;
 
   /** enr identity scheme */
   get id(): IDScheme {
@@ -215,7 +233,7 @@ export abstract class BaseENR {
     return keyType(this.id);
   }
   async peerId(): Promise<PeerId> {
-    return createPeerIdFromKeypair(this.keypair);
+    return createPeerIdFromPublicKey(this.keypairType, this.publicKey);
   }
 
   // Network methods
@@ -325,7 +343,7 @@ export class ENR extends BaseENR {
     this.kvs = new Map(kvs instanceof Map ? kvs.entries() : Object.entries(kvs));
     this.seq = seq;
     this.signature = signature;
-    this.nodeId = nodeId(this.id, Buffer.from(this.publicKey));
+    this.nodeId = nodeId(this.id, this.publicKey);
     this.encoded = encoded;
   }
 
@@ -346,9 +364,6 @@ export class ENR extends BaseENR {
     return new ENR(kvs, seq, signature, encodedBuf);
   }
 
-  get keypair(): IKeypair {
-    return createKeypair(this.keypairType, undefined, Buffer.from(this.publicKey));
-  }
   get publicKey(): Uint8Array {
     return publicKey(this.id, this.kvs);
   }
@@ -382,72 +397,72 @@ export class ENR extends BaseENR {
 export class SignableENR extends BaseENR {
   public kvs: ReadonlyMap<ENRKey, ENRValue>;
   public seq: SequenceNumber;
-  public keypair: IKeypair;
   public nodeId: NodeId;
+  public publicKey: Uint8Array;
+  public privateKey: Uint8Array;
   private _signature?: Uint8Array;
 
   constructor(
     kvs: ReadonlyMap<ENRKey, ENRValue> | Record<ENRKey, ENRValue> = {},
     seq: SequenceNumber = 1n,
-    keypair: IKeypair,
+    privateKey: Uint8Array,
     signature?: Uint8Array
   ) {
     super();
     this.kvs = new Map(kvs instanceof Map ? kvs.entries() : Object.entries(kvs));
     this.seq = seq;
-    this.keypair = keypair;
-    this.nodeId = nodeId(this.id, Buffer.from(this.publicKey));
+    this.privateKey = privateKey;
+    this.publicKey = publicKey(this.id, this.kvs);
+    this.nodeId = nodeId(this.id, this.publicKey);
     this._signature = signature;
 
-    if (!this.keypair.publicKey.equals(publicKey(this.id, this.kvs))) {
-      throw new Error("Provided keypair doesn't match kv pubkey");
+    if (this.id === IDScheme.v4) {
+      if (Buffer.compare(v4.publicKey(this.privateKey), this.publicKey) !== 0) {
+        throw new Error("Provided keypair doesn't match kv pubkey");
+      }
     }
   }
 
   static fromObject(obj: SignableENRData): SignableENR {
     const _id = id(obj.kvs);
-    return new SignableENR(
-      obj.kvs,
-      obj.seq,
-      createKeypair(keyType(_id), Buffer.from(obj.privateKey), Buffer.from(publicKey(_id, obj.kvs)))
-    );
+    return new SignableENR(obj.kvs, obj.seq, obj.privateKey);
   }
-  static createV4(keypair: IKeypair, kvs: Record<ENRKey, ENRValue> = {}): SignableENR {
+  static createV4(privateKey: Uint8Array, kvs: Record<ENRKey, ENRValue> = {}): SignableENR {
     return new SignableENR(
       {
         ...kvs,
         id: Buffer.from("v4"),
-        secp256k1: keypair.publicKey,
+        secp256k1: v4.publicKey(privateKey),
       },
       BigInt(1),
-      keypair
+      privateKey
     );
   }
   static createFromPeerId(peerId: PeerId, kvs: Record<ENRKey, ENRValue> = {}): SignableENR {
-    const keypair = createKeypairFromPeerId(peerId);
-    switch (keypair.type) {
+    const { type, privateKey } = createPrivateKeyFromPeerId(peerId);
+    switch (type) {
       case "secp256k1":
-        return SignableENR.createV4(keypair, kvs);
+        return SignableENR.createV4(privateKey, kvs);
       default:
         throw new Error();
     }
   }
-  static decodeFromValues(encoded: Uint8Array[], keypair: IKeypair): SignableENR {
+  static decodeFromValues(encoded: Uint8Array[], privateKey: Uint8Array): SignableENR {
     const { kvs, seq, signature } = decodeFromValues(encoded);
-    return new SignableENR(kvs, seq, keypair, signature);
+    return new SignableENR(kvs, seq, privateKey, signature);
   }
-  static decode(encoded: Uint8Array, keypair: IKeypair): SignableENR {
+  static decode(encoded: Uint8Array, privateKey: Uint8Array): SignableENR {
     const { kvs, seq, signature } = decode(encoded);
-    return new SignableENR(kvs, seq, keypair, signature);
+    return new SignableENR(kvs, seq, privateKey, signature);
   }
-  static decodeTxt(encoded: string, keypair: IKeypair): SignableENR {
+  static decodeTxt(encoded: string, privateKey: Uint8Array): SignableENR {
     const { kvs, seq, signature } = decodeTxt(encoded);
-    return new SignableENR(kvs, seq, keypair, signature);
+    return new SignableENR(kvs, seq, privateKey, signature);
   }
 
   get signature(): Uint8Array {
     if (!this._signature) {
-      this._signature = sign(this.id, RLP.encode(encodeToValues(this.kvs, this.seq)), this.keypair.privateKey);
+      this._signature = sign(this.id, RLP.encode(encodeToValues(this.kvs, this.seq)), this.privateKey);
     }
     return this._signature;
   }
@@ -472,11 +487,8 @@ export class SignableENR extends BaseENR {
 
   // Identity methods
 
-  get publicKey(): Buffer {
-    return this.keypair.publicKey;
-  }
   async peerId(): Promise<PeerId> {
-    return createPeerIdFromKeypair(this.keypair);
+    return createPeerIdFromPublicKey(this.keypairType, this.publicKey);
   }
 
   // Network methods
@@ -565,7 +577,7 @@ export class SignableENR extends BaseENR {
     return {
       kvs: this.kvs,
       seq: this.seq,
-      privateKey: new Uint8Array(this.keypair.privateKey),
+      privateKey: this.privateKey,
     };
   }
   encodeToValues(): (string | number | Uint8Array)[] {

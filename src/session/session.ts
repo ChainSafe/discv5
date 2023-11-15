@@ -17,7 +17,7 @@ import {
   idSign,
   idVerify,
 } from "./crypto.js";
-import { IKeypair } from "../keypair/index.js";
+import { IKeypair, createKeypair } from "../keypair/index.js";
 import { randomBytes } from "crypto";
 import { RequestId } from "../message/index.js";
 import { IChallenge } from ".";
@@ -101,7 +101,15 @@ export class Session {
     }
 
     // verify the auth header nonce
-    if (!idVerify(enr.keypair, challenge.data, ephPubkey, localId, idSignature)) {
+    if (
+      !idVerify(
+        createKeypair({ type: enr.keypairType, publicKey: enr.publicKey }),
+        challenge.data,
+        ephPubkey,
+        localId,
+        idSignature
+      )
+    ) {
       throw new Error(ERR_INVALID_SIG);
     }
 

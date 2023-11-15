@@ -25,7 +25,7 @@ export const Secp256k1Keypair: IKeypairClass = class Secp256k1Keypair extends Ab
   readonly type: KeyType;
 
   constructor(privateKey?: Buffer, publicKey?: Buffer) {
-    let pub = publicKey;
+    let pub = publicKey ?? secp256k1.publicKeyCreate(privateKey!);
     if (pub) {
       pub = secp256k1PublicKeyToCompressed(pub);
     }

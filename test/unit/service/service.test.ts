@@ -3,13 +3,13 @@ import { expect } from "chai";
 import { multiaddr } from "@multiformats/multiaddr";
 
 import { Discv5 } from "../../../src/service/service.js";
-import { SignableENR } from "../../../src/enr/index.js";
-import { generateKeypair, createPeerIdFromKeypair } from "../../../src/keypair/index.js";
+import { createPeerIdFromPrivateKey, SignableENR } from "../../../src/enr/index.js";
+import { generateKeypair } from "../../../src/keypair/index.js";
 
 describe("Discv5", async () => {
   const kp0 = generateKeypair("secp256k1");
-  const peerId0 = await createPeerIdFromKeypair(kp0);
-  const enr0 = SignableENR.createV4(kp0);
+  const peerId0 = await createPeerIdFromPrivateKey(kp0.type, kp0.privateKey);
+  const enr0 = SignableENR.createV4(kp0.privateKey);
   const mu0 = multiaddr("/ip4/127.0.0.1/udp/40000");
 
   const service0 = Discv5.create({ enr: enr0, peerId: peerId0, bindAddrs: { ip4: mu0 } });
@@ -32,7 +32,7 @@ describe("Discv5", async () => {
 
   it("should add new enrs", async () => {
     const kp1 = generateKeypair("secp256k1");
-    const enr1 = SignableENR.createV4(kp1);
+    const enr1 = SignableENR.createV4(kp1.privateKey);
     enr1.encode();
     service0.addEnr(enr1.toENR());
     expect(service0.kadValues().length).eq(1);
@@ -41,8 +41,8 @@ describe("Discv5", async () => {
   it("should complete a lookup to another node", async function () {
     this.timeout(10000);
     const kp1 = generateKeypair("secp256k1");
-    const peerId1 = await createPeerIdFromKeypair(kp1);
-    const enr1 = SignableENR.createV4(kp1);
+    const peerId1 = await createPeerIdFromPrivateKey(kp1.type, kp1.privateKey);
+    const enr1 = SignableENR.createV4(kp1.privateKey);
     const mu1 = multiaddr("/ip4/127.0.0.1/udp/10360");
     const addr1 = mu1.tuples();
 
@@ -57,7 +57,7 @@ describe("Discv5", async () => {
     await service1.start();
     for (let i = 0; i < 100; i++) {
       const kp = generateKeypair("secp256k1");
-      const enr = SignableENR.createV4(kp);
+      const enr = SignableENR.createV4(kp.privateKey);
       enr.encode();
       service1.addEnr(enr.toENR());
     }

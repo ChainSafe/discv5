@@ -2,14 +2,13 @@
 import { expect } from "chai";
 import { multiaddr } from "@multiformats/multiaddr";
 import { createSecp256k1PeerId } from "@libp2p/peer-id-factory";
-import { BaseENR, ENR, SignableENR, v4 } from "../../../src/enr/index.js";
-import { createKeypair, toHex } from "../../../src/index.js";
+import { BaseENR, ENR, SignableENR, getV4Crypto } from "../../../src/enr/index.js";
+import { toHex } from "../../../src/index.js";
 
 describe("ENR spec test vector", () => {
   // spec enr https://eips.ethereum.org/EIPS/eip-778
   const privateKey = Buffer.from("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291", "hex");
-  const publicKey = v4.publicKey(privateKey);
-  const keypair = createKeypair("secp256k1", privateKey, publicKey);
+  const publicKey = getV4Crypto().publicKey(privateKey);
   const text =
     "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8";
   const seq = BigInt(1);
@@ -29,23 +28,23 @@ describe("ENR spec test vector", () => {
 
   it("should properly round trip decode and encode", () => {
     expect(ENR.decodeTxt(text).encodeTxt()).to.equal(text);
-    expect(SignableENR.decodeTxt(text, keypair).encodeTxt()).to.equal(text);
+    expect(SignableENR.decodeTxt(text, privateKey).encodeTxt()).to.equal(text);
   });
   it("should properly round trip to/from object", () => {
     const enr = new ENR(kvs, seq, signature);
     expect(ENR.fromObject(enr.toObject())).to.deep.equal(enr);
 
-    const signableEnr = new SignableENR(kvs, seq, keypair);
+    const signableEnr = new SignableENR(kvs, seq, privateKey);
     expect(SignableENR.fromObject(signableEnr.toObject())).to.deep.equal(signableEnr);
   });
 
   it("should properly create and encode", () => {
-    expect(new SignableENR(kvs, seq, keypair).encodeTxt()).to.equal(text);
+    expect(new SignableENR(kvs, seq, privateKey).encodeTxt()).to.equal(text);
   });
 
   it("should properly compute the node id", () => {
     expect(ENR.decodeTxt(text).nodeId).to.equal(nodeId);
-    expect(SignableENR.decodeTxt(text, keypair).nodeId).to.equal(nodeId);
+    expect(SignableENR.decodeTxt(text, privateKey).nodeId).to.equal(nodeId);
   });
 
   it("should properly decode values", () => {
@@ -58,7 +57,7 @@ describe("ENR spec test vector", () => {
       expect(enr.publicKey).to.deep.equal(publicKey);
     }
     const enr = ENR.decodeTxt(text);
-    const signableEnr = SignableENR.decodeTxt(text, keypair);
+    const signableEnr = SignableENR.decodeTxt(text, privateKey);
     expectENRValuesMatch(enr);
     expectENRValuesMatch(signableEnr);
   });
@@ -66,12 +65,10 @@ describe("ENR spec test vector", () => {
 
 describe("ENR multiaddr support", () => {
   const privateKey = Buffer.from("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291", "hex");
-  const publicKey = v4.publicKey(privateKey);
-  const keypair = createKeypair("secp256k1", privateKey, publicKey);
   let record: SignableENR;
 
   beforeEach(() => {
-    record = SignableENR.createV4(keypair);
+    record = SignableENR.createV4(privateKey);
   });
 
   it("should get / set UDP multiaddr", () => {

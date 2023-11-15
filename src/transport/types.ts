@@ -3,7 +3,7 @@ import StrictEventEmitter from "strict-event-emitter-types";
 import { Multiaddr } from "@multiformats/multiaddr";
 
 import { IPacket } from "../packet/index.js";
-import { BaseENR } from "../enr/enr.js";
+import { BaseENR } from "../enr/index.js";
 import { SocketAddress } from "../util/ip.js";
 
 export interface ISocketAddr {

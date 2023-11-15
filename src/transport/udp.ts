@@ -5,7 +5,7 @@ import { Multiaddr, multiaddr, MultiaddrObject } from "@multiformats/multiaddr";
 import { decodePacket, encodePacket, IPacket, MAX_PACKET_SIZE } from "../packet/index.js";
 import { BindAddrs, IPMode, IRemoteInfo, ITransportService, TransportEventEmitter } from "./types.js";
 import { IRateLimiter } from "../rateLimit/index.js";
-import { ENR } from "../enr/enr.js";
+import { ENR } from "../enr/index.js";
 import { getSocketAddressOnENR, SocketAddress } from "../util/ip.js";
 
 export type UDPTransportServiceInit = {
