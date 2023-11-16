@@ -4,7 +4,8 @@ import { multiaddr } from "@multiformats/multiaddr";
 import { PeerId } from "@libp2p/interface/peer-id";
 import { createFromPrivKey } from "@libp2p/peer-id-factory";
 import { unmarshalPrivateKey } from "@libp2p/crypto/keys";
-import { Discv5, SignableENR } from "../../src/index.js";
+import { SignableENR } from "@chainsafe/enr";
+import { Discv5 } from "../../src/index.js";
 
 let nodeIdx = 0;
 const portBase = 10000;
