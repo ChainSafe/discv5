@@ -27,8 +27,7 @@
     "prepublishOnly": "yarn build",
     "lint": "eslint --color --ext .ts src/ test/",
     "test": "yarn test:unit && yarn test:e2e",
-    "test:unit": "mocha 'test/unit/**/*.test.ts'",
-    "test:e2e": "mocha 'test/e2e/**/*.test.ts'"
+    "test:unit": "mocha 'test/unit/**/*.test.ts'"
   },
   "pre-push": [
     "lint"
