@@ -7,8 +7,16 @@ import { PeerId } from "@libp2p/interface/peer-id";
 import { BindAddrs, IPMode, ITransportService, UDPTransportService } from "../transport/index.js";
 import { MAX_PACKET_SIZE } from "../packet/index.js";
 import { ConnectionDirection, RequestErrorType, SessionService } from "../session/index.js";
-import { ENR, NodeId, MAX_RECORD_SIZE, createNodeId, SignableENR } from "../enr/index.js";
-import { IKeypair, createKeypairFromPeerId, createPeerIdFromKeypair } from "../keypair/index.js";
+import {
+  createPeerIdFromPublicKey,
+  createPrivateKeyFromPeerId,
+  ENR,
+  NodeId,
+  MAX_RECORD_SIZE,
+  createNodeId,
+  SignableENR,
+} from "../enr/index.js";
+import { IKeypair, createKeypair } from "../keypair/index.js";
 import {
   EntryStatus,
   InsertResult,
@@ -205,8 +213,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     const { enr, peerId, bindAddrs, config = {}, metricsRegistry, transport } = opts;
     const fullConfig = { ...defaultConfig, ...config };
     const metrics = metricsRegistry ? createDiscv5Metrics(metricsRegistry) : undefined;
-    const keypair = createKeypairFromPeerId(peerId);
-    const decodedEnr = typeof enr === "string" ? SignableENR.decodeTxt(enr, keypair) : enr;
+    const { type, privateKey } = createPrivateKeyFromPeerId(peerId);
+    const keypair = createKeypair({ type, privateKey });
+    const decodedEnr = typeof enr === "string" ? SignableENR.decodeTxt(enr, privateKey) : enr;
     const rateLimiter = opts.rateLimiterOpts && new RateLimiter(opts.rateLimiterOpts, metrics ?? null);
     const sessionService = new SessionService(
       fullConfig,
@@ -300,7 +309,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   }
 
   public peerId(): Promise<PeerId> {
-    return createPeerIdFromKeypair(this.keypair);
+    return createPeerIdFromPublicKey(this.keypair.type, this.keypair.publicKey);
   }
 
   public get enr(): SignableENR {

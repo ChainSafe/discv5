@@ -1,7 +1,7 @@
 import { Multiaddr, isMultiaddr } from "@multiformats/multiaddr";
 import { peerIdFromString } from "@libp2p/peer-id";
-import { createKeypairFromPeerId, IKeypair } from "../keypair/index.js";
-import { ENR, NodeId, v4 } from "../enr/index.js";
+import { createKeypair, IKeypair } from "../keypair/index.js";
+import { createPublicKeyFromPeerId, ENR, NodeId, getV4Crypto } from "../enr/index.js";
 import { IPMode } from "../transport/types.js";
 import { getSocketAddressMultiaddrOnENR } from "../util/ip.js";
 
@@ -63,8 +63,9 @@ export function createNodeContact(input: ENR | Multiaddr): NodeContact {
       throw new Error("Multiaddr must specify a peer id");
     }
     const peerId = peerIdFromString(peerIdStr);
-    const keypair = createKeypairFromPeerId(peerId);
-    const nodeId = v4.nodeId(keypair.publicKey);
+    const { type, publicKey } = createPublicKeyFromPeerId(peerId);
+    const keypair = createKeypair({ type, publicKey });
+    const nodeId = getV4Crypto().nodeId(keypair.publicKey);
     return {
       type: INodeContactType.Raw,
       publicKey: keypair,
@@ -110,7 +111,7 @@ export function getNodeAddress(contact: NodeContact, ipMode: IPMode): INodeAddre
 export function getPublicKey(contact: NodeContact): IKeypair {
   switch (contact.type) {
     case INodeContactType.ENR:
-      return contact.enr.keypair;
+      return createKeypair({ type: contact.enr.keypairType, publicKey: contact.enr.publicKey });
     case INodeContactType.Raw:
       return contact.publicKey;
   }
