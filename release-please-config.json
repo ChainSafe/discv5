@@ -1,6 +1,5 @@
 {
-  "group-pull-request-title-pattern": "chore${scope}: release ${version} ${component}",
-  "pull-request-title-pattern": "chore${scope}: release ${version} ${component}",
+  "plugins": ["node-workspace"],
   "bootstrap-sha": "04152c123ba55d5e07da3bd72880ba142af48830",
   "packages": {
     "packages/enr": {
