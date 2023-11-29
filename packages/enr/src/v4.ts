@@ -4,22 +4,22 @@ import secp256k1 from "bcrypto/lib/secp256k1.js";
 import { NodeId } from "./types.js";
 import { createNodeId } from "./create.js";
 
-export function hash(input: Buffer): Buffer {
-  return keccak.digest(input);
+export function hash(input: Uint8Array): Buffer {
+  return keccak.digest(Buffer.from(input));
 }
 
-export function publicKey(privKey: Buffer): Buffer {
-  return secp256k1.publicKeyCreate(privKey);
+export function publicKey(privKey: Uint8Array): Buffer {
+  return secp256k1.publicKeyCreate(Buffer.from(privKey));
 }
 
-export function sign(privKey: Buffer, msg: Buffer): Buffer {
-  return secp256k1.sign(hash(msg), privKey);
+export function sign(privKey: Uint8Array, msg: Uint8Array): Buffer {
+  return secp256k1.sign(hash(msg), Buffer.from(privKey));
 }
 
-export function verify(pubKey: Buffer, msg: Buffer, sig: Buffer): boolean {
-  return secp256k1.verify(hash(msg), sig, pubKey);
+export function verify(pubKey: Uint8Array, msg: Uint8Array, sig: Uint8Array): boolean {
+  return secp256k1.verify(hash(msg), Buffer.from(sig), Buffer.from(pubKey));
 }
 
-export function nodeId(pubKey: Buffer): NodeId {
-  return createNodeId(hash(secp256k1.publicKeyConvert(pubKey, false).slice(1)));
+export function nodeId(pubKey: Uint8Array): NodeId {
+  return createNodeId(hash(secp256k1.publicKeyConvert(Buffer.from(pubKey), false).slice(1)));
 }
