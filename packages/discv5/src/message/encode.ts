@@ -1,4 +1,4 @@
-import * as RLP from "@ethereumjs/rlp";
+import * as RLP from "rlp";
 import { ipToBytes } from "../util/ip.js";
 
 import {

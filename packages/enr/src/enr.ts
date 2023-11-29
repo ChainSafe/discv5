@@ -1,7 +1,7 @@
 import { Multiaddr, multiaddr, protocols } from "@multiformats/multiaddr";
 import base64url from "base64url";
 import { toBigIntBE } from "bigint-buffer";
-import * as RLP from "@ethereumjs/rlp";
+import * as RLP from "rlp";
 import { KeyType } from "@libp2p/interface/keys";
 import { PeerId } from "@libp2p/interface/peer-id";
 import { convertToString, convertToBytes } from "@multiformats/multiaddr/convert";
