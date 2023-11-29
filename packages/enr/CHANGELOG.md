@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/ChainSafe/discv5/compare/enr-v2.0.0...enr-v2.0.1) (2023-11-29)
+
+
+### Bug Fixes
+
+* coerce Buffers in bcrypto crypto ([#275](https://github.com/ChainSafe/discv5/issues/275)) ([67971f7](https://github.com/ChainSafe/discv5/commit/67971f727270e7e616e140ea726c67ce889c218f))
+
 ## [2.0.0](https://github.com/ChainSafe/discv5/compare/enr-v1.1.0...enr-v2.0.0) (2023-11-29)
 
 
