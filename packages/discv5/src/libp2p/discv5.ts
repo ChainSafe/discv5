@@ -1,11 +1,7 @@
 import { PeerId } from "@libp2p/interface/peer-id";
-import {
-  PeerDiscovery,
-  PeerDiscoveryEvents,
-  peerDiscovery as peerDiscoverySymbol,
-} from "@libp2p/interface/peer-discovery";
+import { PeerDiscovery, PeerDiscoveryEvents, peerDiscoverySymbol } from "@libp2p/interface/peer-discovery";
 import { PeerInfo } from "@libp2p/interface/peer-info";
-import { CustomEvent, EventEmitter } from "@libp2p/interface/events";
+import { CustomEvent, TypedEventEmitter } from "@libp2p/interface/events";
 import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
 import { ENR } from "@chainsafe/enr";
 
@@ -63,7 +59,7 @@ export interface IDiscv5DiscoveryOptions extends IDiscv5DiscoveryInputOptions {
 /**
  * Discv5Discovery is a libp2p peer-discovery compatible module
  */
-export class Discv5Discovery extends EventEmitter<PeerDiscoveryEvents> implements PeerDiscovery {
+export class Discv5Discovery extends TypedEventEmitter<PeerDiscoveryEvents> implements PeerDiscovery {
   [Symbol.toStringTag] = "discv5";
   [peerDiscoverySymbol] = this;
 
@@ -143,7 +139,6 @@ export class Discv5Discovery extends EventEmitter<PeerDiscoveryEvents> implement
         detail: {
           id: await enr.peerId(),
           multiaddrs,
-          protocols: [],
         },
       })
     );
