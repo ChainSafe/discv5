@@ -295,7 +295,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
     // Update firstConnectedIndex
     switch (entry.status) {
       case EntryStatus.Connected: {
-        if (this.firstConnectedIndex === index && index === this.nodes.length) {
+        if (this.firstConnectedIndex === index && index === this.nodes.length - 1) {
           // It was the last connected node.
           delete this.firstConnectedIndex;
         }
