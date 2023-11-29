@@ -152,6 +152,22 @@
 
 - Add validations to ENR verification ([f5c53f](https://github.com/ChainSafe/discv5/commit/f5c53f))
 
+## [6.0.0](https://github.com/ChainSafe/discv5/compare/v5.1.2...v6.0.0) (2023-11-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* add pluggable enr crypto interface ([#266](https://github.com/ChainSafe/discv5/issues/266))
+
+### Features
+
+* add pluggable enr crypto interface ([#266](https://github.com/ChainSafe/discv5/issues/266)) ([3475758](https://github.com/ChainSafe/discv5/commit/347575898d62443fb83f3cb263cd524b490b6282))
+
+
+### Bug Fixes
+
+* delete the first connected index when remove last node from bucket ([#269](https://github.com/ChainSafe/discv5/issues/269)) ([70ab967](https://github.com/ChainSafe/discv5/commit/70ab96760ea205a60a7529666178e0db4c04baf4))
+
 ## [5.1.2](https://github.com/ChainSafe/discv5/compare/v5.1.1...v5.1.2) (2023-09-11)
 
 
