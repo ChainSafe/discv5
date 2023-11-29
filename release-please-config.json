@@ -1,0 +1,8 @@
+{
+  "group-pull-request-title-pattern": "chore: release ${component}",
+  "bootstrap-sha": "04152c123ba55d5e07da3bd72880ba142af48830",
+  "packages": {
+    "packages/enr": {},
+    "packages/discv5": {}
+  }
+}
