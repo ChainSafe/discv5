@@ -39,7 +39,7 @@ import {
   NodeAddressString,
 } from "./types.js";
 import { getNodeAddress, INodeAddress, INodeContactType, nodeAddressToString, NodeContact } from "./nodeInfo.js";
-import LRUCache from "lru-cache";
+import { LRUCache } from "lru-cache";
 import { TimeoutMap } from "../util/index.js";
 import { IDiscv5Metrics } from "../metrics.js";
 import { getSocketAddressMultiaddrOnENR } from "../util/ip.js";
@@ -154,8 +154,8 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     );
     this.activeRequestsNonceMapping = new Map();
     this.pendingRequests = new Map();
-    this.activeChallenges = new LRUCache({ maxAge: config.requestTimeout * 2 });
-    this.sessions = new LRUCache({ maxAge: config.sessionTimeout, max: config.sessionCacheCapacity });
+    this.activeChallenges = new LRUCache({ ttl: config.requestTimeout * 2, max: config.sessionCacheCapacity });
+    this.sessions = new LRUCache({ ttl: config.sessionTimeout, max: config.sessionCacheCapacity });
     this.ipMode = this.transport.ipMode;
   }
 
@@ -178,12 +178,12 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     this.activeRequests.clear();
     this.activeRequestsNonceMapping.clear();
     this.pendingRequests.clear();
-    this.activeChallenges.reset();
-    this.sessions.reset();
+    this.activeChallenges.clear();
+    this.sessions.clear();
   }
 
   public sessionsSize(): number {
-    return this.sessions.length;
+    return this.sessions.size;
   }
 
   /**
@@ -519,7 +519,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       log("Received an authenticated header without a matching WHOAREYOU request. %o", nodeAddr);
       return;
     }
-    this.activeChallenges.del(nodeAddrStr);
+    this.activeChallenges.delete(nodeAddrStr);
 
     try {
       const [session, enr] = Session.establishFromChallenge(
@@ -833,7 +833,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   private failSession(nodeAddr: INodeAddress, error: RequestErrorType, removeSession: boolean): void {
     const nodeAddrStr = nodeAddressToString(nodeAddr);
     if (removeSession) {
-      this.sessions.del(nodeAddrStr);
+      this.sessions.delete(nodeAddrStr);
     }
 
     const requests = this.pendingRequests.get(nodeAddrStr);

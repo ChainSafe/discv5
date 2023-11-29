@@ -1,4 +1,4 @@
-import * as RLP from "rlp";
+import * as RLP from "@ethereumjs/rlp";
 import { toBigIntBE } from "bigint-buffer";
 import { ENR } from "@chainsafe/enr";
 import {
