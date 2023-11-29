@@ -1,6 +1,6 @@
 {
   "name": "@chainsafe/discv5",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "description": "Discovery V5",
   "type": "module",
   "files": [
@@ -69,7 +69,7 @@
     "@types/lru-cache": "^5.1.1"
   },
   "dependencies": {
-    "@chainsafe/enr": "^1.0.1",
+    "@chainsafe/enr": "^1.1.0",
     "@libp2p/crypto": "^2.0.0",
     "@libp2p/interface": "^0.1.2",
     "@multiformats/multiaddr": "^12.1.3",
