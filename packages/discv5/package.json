@@ -1,0 +1,84 @@
+{
+  "name": "@chainsafe/discv5",
+  "version": "5.1.2",
+  "description": "Discovery V5",
+  "type": "module",
+  "files": [
+    "lib"
+  ],
+  "exports": {
+    ".": {
+      "import": "./lib/index.js"
+    },
+    "./kademlia": {
+      "import": "./lib/kademlia/index.js"
+    },
+    "./keypair": {
+      "import": "./lib/keypair/index.js"
+    },
+    "./libp2p": {
+      "import": "./lib/libp2p/index.js"
+    },
+    "./packet": {
+      "import": "./lib/packet/index.js"
+    },
+    "./util": {
+      "import": "./lib/util/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "*",
+        "lib/*",
+        "lib/*/index"
+      ]
+    }
+  },
+  "types": "./lib/index.d.ts",
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "yarn build",
+    "lint": "eslint --color --ext .ts src/ test/",
+    "test": "yarn test:unit && yarn test:e2e",
+    "test:unit": "mocha 'test/unit/**/*.test.ts'",
+    "test:e2e": "mocha 'test/e2e/**/*.test.ts'"
+  },
+  "pre-push": [
+    "lint"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChainSafe/discv5.git"
+  },
+  "keywords": [
+    "discovery",
+    "discv5",
+    "ethereum",
+    "p2p"
+  ],
+  "author": "ChainSafe Systems",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/ChainSafe/discv5/issues"
+  },
+  "homepage": "https://github.com/ChainSafe/discv5#readme",
+  "devDependencies": {
+    "@libp2p/peer-id-factory": "^3.0.1",
+    "@types/lru-cache": "^5.1.1"
+  },
+  "dependencies": {
+    "@chainsafe/enr": "^1.0.0",
+    "@libp2p/crypto": "^2.0.0",
+    "@libp2p/interface": "^0.1.2",
+    "@multiformats/multiaddr": "^12.1.3",
+    "bcrypto": "^5.4.0",
+    "bigint-buffer": "^1.1.5",
+    "debug": "^4.3.1",
+    "err-code": "^3.0.1",
+    "lru-cache": "^6.0.0",
+    "rlp": "^2.2.6",
+    "strict-event-emitter-types": "^2.0.0"
+  }
+}
