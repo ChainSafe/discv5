@@ -1,33 +1,32 @@
 export interface MetricsRegister {
-  gauge<T extends string>(config: GaugeConfig<T>): IGauge<T>;
+  gauge<Labels extends LabelsGeneric = NoLabels>(config: GaugeConfig<Labels>): Gauge<Labels>;
 }
 
-type GaugeConfig<T extends string> = {
+type GaugeConfig<Labels extends LabelsGeneric> = {
   name: string;
   help: string;
-  labelNames?: T[] | readonly T[];
-};
+} & (NoLabels extends Labels ? { labelNames?: never } : { labelNames: [LabelKeys<Labels>, ...LabelKeys<Labels>[]] });
 
-type Labels<T extends string> = Partial<Record<T, string | number>>;
-interface IGauge<T extends string = string> {
-  inc(value?: number): void;
-  inc(labels: Labels<T>, value?: number): void;
-  set(value: number): void;
-  set(labels: Labels<T>, value: number): void;
-  collect(): void;
+type NoLabels = Record<string, never>;
+type LabelsGeneric = Record<string, string | number>;
+type LabelKeys<Labels extends LabelsGeneric> = Extract<keyof Labels, string>;
+interface Gauge<Labels extends LabelsGeneric = NoLabels> {
+  inc: NoLabels extends Labels ? (value?: number) => void : (labels: Labels, value?: number) => void;
+  set: NoLabels extends Labels ? (value: number) => void : (labels: Labels, value: number) => void;
+  collect?(): void;
 }
 
 export interface IDiscv5Metrics {
-  kadTableSize: IGauge;
-  activeSessionCount: IGauge;
-  connectedPeerCount: IGauge;
-  lookupCount: IGauge;
+  kadTableSize: Gauge;
+  activeSessionCount: Gauge;
+  connectedPeerCount: Gauge;
+  lookupCount: Gauge;
 
-  sentMessageCount: IGauge<"type">;
-  rcvdMessageCount: IGauge<"type">;
+  sentMessageCount: Gauge<{ type: string }>;
+  rcvdMessageCount: Gauge<{ type: string }>;
 
-  rateLimitHitIP: IGauge;
-  rateLimitHitTotal: IGauge;
+  rateLimitHitIP: Gauge;
+  rateLimitHitTotal: Gauge;
 }
 
 export type Metrics = ReturnType<typeof createDiscv5Metrics>;
@@ -59,13 +58,13 @@ export function createDiscv5Metrics(register: MetricsRegister) {
       help: "Count of the discv5 connected peers",
     }),
     /** Total number messages sent by message type */
-    sentMessageCount: register.gauge<"type">({
+    sentMessageCount: register.gauge<{ type: string }>({
       name: "discv5_sent_message_count",
       help: "Count of the discv5 messages sent by message type",
       labelNames: ["type"],
     }),
     /** Total number messages received by message type */
-    rcvdMessageCount: register.gauge<"type">({
+    rcvdMessageCount: register.gauge<{ type: string }>({
       name: "discv5_rcvd_message_count",
       help: "Count of the discv5 messages received by message type",
       labelNames: ["type"],
