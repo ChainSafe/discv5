@@ -6,6 +6,20 @@
   * dependencies
     * @chainsafe/enr bumped from ^2.0.0 to ^2.0.1
 
+## [7.1.0](https://github.com/ChainSafe/discv5/compare/discv5-v7.0.1...discv5-v7.1.0) (2024-01-11)
+
+
+### Features
+
+* type safe metric labels ([#278](https://github.com/ChainSafe/discv5/issues/278)) ([acb4792](https://github.com/ChainSafe/discv5/commit/acb479222617f72aae1e9fc35e943eecc5b0ca06))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @chainsafe/enr bumped from ^2.0.1 to ^2.0.2
+
 ## [7.0.0](https://github.com/ChainSafe/discv5/compare/discv5-v6.1.0...discv5-v7.0.0) (2023-11-29)
 
 
