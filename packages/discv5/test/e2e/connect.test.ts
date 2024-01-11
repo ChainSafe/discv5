@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import { expect } from "chai";
 import { multiaddr } from "@multiformats/multiaddr";
-import { PeerId } from "@libp2p/interface/peer-id";
+import { PeerId } from "@libp2p/interface";
 import { createFromPrivKey } from "@libp2p/peer-id-factory";
 import { unmarshalPrivateKey } from "@libp2p/crypto/keys";
 import { SignableENR } from "@chainsafe/enr";

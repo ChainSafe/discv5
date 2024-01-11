@@ -1,5 +1,5 @@
 import secp256k1 from "bcrypto/lib/secp256k1.js";
-import { KeyType } from "@libp2p/interface/keys";
+import { KeyType } from "@libp2p/interface";
 import { AbstractKeypair, IKeypair, IKeypairClass } from "./types.js";
 import { ERR_INVALID_KEYPAIR_TYPE } from "./constants.js";
 

@@ -2,7 +2,7 @@ import { EventEmitter } from "events";
 import debug from "debug";
 import { randomBytes } from "@libp2p/crypto";
 import { Multiaddr } from "@multiformats/multiaddr";
-import { PeerId } from "@libp2p/interface/peer-id";
+import { PeerId } from "@libp2p/interface";
 import {
   createPeerIdFromPublicKey,
   createPrivateKeyFromPeerId,

@@ -1,7 +1,12 @@
-import { PeerId } from "@libp2p/interface/peer-id";
-import { PeerDiscovery, PeerDiscoveryEvents, peerDiscoverySymbol } from "@libp2p/interface/peer-discovery";
-import { PeerInfo } from "@libp2p/interface/peer-info";
-import { CustomEvent, TypedEventEmitter } from "@libp2p/interface/events";
+import {
+  CustomEvent,
+  PeerDiscovery,
+  PeerDiscoveryEvents,
+  peerDiscoverySymbol,
+  PeerId,
+  PeerInfo,
+  TypedEventEmitter,
+} from "@libp2p/interface";
 import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
 import { ENR } from "@chainsafe/enr";
 
