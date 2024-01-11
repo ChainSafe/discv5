@@ -1,4 +1,4 @@
-import { KeyType } from "@libp2p/interface/keys";
+import { KeyType } from "@libp2p/interface";
 
 import { IKeypair } from "./types.js";
 import { ERR_TYPE_NOT_IMPLEMENTED } from "./constants.js";

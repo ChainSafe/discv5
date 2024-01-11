@@ -49,13 +49,13 @@
   },
   "homepage": "https://github.com/ChainSafe/discv5#readme",
   "devDependencies": {
-    "@libp2p/peer-id-factory": "^3.0.1",
+    "@libp2p/peer-id-factory": "^4.0.3",
     "@types/bn.js": "^4.11.5"
   },
   "dependencies": {
-    "@libp2p/crypto": "^3.0.0",
-    "@libp2p/interface": "^1.0.0",
-    "@libp2p/peer-id": "^4.0.0",
+    "@libp2p/crypto": "^3.0.4",
+    "@libp2p/interface": "^1.1.1",
+    "@libp2p/peer-id": "^4.0.4",
     "@multiformats/multiaddr": "^12.1.10",
     "base64url": "^3.0.1",
     "bcrypto": "^5.4.0",

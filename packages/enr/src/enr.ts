@@ -2,8 +2,7 @@ import { Multiaddr, multiaddr, protocols } from "@multiformats/multiaddr";
 import base64url from "base64url";
 import { toBigIntBE } from "bigint-buffer";
 import * as RLP from "rlp";
-import { KeyType } from "@libp2p/interface/keys";
-import { PeerId } from "@libp2p/interface/peer-id";
+import { KeyType, PeerId } from "@libp2p/interface";
 import { convertToString, convertToBytes } from "@multiformats/multiaddr/convert";
 import { encode as varintEncode } from "uint8-varint";
 

@@ -1,7 +1,6 @@
-import { PeerId } from "@libp2p/interface/peer-id";
+import { KeyType, PeerId } from "@libp2p/interface";
 import { peerIdFromKeys } from "@libp2p/peer-id";
 import { keysPBM, supportedKeys } from "@libp2p/crypto/keys";
-import { KeyType } from "@libp2p/interface/keys";
 
 export const ERR_TYPE_NOT_IMPLEMENTED = "Keypair type not implemented";
 

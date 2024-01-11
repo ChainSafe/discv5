@@ -1,4 +1,4 @@
-import { KeyType } from "@libp2p/interface/keys";
+import { KeyType } from "@libp2p/interface";
 
 export interface IKeypair {
   type: KeyType;
