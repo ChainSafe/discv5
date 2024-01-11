@@ -314,10 +314,10 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@dapplion/benchmark@^0.1.6":
-  version "0.1.6"
-  resolved "https://registry.yarnpkg.com/@dapplion/benchmark/-/benchmark-0.1.6.tgz#d58cc150732a2d743089b9462cdfef9339ef81fa"
-  integrity sha512-qBNXvktHxqnfql2dtjdYqPVj+6OZriuKYNB/ZOdZv58kov9/vEVxFstlXQKCnmxVgC3q4NNmvWXIemTAPZah/A==
+"@dapplion/benchmark@^0.2.4":
+  version "0.2.4"
+  resolved "https://registry.yarnpkg.com/@dapplion/benchmark/-/benchmark-0.2.4.tgz#e75443a067af4c923c5c32c932750d297b3a34c0"
+  integrity sha512-57nIqyEEgEoSPzLTTgkt5NukLbZuYCg9lmNml+/QR4TcwwFugSuSPmNQTDKyqO92l8XmI8AfSxSoIioAXkJ7lw==
   dependencies:
     "@actions/cache" "^1.0.7"
     "@actions/github" "^5.0.0"
@@ -325,7 +325,7 @@
     aws-sdk "^2.932.0"
     csv-parse "^4.16.0"
     csv-stringify "^5.6.2"
-    yargs "^17.0.1"
+    yargs "^17.1.1"
 
 "@eslint-community/eslint-utils@^4.2.0":
   version "4.4.0"
@@ -6917,7 +6917,7 @@ yargs@^13.2.2:
     y18n "^4.0.0"
     yargs-parser "^13.1.2"
 
-yargs@^17.0.1, yargs@^17.6.2:
+yargs@^17.1.1, yargs@^17.6.2:
   version "17.7.2"
   resolved "https://registry.yarnpkg.com/yargs/-/yargs-17.7.2.tgz#991df39aca675a192b816e1e0363f9d75d2aa269"
   integrity sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==
