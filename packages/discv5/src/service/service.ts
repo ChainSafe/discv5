@@ -462,7 +462,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   private pingConnectedPeers(): void {
     for (const entry of this.kbuckets.rawValues()) {
       if (entry.status === EntryStatus.Connected) {
-        this.sendPing(entry.value);
+        this.sendPing(entry.value).catch((e) => log("Error pinging peer %o: %s", entry.value, (e as Error).message));
       }
     }
   }
@@ -548,7 +548,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
               setInterval(() => {
                 // If the node is in the routing table, keep pinging
                 if (this.kbuckets.getValue(nodeId)) {
-                  this.sendPing(newStatus.enr);
+                  this.sendPing(newStatus.enr).catch((e) =>
+                    log("Error pinging peer %o: %s", newStatus.enr, (e as Error).message)
+                  );
                 } else {
                   clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout);
                   this.connectedPeers.delete(nodeId);
@@ -569,7 +571,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
               setInterval(() => {
                 // If the node is in the routing table, keep pinging
                 if (this.kbuckets.getValue(nodeId)) {
-                  this.sendPing(newStatus.enr);
+                  this.sendPing(newStatus.enr).catch((e) =>
+                    log("Error pinging peer %o: %s", newStatus.enr, (e as Error).message)
+                  );
                 } else {
                   clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout);
                   this.connectedPeers.delete(nodeId);
@@ -682,7 +686,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   // process kad updates
 
   private onPendingEviction = (enr: ENR): void => {
-    this.sendPing(enr);
+    this.sendPing(enr).catch((e) => log("Error pinging peer %o: %s", enr, (e as Error).message));
   };
 
   private onAppliedEviction = (inserted: ENR, evicted?: ENR): void => {

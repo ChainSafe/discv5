@@ -847,6 +847,8 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   }
 
   private send(nodeAddr: INodeAddress, packet: IPacket): void {
-    this.transport.send(nodeAddr.socketAddr, nodeAddr.nodeId, packet);
+    this.transport
+      .send(nodeAddr.socketAddr, nodeAddr.nodeId, packet)
+      .catch((e) => log("Error sending packet to node %o: %s", nodeAddr, (e as Error).message));
   }
 }

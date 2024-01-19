@@ -80,7 +80,7 @@ describe("discv5 integration test", function () {
     // test a TALKRESP with a response
     const expectedResp = Buffer.from([4, 5, 6, 7]);
     node1.discv5.on("talkReqReceived", (nodeAddr, enr, request) => {
-      node1.discv5.sendTalkResp(nodeAddr, request.id, expectedResp);
+      void node1.discv5.sendTalkResp(nodeAddr, request.id, expectedResp);
     });
     const resp = await node0.discv5.sendTalkReq(node1.enr.toENR(), Buffer.from([0, 1, 2, 3]), "foo");
     expect(resp).to.deep.equal(expectedResp);

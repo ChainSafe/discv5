@@ -48,6 +48,7 @@ module.exports = {
     "prefer-const": "error",
     "quotes": ["error", "double"],
     "@chainsafe/node/file-extension-in-import": ["error", "always", {esm: true}],
+    "@typescript-eslint/no-floating-promises": "error",
   },
   "overrides": [
     {

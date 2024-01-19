@@ -88,7 +88,7 @@ describe("session service", () => {
     await Promise.all([receivedRandom, receivedWhoAreYou, establishedSession, receivedMsg]);
   });
   it("receiver should drop WhoAreYou packets from destinations without existing pending requests", async () => {
-    transport0.send(addr1, enr1.nodeId, createWhoAreYouPacket(Buffer.alloc(12), BigInt(0)));
+    void transport0.send(addr1, enr1.nodeId, createWhoAreYouPacket(Buffer.alloc(12), BigInt(0)));
     transport0.on("packet", () => expect.fail("transport0 should not receive any packets"));
   });
   it("should only accept WhoAreYou packets from destinations with existing pending requests", async () => {
