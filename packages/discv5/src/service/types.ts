@@ -57,7 +57,7 @@ export interface INodesResponse {
 /**
  * Active RPC request awaiting a response
  */
-export interface IActiveRequest<T extends RequestMessage = RequestMessage, U extends Callback = Callback> {
+export interface IActiveRequest<T extends RequestMessage = RequestMessage, U extends ResponseType = ResponseType> {
   /**
    * The address the request was sent to.
    */
@@ -73,19 +73,18 @@ export interface IActiveRequest<T extends RequestMessage = RequestMessage, U ext
   /**
    * Callback if this request was from a user level request.
    */
-  callback?: U;
+  callbackPromise?: {
+    resolve: (value: U) => void;
+    reject: (err: RequestErrorType) => void;
+  };
 }
 
-export type BufferCallback = (err: RequestErrorType | null, res: Buffer | null) => void;
-export type ENRCallback = (err: RequestErrorType | null, res: ENR[] | null) => void;
 export type PongResponse = {
   enrSeq: SequenceNumber;
   addr: SocketAddress;
 };
-export type PongCallback = (err: RequestErrorType | null, res: PongResponse | null) => void;
-export type Callback = BufferCallback | ENRCallback | PongCallback;
 
-export type CallbackResponseType = Buffer | ENR;
+export type ResponseType = Buffer | ENR[] | PongResponse;
 
 export enum ConnectionStatusType {
   Connected,

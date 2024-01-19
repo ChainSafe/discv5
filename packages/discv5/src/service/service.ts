@@ -48,7 +48,6 @@ import { toBuffer } from "../util/index.js";
 import { IDiscv5Config, defaultConfig } from "../config/index.js";
 import { createNodeContact, getNodeAddress, getNodeId, INodeAddress, NodeContact } from "../session/nodeInfo.js";
 import {
-  BufferCallback,
   ConnectionStatus,
   ConnectionStatusType,
   Discv5EventEmitter,
@@ -56,6 +55,7 @@ import {
   IActiveRequest,
   INodesResponse,
   PongResponse,
+  ResponseType,
   SignableENRInput,
 } from "./types.js";
 import { RateLimiter, RateLimiterOpts } from "../rateLimit/index.js";
@@ -388,16 +388,16 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * Send FINDNODE message to remote and returns response
    */
   public async sendFindNode(remote: ENR | Multiaddr, distances: number[]): Promise<ENR[]> {
+    const contact = createNodeContact(remote);
+    const request = createFindNodeMessage(distances);
+
     return await new Promise((resolve, reject) => {
       this.sendRpcRequest({
-        contact: createNodeContact(remote),
-        request: createFindNodeMessage(distances),
-        callback: (err: RequestErrorType | null, res: ENR[] | null): void => {
-          if (err !== null) {
-            reject(err);
-            return;
-          }
-          resolve(res as ENR[]);
+        contact,
+        request,
+        callbackPromise: {
+          resolve: resolve as (val: ENR[]) => void,
+          reject,
         },
       });
     });
@@ -407,16 +407,16 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * Send TALKREQ message to dstId and returns response
    */
   public async sendTalkReq(remote: ENR | Multiaddr, payload: Buffer, protocol: string | Uint8Array): Promise<Buffer> {
+    const contact = createNodeContact(remote);
+    const request = createTalkRequestMessage(payload, protocol);
+
     return await new Promise((resolve, reject) => {
       this.sendRpcRequest({
-        contact: createNodeContact(remote),
-        request: createTalkRequestMessage(payload, protocol),
-        callback: (err: RequestErrorType | null, res: Buffer | null): void => {
-          if (err !== null) {
-            reject(err);
-            return;
-          }
-          resolve(res as Buffer);
+        contact,
+        request,
+        callbackPromise: {
+          resolve: resolve as (val: Buffer) => void,
+          reject,
         },
       });
     });
@@ -441,16 +441,16 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * Sends a PING request to a node and returns response
    */
   public async sendPing(nodeAddr: ENR | Multiaddr): Promise<PongResponse> {
+    const contact = createNodeContact(nodeAddr);
+    const request = createPingMessage(this.enr.seq);
+
     return await new Promise((resolve, reject) => {
       this.sendRpcRequest({
-        contact: createNodeContact(nodeAddr),
-        request: createPingMessage(this.enr.seq),
-        callback: (err: RequestErrorType | null, res: PongResponse | null): void => {
-          if (err !== null) {
-            reject(err);
-            return;
-          }
-          resolve(res as PongResponse);
+        contact,
+        request,
+        callbackPromise: {
+          resolve: resolve as (val: PongResponse) => void,
+          reject,
         },
       });
     });
@@ -470,8 +470,8 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Request an external node's ENR
    */
-  private requestEnr(contact: NodeContact, callback?: (err: RequestErrorType | null, res: ENR[] | null) => void): void {
-    this.sendRpcRequest({ request: createFindNodeMessage([0]), contact, callback });
+  private requestEnr(contact: NodeContact): void {
+    this.sendRpcRequest({ request: createFindNodeMessage([0]), contact });
   }
 
   /**
@@ -498,8 +498,11 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    *
    * Returns true if the request was sent successfully
    */
-  private sendRpcRequest(activeRequest: IActiveRequest): void {
-    this.activeRequests.set(activeRequest.request.id, activeRequest);
+  private sendRpcRequest<T extends RequestMessage, U extends ResponseType>(activeRequest: IActiveRequest<T, U>): void {
+    this.activeRequests.set(
+      activeRequest.request.id,
+      activeRequest as unknown as IActiveRequest<RequestMessage, ResponseType>
+    );
 
     const nodeAddr = getNodeAddress(activeRequest.contact, this.ipMode);
     log("Sending %s to node: %o", MessageType[activeRequest.request.type], nodeAddr);
@@ -862,11 +865,11 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       case MessageType.PONG:
         return this.handlePong(nodeAddr, activeRequest, response as IPongMessage);
       case MessageType.NODES:
-        return this.handleNodes(nodeAddr, activeRequest, response as INodesMessage);
+        return this.handleNodes(nodeAddr, activeRequest as IActiveRequest<IFindNodeMessage>, response as INodesMessage);
       case MessageType.TALKRESP:
         return this.handleTalkResp(
           nodeAddr,
-          activeRequest as IActiveRequest<ITalkReqMessage, BufferCallback>,
+          activeRequest as IActiveRequest<ITalkReqMessage>,
           response as ITalkRespMessage
         );
       default:
@@ -908,10 +911,17 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       }
       this.connectionUpdated(nodeAddr.nodeId, { type: ConnectionStatusType.PongReceived, enr });
     }
+
+    // If this is initiated by the user, return the error on the callback.
+    activeRequest.callbackPromise?.resolve(message);
   }
 
-  private handleNodes(nodeAddr: INodeAddress, activeRequest: IActiveRequest, message: INodesMessage): void {
-    const { request, lookupId } = activeRequest as { request: IFindNodeMessage; lookupId: number };
+  private handleNodes(
+    nodeAddr: INodeAddress,
+    activeRequest: IActiveRequest<IFindNodeMessage>,
+    message: INodesMessage
+  ): void {
+    const { request, lookupId, callbackPromise } = activeRequest;
     // Currently a maximum of 16 peers can be returned.
     // Datagrams have a max size of 1280 and ENRs have a max size of 300 bytes.
     // There should be no more than 5 responses to return 16 peers
@@ -934,7 +944,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       if (currentResponse.count < 5 && currentResponse.count < message.total) {
         currentResponse.count += 1;
         currentResponse.enrs.push(...message.enrs);
-        this.activeRequests.set(message.id, activeRequest);
+        this.activeRequests.set(message.id, activeRequest as IActiveRequest<RequestMessage>);
         this.activeNodesResponses.set(message.id, currentResponse);
         return;
       }
@@ -952,18 +962,21 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.activeNodesResponses.delete(message.id);
 
     this.discovered(nodeAddr.nodeId, message.enrs, lookupId);
+
+    // If this is initiated by the user, return the response on the callback.
+    callbackPromise?.resolve(message.enrs);
   }
 
   private handleTalkResp = (
     nodeAddr: INodeAddress,
-    activeRequest: IActiveRequest<ITalkReqMessage, BufferCallback>,
+    activeRequest: IActiveRequest<ITalkReqMessage>,
     message: ITalkRespMessage
   ): void => {
     log("Received TALKRESP message from Node: %o", nodeAddr);
     this.emit("talkRespReceived", nodeAddr, this.findEnr(nodeAddr.nodeId) ?? null, message);
-    if (activeRequest.callback) {
-      activeRequest.callback(null, message.response);
-    }
+
+    // If this is initiated by the user, return the response on the callback.
+    activeRequest.callbackPromise?.resolve(message.response);
   };
 
   /**
@@ -975,13 +988,8 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     if (!req) {
       return;
     }
-    const { request, contact, lookupId, callback } = req;
+    const { request, contact, lookupId, callbackPromise } = req;
     this.activeRequests.delete(request.id);
-
-    // If this is initiated by the user, return an error on the callback.
-    if (callback) {
-      callback(error, null);
-    }
 
     const nodeId = getNodeId(contact);
     // If a failed FindNodes Request, ensure we haven't partially received responses.
@@ -1017,5 +1025,8 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
 
     // report the node as being disconnected
     this.connectionUpdated(nodeId, { type: ConnectionStatusType.Disconnected });
+
+    // If this is initiated by the user, return the error on the callback.
+    callbackPromise?.reject(error);
   };
 }
