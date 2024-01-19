@@ -404,31 +404,6 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   }
 
   /**
-   * Broadcast TALKREQ message to all nodes in routing table and returns response
-   */
-  public async broadcastTalkReq(payload: Buffer, protocol: string | Uint8Array): Promise<Buffer> {
-    return await new Promise((resolve, reject) => {
-      const request = createTalkRequestMessage(payload, protocol);
-      const callback = (err: RequestErrorType | null, res: Buffer | null): void => {
-        if (err) {
-          return reject(err);
-        }
-        if (res) {
-          resolve(res);
-        }
-      };
-
-      /** Broadcast request to all peers in the routing table */
-      for (const node of this.kadValues()) {
-        this.sendRpcRequest({
-          contact: createNodeContact(node),
-          request,
-          callback,
-        });
-      }
-    });
-  }
-  /**
    * Send TALKREQ message to dstId and returns response
    */
   public async sendTalkReq(remote: ENR | Multiaddr, payload: Buffer, protocol: string | Uint8Array): Promise<Buffer> {
