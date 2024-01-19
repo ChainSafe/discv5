@@ -730,18 +730,24 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * Requests respond to the received socket address, rather than the IP of the known ENR.
    */
   private handleRpcRequest = (nodeAddr: INodeAddress, request: RequestMessage): void => {
-    this.metrics?.rcvdMessageCount.inc({ type: MessageType[request.type] });
-    switch (request.type) {
-      case MessageType.PING:
-        return this.handlePing(nodeAddr, request as IPingMessage);
-      case MessageType.FINDNODE:
-        return this.handleFindNode(nodeAddr, request as IFindNodeMessage);
-      case MessageType.TALKREQ:
-        return this.handleTalkReq(nodeAddr, request as ITalkReqMessage);
-      default:
-        log("Received request which is unimplemented");
-        // TODO Implement all RPC methods
-        return;
+    const requestType = MessageType[request.type];
+    this.metrics?.rcvdMessageCount.inc({ type: requestType });
+
+    try {
+      switch (request.type) {
+        case MessageType.PING:
+          return this.handlePing(nodeAddr, request as IPingMessage);
+        case MessageType.FINDNODE:
+          return this.handleFindNode(nodeAddr, request as IFindNodeMessage);
+        case MessageType.TALKREQ:
+          return this.handleTalkReq(nodeAddr, request as ITalkReqMessage);
+        default:
+          log("Received request type which is unimplemented: %s", request.type);
+          // TODO Implement all RPC methods
+          return;
+      }
+    } catch (e) {
+      log("Error handling rpc request: node: %o, requestType: %s", nodeAddr, requestType);
     }
   };
 
@@ -836,7 +842,8 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * Processes an RPC response from a peer.
    */
   private handleRpcResponse = (nodeAddr: INodeAddress, response: ResponseMessage): void => {
-    this.metrics?.rcvdMessageCount.inc({ type: MessageType[response.type] });
+    const responseType = MessageType[response.type];
+    this.metrics?.rcvdMessageCount.inc({ type: responseType });
 
     // verify we know of the rpc id
 
@@ -865,20 +872,28 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       return;
     }
 
-    switch (response.type) {
-      case MessageType.PONG:
-        return this.handlePong(nodeAddr, activeRequest, response as IPongMessage);
-      case MessageType.NODES:
-        return this.handleNodes(nodeAddr, activeRequest as IActiveRequest<IFindNodeMessage>, response as INodesMessage);
-      case MessageType.TALKRESP:
-        return this.handleTalkResp(
-          nodeAddr,
-          activeRequest as IActiveRequest<ITalkReqMessage>,
-          response as ITalkRespMessage
-        );
-      default:
-        // TODO Implement all RPC methods
-        return;
+    try {
+      switch (response.type) {
+        case MessageType.PONG:
+          return this.handlePong(nodeAddr, activeRequest, response as IPongMessage);
+        case MessageType.NODES:
+          return this.handleNodes(
+            nodeAddr,
+            activeRequest as IActiveRequest<IFindNodeMessage>,
+            response as INodesMessage
+          );
+        case MessageType.TALKRESP:
+          return this.handleTalkResp(
+            nodeAddr,
+            activeRequest as IActiveRequest<ITalkReqMessage>,
+            response as ITalkRespMessage
+          );
+        default:
+          // TODO Implement all RPC methods
+          return;
+      }
+    } catch (e) {
+      log("Error handling rpc response: node: %o response: %s", nodeAddr, responseType);
     }
   };
 
