@@ -14,7 +14,6 @@ import {
   decryptMessage,
 } from "../../../src/session/index.js";
 import { createKeypair, generateKeypair } from "../../../src/keypair/index.js";
-import { createNodeContact } from "../../../src/session/nodeInfo.js";
 
 describe("session crypto", () => {
   it("ecdh should produce expected secret", () => {
@@ -55,7 +54,12 @@ describe("session crypto", () => {
     const enr1 = SignableENR.createV4(kp1.privateKey);
     const enr2 = SignableENR.createV4(kp2.privateKey);
     const nonce = randomBytes(32);
-    const [a1, b1, pk] = generateSessionKeys(enr1.nodeId, createNodeContact(enr2.toENR()), nonce);
+    const [a1, b1, pk] = generateSessionKeys(
+      enr1.nodeId,
+      enr2.nodeId,
+      createKeypair({ type: enr2.keypairType, publicKey: enr2.publicKey }),
+      nonce
+    );
     const [a2, b2] = deriveKeysFromPubkey(kp2, enr2.nodeId, enr1.nodeId, pk, nonce);
 
     expect(a1).to.deep.equal(a2);

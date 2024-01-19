@@ -22,7 +22,7 @@ export function nodeAddressToString(nodeAddr: INodeAddress): string {
 }
 
 /**
- * This type relaxes the requirement of having an ENR to connect to a node, to allow for unsigned
+ * This type abstracts the requirement of having an ENR to connect to a node, to allow for unsigned
  * connection types, such as multiaddrs.
  */
 export enum INodeContactType {
@@ -30,7 +30,6 @@ export enum INodeContactType {
   ENR,
   /**
    * We don't have an ENR, but have enough information to start a handshake.
-   *
    * The handshake will request the ENR at the first opportunity.
    * The public key can be derived from multiaddr's whose keys can be inlined.
    */
@@ -38,25 +37,44 @@ export enum INodeContactType {
 }
 
 /**
- * This type relaxes the requirement of having an ENR to connect to a node, to allow for unsigned
+ * This type abstracts the requirement of having an ENR to connect to a node, to allow for unsigned
  * connection types, such as multiaddrs.
+ *
+ * Either:
+ *
+ * * We know the ENR of the node we are contacting, or
+ *
+ * * We don't have an ENR, but have enough information to start a handshake.
+ *
+ *   The handshake will request the ENR at the first opportunity.
+ *   The public key can be derived from multiaddr's whose keys can be inlined.
  */
 export type NodeContact =
-  | {
-      type: INodeContactType.ENR;
-      enr: ENR;
-    }
   | {
       type: INodeContactType.Raw;
       publicKey: IKeypair;
       nodeAddress: INodeAddress;
+    }
+  | {
+      type: INodeContactType.ENR;
+      publicKey: IKeypair;
+      nodeAddress: INodeAddress;
+      enr: ENR;
     };
 
-export function createNodeContact(input: ENR | Multiaddr): NodeContact {
+/**
+ * Convert an ENR or Multiaddr into a NodeContact.
+ *
+ * Note: this function may error if the input can't derive a public key or a valid socket address
+ */
+export function createNodeContact(input: ENR | Multiaddr, ipMode: IPMode): NodeContact {
   if (isMultiaddr(input)) {
     const options = input.toOptions();
     if (options.transport !== "udp") {
       throw new Error("Multiaddr must specify a UDP port");
+    }
+    if ((options.family === 4 && !ipMode.ip4) || (options.family === 6 && !ipMode.ip6)) {
+      throw new Error("Multiaddr family not supported by IP mode");
     }
     const peerIdStr = input.getPeerId();
     if (!peerIdStr) {
@@ -75,44 +93,30 @@ export function createNodeContact(input: ENR | Multiaddr): NodeContact {
       },
     };
   } else {
+    const socketAddr = getSocketAddressMultiaddrOnENR(input, ipMode);
+    if (!socketAddr) {
+      throw new Error("ENR has no suitable udp multiaddr given the IP mode");
+    }
     return {
       type: INodeContactType.ENR,
+      publicKey: createKeypair({ type: input.keypairType, publicKey: input.publicKey }),
+      nodeAddress: {
+        socketAddr,
+        nodeId: input.nodeId,
+      },
       enr: input,
     };
   }
 }
 
 export function getNodeId(contact: NodeContact): NodeId {
-  switch (contact.type) {
-    case INodeContactType.ENR:
-      return contact.enr.nodeId;
-    case INodeContactType.Raw:
-      return contact.nodeAddress.nodeId;
-  }
+  return contact.nodeAddress.nodeId;
 }
 
-export function getNodeAddress(contact: NodeContact, ipMode: IPMode): INodeAddress {
-  switch (contact.type) {
-    case INodeContactType.ENR: {
-      const socketAddr = getSocketAddressMultiaddrOnENR(contact.enr, ipMode);
-      if (!socketAddr) {
-        throw new Error("ENR has no udp multiaddr");
-      }
-      return {
-        socketAddr,
-        nodeId: contact.enr.nodeId,
-      };
-    }
-    case INodeContactType.Raw:
-      return contact.nodeAddress;
-  }
+export function getNodeAddress(contact: NodeContact): INodeAddress {
+  return contact.nodeAddress;
 }
 
 export function getPublicKey(contact: NodeContact): IKeypair {
-  switch (contact.type) {
-    case INodeContactType.ENR:
-      return createKeypair({ type: contact.enr.keypairType, publicKey: contact.enr.publicKey });
-    case INodeContactType.Raw:
-      return contact.publicKey;
-  }
+  return contact.publicKey;
 }

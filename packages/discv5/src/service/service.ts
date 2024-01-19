@@ -388,7 +388,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * Send FINDNODE message to remote and returns response
    */
   public async sendFindNode(remote: ENR | Multiaddr, distances: number[]): Promise<ENR[]> {
-    const contact = createNodeContact(remote);
+    const contact = createNodeContact(remote, this.ipMode);
     const request = createFindNodeMessage(distances);
 
     return await new Promise((resolve, reject) => {
@@ -407,7 +407,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * Send TALKREQ message to dstId and returns response
    */
   public async sendTalkReq(remote: ENR | Multiaddr, payload: Buffer, protocol: string | Uint8Array): Promise<Buffer> {
-    const contact = createNodeContact(remote);
+    const contact = createNodeContact(remote, this.ipMode);
     const request = createTalkRequestMessage(payload, protocol);
 
     return await new Promise((resolve, reject) => {
@@ -441,7 +441,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * Sends a PING request to a node and returns response
    */
   public async sendPing(nodeAddr: ENR | Multiaddr): Promise<PongResponse> {
-    const contact = createNodeContact(nodeAddr);
+    const contact = createNodeContact(nodeAddr, this.ipMode);
     const request = createPingMessage(this.enr.seq);
 
     return await new Promise((resolve, reject) => {
@@ -486,7 +486,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     }
 
     this.sendRpcRequest({
-      contact: createNodeContact(enr),
+      contact: createNodeContact(enr, this.ipMode),
       request,
       lookupId,
     });
@@ -504,7 +504,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       activeRequest as unknown as IActiveRequest<RequestMessage, ResponseType>
     );
 
-    const nodeAddr = getNodeAddress(activeRequest.contact, this.ipMode);
+    const nodeAddr = getNodeAddress(activeRequest.contact);
     log("Sending %s to node: %o", MessageType[activeRequest.request.type], nodeAddr);
     try {
       this.sessionService.sendRequest(activeRequest.contact, activeRequest.request);
@@ -750,7 +750,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     const entry = this.kbuckets.getWithPending(nodeAddr.nodeId);
     if (entry) {
       if (entry.value.seq < message.enrSeq) {
-        this.requestEnr(createNodeContact(entry.value));
+        this.requestEnr(createNodeContact(entry.value, this.ipMode));
       }
     }
 
@@ -848,7 +848,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.activeRequests.delete(response.id);
 
     // Check that the responder matches the expected request
-    const requestNodeAddr = getNodeAddress(activeRequest.contact, this.ipMode);
+    const requestNodeAddr = getNodeAddress(activeRequest.contact);
     if (requestNodeAddr.nodeId !== nodeAddr.nodeId || !requestNodeAddr.socketAddr.equals(nodeAddr.socketAddr)) {
       log(
         "Received a response from an unexpected address. Expected %o, received %o, request id: %s",
