@@ -5,7 +5,7 @@ import { ENR, SequenceNumber, SignableENR } from "@chainsafe/enr";
 
 import { ITalkReqMessage, ITalkRespMessage, RequestMessage } from "../message/index.js";
 import { INodeAddress, NodeContact } from "../session/nodeInfo.js";
-import { ConnectionDirection, RequestErrorType } from "../session/index.js";
+import { ConnectionDirection, RequestErrorType, ResponseErrorType } from "../session/index.js";
 import { SocketAddress } from "../util/ip.js";
 
 export interface IDiscv5Events {
@@ -75,8 +75,18 @@ export interface IActiveRequest<T extends RequestMessage = RequestMessage, U ext
    */
   callbackPromise?: {
     resolve: (value: U) => void;
-    reject: (err: RequestErrorType) => void;
+    reject: (err: CodeError<RequestErrorType | ResponseErrorType>) => void;
   };
+}
+
+export class CodeError<T> extends Error {
+  code: T;
+
+  constructor(code: T, message?: string) {
+    super(message);
+
+    this.code = code;
+  }
 }
 
 export type PongResponse = {

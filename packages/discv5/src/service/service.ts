@@ -15,7 +15,7 @@ import {
 
 import { BindAddrs, IPMode, ITransportService, UDPTransportService } from "../transport/index.js";
 import { MAX_PACKET_SIZE } from "../packet/index.js";
-import { ConnectionDirection, RequestErrorType, SessionService } from "../session/index.js";
+import { ConnectionDirection, RequestErrorType, ResponseErrorType, SessionService } from "../session/index.js";
 import { IKeypair, createKeypair } from "../keypair/index.js";
 import {
   EntryStatus,
@@ -48,6 +48,7 @@ import { toBuffer } from "../util/index.js";
 import { IDiscv5Config, defaultConfig } from "../config/index.js";
 import { createNodeContact, getNodeAddress, getNodeId, INodeAddress, NodeContact } from "../session/nodeInfo.js";
 import {
+  CodeError,
   ConnectionStatus,
   ConnectionStatusType,
   Discv5EventEmitter,
@@ -863,12 +864,14 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
         nodeAddr,
         response.id
       );
+      activeRequest.callbackPromise?.reject(new CodeError(ResponseErrorType.WrongAddress));
       return;
     }
 
     // Check that the response type matches the request
     if (!requestMatchesResponse(activeRequest.request, response)) {
       log("Node gave an incorrect response type. Ignoring response from: %o", nodeAddr);
+      activeRequest.callbackPromise?.reject(new CodeError(ResponseErrorType.WrongResponseType));
       return;
     }
 
@@ -894,6 +897,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       }
     } catch (e) {
       log("Error handling rpc response: node: %o response: %s", nodeAddr, responseType);
+      activeRequest.callbackPromise?.reject(new CodeError(ResponseErrorType.InternalError, (e as Error).message));
     }
   };
 
@@ -1046,6 +1050,6 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.connectionUpdated(nodeId, { type: ConnectionStatusType.Disconnected });
 
     // If this is initiated by the user, return the error on the callback.
-    callbackPromise?.reject(error);
+    callbackPromise?.reject(new CodeError(error));
   };
 }

@@ -57,6 +57,14 @@ export enum RequestErrorType {
   InvalidMultiaddr,
 }
 
+export enum ResponseErrorType {
+  /** The responder address does not match the expected address */
+  WrongAddress,
+  /** The response type does not match the expected response type */
+  WrongResponseType,
+  /** The response handler threw */
+  InternalError,
+}
 export interface IKeys {
   encryptionKey: Buffer;
   decryptionKey: Buffer;
