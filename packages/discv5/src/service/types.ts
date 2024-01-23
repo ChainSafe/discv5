@@ -3,7 +3,14 @@ import StrictEventEmitter from "strict-event-emitter-types";
 import { Multiaddr } from "@multiformats/multiaddr";
 import { ENR, SequenceNumber, SignableENR } from "@chainsafe/enr";
 
-import { ITalkReqMessage, ITalkRespMessage, RequestMessage } from "../message/index.js";
+import {
+  INodesMessage,
+  IPongMessage,
+  ITalkReqMessage,
+  ITalkRespMessage,
+  MessageType,
+  RequestMessage,
+} from "../message/index.js";
 import { INodeAddress, NodeContact } from "../session/nodeInfo.js";
 import { ConnectionDirection, RequestErrorType, ResponseErrorType } from "../session/index.js";
 import { SocketAddress } from "../util/ip.js";
@@ -95,6 +102,17 @@ export type PongResponse = {
 };
 
 export type ResponseType = Buffer | ENR[] | PongResponse;
+
+export function toResponseType(response: IPongMessage | INodesMessage | ITalkRespMessage): ResponseType {
+  switch (response.type) {
+    case MessageType.PONG:
+      return { enrSeq: response.enrSeq, addr: response.addr };
+    case MessageType.NODES:
+      return response.enrs;
+    case MessageType.TALKRESP:
+      return response.response;
+  }
+}
 
 export enum ConnectionStatusType {
   Connected,
