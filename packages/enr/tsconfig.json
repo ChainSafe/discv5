@@ -7,10 +7,6 @@
     "outDir": "./lib",
     "strict": true,
     "strictNullChecks": true,
-    "typeRoots": [
-       "../../node_modules/@types",
-       "../../types"
-    ],
     "esModuleInterop": true,
     "sourceMap": true,
   }

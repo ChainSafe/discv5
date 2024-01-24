@@ -39,6 +39,17 @@ const libp2p = new Libp2p({
 
 ```
 
+## Additional features
+
+#### Faster nodejs ENR crypto
+
+When using nodejs, you may want to enable faster crypto for ENRs using bcrypto. This can be done by importing `@chainsafe/discv5/enr/setNodeV4Crypto`.
+
+Eg:
+```ts
+import "@chainsafe/discv5/enr/setNodeV4Crypto";
+```
+
 ## License
 
 Apache-2.0

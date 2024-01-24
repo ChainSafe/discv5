@@ -1,8 +1,7 @@
 import keccak from "bcrypto/lib/keccak.js";
 import secp256k1 from "bcrypto/lib/secp256k1.js";
 
-import { NodeId } from "./types.js";
-import { createNodeId } from "./create.js";
+import { createNodeId, NodeId } from "@chainsafe/enr";
 
 export function hash(input: Uint8Array): Buffer {
   return keccak.digest(Buffer.from(input));
