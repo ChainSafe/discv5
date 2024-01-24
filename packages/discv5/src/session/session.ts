@@ -22,7 +22,7 @@ import { IKeypair, createKeypair } from "../keypair/index.js";
 import { randomBytes } from "crypto";
 import { RequestId } from "../message/index.js";
 import { IChallenge } from ".";
-import { getNodeId, NodeContact } from "./nodeInfo.js";
+import { getNodeId, getPublicKey, NodeContact } from "./nodeInfo.js";
 
 // The `Session` struct handles the stages of creating and establishing a handshake with a
 // peer.
@@ -136,7 +136,12 @@ export class Session {
     message: Buffer
   ): [IPacket, Session] {
     // generate session keys
-    const [encryptionKey, decryptionKey, ephPubkey] = generateSessionKeys(localNodeId, remoteContact, challengeData);
+    const [encryptionKey, decryptionKey, ephPubkey] = generateSessionKeys(
+      localNodeId,
+      getNodeId(remoteContact),
+      getPublicKey(remoteContact),
+      challengeData
+    );
     const keys = { encryptionKey, decryptionKey };
 
     // construct nonce signature

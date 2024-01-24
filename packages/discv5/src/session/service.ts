@@ -150,7 +150,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     this.transport = transport;
 
     this.activeRequests = new TimeoutMap(config.requestTimeout, (k, v) =>
-      this.handleRequestTimeout(getNodeAddress(v.contact, this.ipMode), v)
+      this.handleRequestTimeout(getNodeAddress(v.contact), v)
     );
     this.activeRequestsNonceMapping = new Map();
     this.pendingRequests = new Map();
@@ -190,7 +190,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * Sends an RequestMessage to a node.
    */
   public sendRequest(contact: NodeContact, request: RequestMessage): void {
-    const nodeAddr = getNodeAddress(contact, this.ipMode);
+    const nodeAddr = getNodeAddress(contact);
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
     if (this.transport.bindAddrs.some((bindAddr) => nodeAddr.socketAddr.equals(bindAddr))) {
@@ -745,7 +745,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * Inserts a request and associated authTag mapping
    */
   private insertActiveRequest(requestCall: IRequestCall): void {
-    const nodeAddr = getNodeAddress(requestCall.contact, this.ipMode);
+    const nodeAddr = getNodeAddress(requestCall.contact);
     const nodeAddrStr = nodeAddressToString(nodeAddr);
     this.activeRequestsNonceMapping.set(requestCall.packet.header.nonce.toString("hex"), nodeAddr);
     this.activeRequests.set(nodeAddrStr, requestCall);
@@ -823,7 +823,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     // Fail the current request
     this.emit("requestFailed", requestCall.request.id, error);
 
-    const nodeAddr = getNodeAddress(requestCall.contact, this.ipMode);
+    const nodeAddr = getNodeAddress(requestCall.contact);
     this.failSession(nodeAddr, error, removeSession);
   }
 
@@ -847,6 +847,8 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   }
 
   private send(nodeAddr: INodeAddress, packet: IPacket): void {
-    this.transport.send(nodeAddr.socketAddr, nodeAddr.nodeId, packet);
+    this.transport
+      .send(nodeAddr.socketAddr, nodeAddr.nodeId, packet)
+      .catch((e) => log("Error sending packet to node %o: %s", nodeAddr, (e as Error).message));
   }
 }

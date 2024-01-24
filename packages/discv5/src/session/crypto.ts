@@ -5,7 +5,6 @@ import { NodeId } from "@chainsafe/enr";
 
 import { generateKeypair, IKeypair, createKeypair } from "../keypair/index.js";
 import { fromHex } from "../util/index.js";
-import { getNodeId, getPublicKey, NodeContact } from "./nodeInfo.js";
 
 // Implementation for generating session keys in the Discv5 protocol.
 // Currently, Diffie-Hellman key agreement is performed with known public key types. Session keys
@@ -25,23 +24,19 @@ export const MAC_LENGTH = 16;
 // Returns [initiatorKey, responderKey, ephemPK]
 export function generateSessionKeys(
   localId: NodeId,
-  remoteContact: NodeContact,
+  remoteId: NodeId,
+  remotePubkey: IKeypair,
   challengeData: Buffer
 ): [Buffer, Buffer, Buffer] {
-  const remoteKeypair = getPublicKey(remoteContact);
-  const ephemKeypair = generateKeypair(remoteKeypair.type);
-  const secret = ephemKeypair.deriveSecret(remoteKeypair);
+  const ephemKeypair = generateKeypair(remotePubkey.type);
+  const secret = ephemKeypair.deriveSecret(remotePubkey);
   /* TODO possibly not needed, check tests
   const ephemPubkey =
     remoteKeypair.type === "secp256k1"
       ? secp256k1PublicKeyToCompressed(ephemKeypair.publicKey)
       : ephemKeypair.publicKey;
   */
-  return [...deriveKey(secret, localId, getNodeId(remoteContact), challengeData), ephemKeypair.publicKey] as [
-    Buffer,
-    Buffer,
-    Buffer
-  ];
+  return [...deriveKey(secret, localId, remoteId, challengeData), ephemKeypair.publicKey] as [Buffer, Buffer, Buffer];
 }
 
 export function deriveKey(secret: Buffer, firstId: NodeId, secondId: NodeId, challengeData: Buffer): [Buffer, Buffer] {

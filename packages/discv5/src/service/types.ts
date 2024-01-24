@@ -3,9 +3,16 @@ import StrictEventEmitter from "strict-event-emitter-types";
 import { Multiaddr } from "@multiformats/multiaddr";
 import { ENR, SequenceNumber, SignableENR } from "@chainsafe/enr";
 
-import { ITalkReqMessage, ITalkRespMessage, RequestMessage } from "../message/index.js";
+import {
+  INodesMessage,
+  IPongMessage,
+  ITalkReqMessage,
+  ITalkRespMessage,
+  MessageType,
+  RequestMessage,
+} from "../message/index.js";
 import { INodeAddress, NodeContact } from "../session/nodeInfo.js";
-import { ConnectionDirection, RequestErrorType } from "../session/index.js";
+import { ConnectionDirection, RequestErrorType, ResponseErrorType } from "../session/index.js";
 import { SocketAddress } from "../util/ip.js";
 
 export interface IDiscv5Events {
@@ -57,7 +64,7 @@ export interface INodesResponse {
 /**
  * Active RPC request awaiting a response
  */
-export interface IActiveRequest<T extends RequestMessage = RequestMessage, U extends Callback = Callback> {
+export interface IActiveRequest<T extends RequestMessage = RequestMessage, U extends ResponseType = ResponseType> {
   /**
    * The address the request was sent to.
    */
@@ -73,19 +80,39 @@ export interface IActiveRequest<T extends RequestMessage = RequestMessage, U ext
   /**
    * Callback if this request was from a user level request.
    */
-  callback?: U;
+  callbackPromise?: {
+    resolve: (value: U) => void;
+    reject: (err: CodeError<RequestErrorType | ResponseErrorType>) => void;
+  };
 }
 
-export type BufferCallback = (err: RequestErrorType | null, res: Buffer | null) => void;
-export type ENRCallback = (err: RequestErrorType | null, res: ENR[] | null) => void;
+export class CodeError<T> extends Error {
+  code: T;
+
+  constructor(code: T, message?: string) {
+    super(message);
+
+    this.code = code;
+  }
+}
+
 export type PongResponse = {
   enrSeq: SequenceNumber;
   addr: SocketAddress;
 };
-export type PongCallback = (err: RequestErrorType | null, res: PongResponse | null) => void;
-export type Callback = BufferCallback | ENRCallback | PongCallback;
 
-export type CallbackResponseType = Buffer | ENR;
+export type ResponseType = Buffer | ENR[] | PongResponse;
+
+export function toResponseType(response: IPongMessage | INodesMessage | ITalkRespMessage): ResponseType {
+  switch (response.type) {
+    case MessageType.PONG:
+      return { enrSeq: response.enrSeq, addr: response.addr };
+    case MessageType.NODES:
+      return response.enrs;
+    case MessageType.TALKRESP:
+      return response.response;
+  }
+}
 
 export enum ConnectionStatusType {
   Connected,
