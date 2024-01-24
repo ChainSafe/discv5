@@ -41,13 +41,12 @@ const libp2p = new Libp2p({
 
 ## Additional features
 
-#### Faster nodejs ENR crypto
-
-When using nodejs, you may want to enable faster crypto for ENRs using bcrypto. This can be done by importing `@chainsafe/discv5/enr/setNodeV4Crypto`.
-
-Eg:
+By default, importing this library will, as a side-effect, change the enr crypto implementation to use `bcrypto`.
+If you'd like to remain using `@chainsafe/enr`'s default crypto you can add this after importing `@chainsafe/discv5`:
 ```ts
-import "@chainsafe/discv5/enr/setNodeV4Crypto";
+import {setV4Crypto, defaultCrypto} from "@chainsafe/enr";
+
+setV4Crypto(defaultCrypto)
 ```
 
 ## License

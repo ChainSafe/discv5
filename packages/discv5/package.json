@@ -10,9 +10,6 @@
     ".": {
       "import": "./lib/index.js"
     },
-    "./enr/setNodeV4Crypto": {
-      "import": "./lib/enr/setV4Crypto.js"
-    },
     "./kademlia": {
       "import": "./lib/kademlia/index.js"
     },
