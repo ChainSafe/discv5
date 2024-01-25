@@ -69,7 +69,7 @@
   },
   "dependencies": {
     "@chainsafe/enr": "^2.0.2",
-    "@libp2p/crypto": "^3.0.4",
+    "@libp2p/crypto": "^4.0.1",
     "@libp2p/interface": "^1.1.1",
     "@multiformats/multiaddr": "^12.1.10",
     "bcrypto": "^5.4.0",
