@@ -1,7 +1,7 @@
 import { keccak256 } from "ethereum-cryptography/keccak";
 import { secp256k1 } from "ethereum-cryptography/secp256k1";
 
-import { createNodeId } from "./create.js";
+import { createNodeId } from "./util.js";
 import { NodeId } from "./types.js";
 
 export function hash(input: Uint8Array): Uint8Array {
@@ -25,5 +25,5 @@ function uncompressPublicKey(pubKey: Uint8Array): Uint8Array {
 }
 
 export function nodeId(pubKey: Uint8Array): NodeId {
-  return createNodeId(Buffer.from(hash(uncompressPublicKey(pubKey).slice(1))));
+  return createNodeId(hash(uncompressPublicKey(pubKey).slice(1)));
 }

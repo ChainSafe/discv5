@@ -211,10 +211,7 @@ describe("ENR", function () {
 
     it("should throw decoding error - no id", () => {
       try {
-        const txt = Buffer.from(
-          "656e723a2d435972595a62404b574342526c4179357a7a61445a584a42476b636e68344d486342465a6e75584e467264764a6a5830346a527a6a7a",
-          "hex"
-        ).toString();
+        const txt = "enr:-CYrYZbKWCBRlAy5zzaDZXJBGkcnh4MHcBFZnuXNFrdvJjX04jRzjw";
         ENR.decodeTxt(txt);
         expect.fail("Expect error here");
       } catch (err: any) {
@@ -237,23 +234,19 @@ describe("ENR", function () {
 
 describe("ENR fuzzing testcases", () => {
   it("should throw error in invalid signature", () => {
-    const buf = Buffer.from(
-      "656e723a2d4b7634514147774f54385374716d7749354c486149796d494f346f6f464b664e6b456a576130663150384f73456c67426832496a622d4772445f2d623957346b6350466377796e354845516d526371584e716470566f3168656f42683246306447356c64484f494141414141414141414143455a58526f4d704141414141414141414141505f5f5f5f5f5f5f5f5f5f676d6c6b676e5930676d6c7768424c663232534a6332566a634449314e6d73786f514a78436e4536765f7832656b67595f756f45317274777a76477934306d7139654436365866485042576749494e315a48437f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f434436410d0a",
-      "hex"
-    ).toString();
+    const txt =
+      "enr:-Kv4QAGwOT8StqmwI5LHaIymIO4ooFKfNkEjWa0f1P8OsElgBh2Ijb-GrD_-b9W4kcPFcwyn5HEQmRcqXNqdpVo1heoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAAAAAAAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQJxCnE6v_x2ekgY_uoE1rtwzvGy40mq9eD66XfHPBWgIIN1ZHCCD6A";
     try {
-      ENR.decodeTxt(buf);
+      ENR.decodeTxt(txt);
     } catch (e: any) {
       expect(e.message).to.equal("Decoded ENR invalid signature: must be a byte array");
     }
   });
   it("should throw error in invalid sequence number", () => {
-    const buf = Buffer.from(
-      "656e723a2d495334514b6b33ff583945717841337838334162436979416e537550444d764b353264433530486d31584744643574457951684d3356634a4c2d5062446b44673541507a5f706f76763022d48dcf992d5379716b306e616e636f4e572d656e7263713042676d6c6b676e5930676d6c77684838414141474a6332566a634449314e6d73786f514d31453579557370397638516a397476335a575843766146427672504e647a384b5049314e68576651577a494e315a4843434239410a",
-      "hex"
-    ).toString();
+    const txt =
+      "enr:-IS4QKk3X9EqxA3x83AbCiyAnSuPDMvK52dC50Hm1XGDd5tEyQhM3VcJL-PbDkDg5APz_povv0-Syqk0nancoNW-enrcq0BgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQM1E5yUsp9v8Qj9tv3ZWXCvaFBvrPNdz8KPI1NhWfQWzIN1ZHCA";
     try {
-      ENR.decodeTxt(buf);
+      ENR.decodeTxt(txt);
     } catch (e: any) {
       expect(e.message).to.equal("Decoded ENR invalid sequence number: must be a byte array");
     }
