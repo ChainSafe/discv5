@@ -39,6 +39,16 @@ const libp2p = new Libp2p({
 
 ```
 
+## Additional features
+
+By default, importing this library will, as a side-effect, change the enr crypto implementation to use `bcrypto`.
+If you'd like to remain using `@chainsafe/enr`'s default crypto you can add this after importing `@chainsafe/discv5`:
+```ts
+import {setV4Crypto, defaultCrypto} from "@chainsafe/enr";
+
+setV4Crypto(defaultCrypto)
+```
+
 ## License
 
 Apache-2.0

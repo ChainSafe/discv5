@@ -7,33 +7,14 @@ import { convertToString, convertToBytes } from "@multiformats/multiaddr/convert
 import { encode as varintEncode } from "uint8-varint";
 
 import { ERR_INVALID_ID, MAX_RECORD_SIZE } from "./constants.js";
-import * as bcryptoV4Crypto from "./v4.js";
 import { ENRKey, ENRValue, SequenceNumber, NodeId } from "./types.js";
 import { createPeerIdFromPublicKey, createPrivateKeyFromPeerId } from "./peerId.js";
 import { toNewUint8Array } from "./util.js";
+import { getV4Crypto } from "./crypto.js";
 
 /** ENR identity scheme */
 export enum IDScheme {
   v4 = "v4",
-}
-
-// In order to support different environments (eg: browser vs high performance), a pluggable crypto interface is provided
-
-export type V4Crypto = {
-  publicKey(privKey: Uint8Array): Uint8Array;
-  sign(privKey: Uint8Array, msg: Uint8Array): Uint8Array;
-  verify(pubKey: Uint8Array, msg: Uint8Array, sig: Uint8Array): boolean;
-  nodeId(pubKey: Uint8Array): NodeId;
-};
-
-let v4: V4Crypto = bcryptoV4Crypto;
-
-export function setV4Crypto(crypto: V4Crypto): void {
-  v4 = crypto;
-}
-
-export function getV4Crypto(): V4Crypto {
-  return v4;
 }
 
 /** Raw data included in an ENR */
@@ -63,7 +44,7 @@ export function id(kvs: ReadonlyMap<ENRKey, ENRValue>): IDScheme {
 export function nodeId(id: IDScheme, publicKey: Uint8Array): NodeId {
   switch (id) {
     case IDScheme.v4:
-      return v4.nodeId(publicKey);
+      return getV4Crypto().nodeId(publicKey);
     default:
       throw new Error(ERR_INVALID_ID);
   }
@@ -93,7 +74,7 @@ export function keyType(id: IDScheme): KeyType {
 export function verify(id: IDScheme, data: Uint8Array, publicKey: Uint8Array, signature: Uint8Array): boolean {
   switch (id) {
     case IDScheme.v4:
-      return v4.verify(publicKey, data, signature);
+      return getV4Crypto().verify(publicKey, data, signature);
     default:
       throw new Error(ERR_INVALID_ID);
   }
@@ -101,7 +82,7 @@ export function verify(id: IDScheme, data: Uint8Array, publicKey: Uint8Array, si
 export function sign(id: IDScheme, data: Uint8Array, privateKey: Uint8Array): Uint8Array {
   switch (id) {
     case IDScheme.v4:
-      return v4.sign(privateKey, data);
+      return getV4Crypto().sign(privateKey, data);
     default:
       throw new Error(ERR_INVALID_ID);
   }
@@ -416,7 +397,7 @@ export class SignableENR extends BaseENR {
     this._signature = signature;
 
     if (this.id === IDScheme.v4) {
-      if (Buffer.compare(v4.publicKey(this.privateKey), this.publicKey) !== 0) {
+      if (Buffer.compare(getV4Crypto().publicKey(this.privateKey), this.publicKey) !== 0) {
         throw new Error("Provided keypair doesn't match kv pubkey");
       }
     }
@@ -431,7 +412,7 @@ export class SignableENR extends BaseENR {
       {
         ...kvs,
         id: Buffer.from("v4"),
-        secp256k1: v4.publicKey(privateKey),
+        secp256k1: getV4Crypto().publicKey(privateKey),
       },
       BigInt(1),
       privateKey
