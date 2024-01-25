@@ -58,10 +58,10 @@
     "@libp2p/interface": "^1.1.1",
     "@libp2p/peer-id": "^4.0.4",
     "@multiformats/multiaddr": "^12.1.10",
-    "base64url": "^3.0.1",
     "bigint-buffer": "^1.1.5",
     "ethereum-cryptography": "^2.1.3",
     "rlp": "^2.2.6",
-    "uint8-varint": "^2.0.2"
+    "uint8-varint": "^2.0.2",
+    "uint8arrays": "^5.0.1"
   }
 }

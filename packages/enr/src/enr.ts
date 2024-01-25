@@ -1,6 +1,4 @@
 import { Multiaddr, multiaddr, protocols } from "@multiformats/multiaddr";
-import base64url from "base64url";
-import { toBigIntBE } from "bigint-buffer";
 import * as RLP from "rlp";
 import { KeyType, PeerId } from "@libp2p/interface";
 import { convertToString, convertToBytes } from "@multiformats/multiaddr/convert";
@@ -9,8 +7,9 @@ import { encode as varintEncode } from "uint8-varint";
 import { ERR_INVALID_ID, MAX_RECORD_SIZE } from "./constants.js";
 import { ENRKey, ENRValue, SequenceNumber, NodeId } from "./types.js";
 import { createPeerIdFromPublicKey, createPrivateKeyFromPeerId } from "./peerId.js";
-import { toNewUint8Array } from "./util.js";
+import { fromBase64url, toBase64url, toBigInt, toNewUint8Array } from "./util.js";
 import { getV4Crypto } from "./crypto.js";
+import { compare, fromString, toString } from "uint8arrays";
 
 /** ENR identity scheme */
 export enum IDScheme {
@@ -34,7 +33,7 @@ export type SignableENRData = {
 export function id(kvs: ReadonlyMap<ENRKey, ENRValue>): IDScheme {
   const idBuf = kvs.get("id");
   if (!idBuf) throw new Error("id not found");
-  const id = Buffer.from(idBuf).toString("utf8") as IDScheme;
+  const id = toString(idBuf, "utf8") as IDScheme;
   if (IDScheme[id] == null) {
     throw new Error("Unknown enr id scheme: " + id);
   }
@@ -143,7 +142,7 @@ export function decodeFromValues(decoded: Uint8Array[]): ENRData {
   }
   return {
     kvs,
-    seq: toBigIntBE(Buffer.from(seq)),
+    seq: toBigInt(seq),
     signature,
   };
 }
@@ -154,7 +153,7 @@ export function txtToBuf(encoded: string): Uint8Array {
   if (!encoded.startsWith("enr:")) {
     throw new Error("string encoded ENR must start with 'enr:'");
   }
-  return base64url.toBuffer(encoded.slice(4));
+  return fromBase64url(encoded.slice(4));
 }
 export function decodeTxt(encoded: string): ENRData {
   return decode(txtToBuf(encoded));
@@ -176,8 +175,10 @@ export function getIPValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string, mult
 export function getProtocolValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string): number | undefined {
   const raw = kvs.get(key);
   if (raw) {
-    const view = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
-    return view.getUint16(0);
+    if (raw.length < 2) {
+      throw new Error("Encoded protocol length should be 2");
+    }
+    return (raw[0] << 8) + raw[1];
   } else {
     return undefined;
   }
@@ -185,8 +186,8 @@ export function getProtocolValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string
 
 export function portToBuf(port: number): Uint8Array {
   const buf = new Uint8Array(2);
-  const view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
-  view.setUint16(0, port);
+  buf[0] = port >> 8;
+  buf[1] = port;
   return buf;
 }
 
@@ -296,7 +297,7 @@ export abstract class BaseENR {
   abstract encodeToValues(): (ENRKey | ENRValue | number)[];
   abstract encode(): Uint8Array;
   encodeTxt(): string {
-    return "enr:" + base64url.encode(Buffer.from(this.encode()));
+    return "enr:" + toBase64url(this.encode());
   }
 }
 /**
@@ -397,7 +398,7 @@ export class SignableENR extends BaseENR {
     this._signature = signature;
 
     if (this.id === IDScheme.v4) {
-      if (Buffer.compare(getV4Crypto().publicKey(this.privateKey), this.publicKey) !== 0) {
+      if (compare(getV4Crypto().publicKey(this.privateKey), this.publicKey) !== 0) {
         throw new Error("Provided keypair doesn't match kv pubkey");
       }
     }
@@ -411,7 +412,7 @@ export class SignableENR extends BaseENR {
     return new SignableENR(
       {
         ...kvs,
-        id: Buffer.from("v4"),
+        id: fromString("v4"),
         secp256k1: getV4Crypto().publicKey(privateKey),
       },
       BigInt(1),
