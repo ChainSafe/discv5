@@ -2,7 +2,7 @@ import { EventEmitter } from "events";
 import debug from "debug";
 import { randomBytes } from "@libp2p/crypto";
 import { Multiaddr } from "@multiformats/multiaddr";
-import { PeerId } from "@libp2p/interface";
+import { CodeError, PeerId } from "@libp2p/interface";
 import {
   createPeerIdFromPublicKey,
   createPrivateKeyFromPeerId,
@@ -48,7 +48,6 @@ import { toBuffer } from "../util/index.js";
 import { IDiscv5Config, defaultConfig } from "../config/index.js";
 import { createNodeContact, getNodeAddress, getNodeId, INodeAddress, NodeContact } from "../session/nodeInfo.js";
 import {
-  CodeError,
   ConnectionStatus,
   ConnectionStatusType,
   Discv5EventEmitter,
@@ -865,14 +864,21 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
         nodeAddr,
         response.id
       );
-      activeRequest.callbackPromise?.reject(new CodeError(ResponseErrorType.WrongAddress));
+      activeRequest.callbackPromise?.reject(
+        new CodeError(
+          "Received a response from an nexpected address",
+          ResponseErrorType[ResponseErrorType.WrongAddress]
+        )
+      );
       return;
     }
 
     // Check that the response type matches the request
     if (!requestMatchesResponse(activeRequest.request, response)) {
       log("Node gave an incorrect response type. Ignoring response from: %o", nodeAddr);
-      activeRequest.callbackPromise?.reject(new CodeError(ResponseErrorType.WrongResponseType));
+      activeRequest.callbackPromise?.reject(
+        new CodeError("Response has incorrect response type", ResponseErrorType[ResponseErrorType.WrongResponseType])
+      );
       return;
     }
 
@@ -896,7 +902,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       activeRequest.callbackPromise?.resolve(toResponseType(response));
     } catch (e) {
       log("Error handling rpc response: node: %o response: %s", nodeAddr, responseType);
-      activeRequest.callbackPromise?.reject(new CodeError(ResponseErrorType.InternalError, (e as Error).message));
+      activeRequest.callbackPromise?.reject(
+        new CodeError((e as Error).message, ResponseErrorType[ResponseErrorType.InternalError])
+      );
     }
   };
 
@@ -1045,6 +1053,6 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.connectionUpdated(nodeId, { type: ConnectionStatusType.Disconnected });
 
     // If this is initiated by the user, return the error on the callback.
-    callbackPromise?.reject(new CodeError(error));
+    callbackPromise?.reject(new CodeError("RPC failure", RequestErrorType[error]));
   };
 }
