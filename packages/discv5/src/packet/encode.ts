@@ -1,6 +1,6 @@
+import { CodeError } from "@libp2p/interface";
 import cipher from "bcrypto/lib/cipher.js";
 import { toBigIntBE, toBufferBE } from "bigint-buffer";
-import errcode from "err-code";
 
 import { bufferToNumber, fromHex, numberToBuffer, toHex } from "../util/index.js";
 import {
@@ -52,10 +52,10 @@ export function encodeHeader(destId: string, maskingIv: Buffer, header: IHeader)
 
 export function decodePacket(srcId: string, data: Buffer): IPacket {
   if (data.length < MIN_PACKET_SIZE) {
-    throw errcode(new Error(`Packet too small: ${data.length}`), ERR_TOO_SMALL);
+    throw new CodeError(`Packet too small: ${data.length}`, ERR_TOO_SMALL);
   }
   if (data.length > MAX_PACKET_SIZE) {
-    throw errcode(new Error(`Packet too large: ${data.length}`), ERR_TOO_LARGE);
+    throw new CodeError(`Packet too large: ${data.length}`, ERR_TOO_LARGE);
   }
 
   const maskingIv = data.slice(0, MASKING_IV_SIZE);
@@ -82,12 +82,12 @@ export function decodeHeader(srcId: string, maskingIv: Buffer, data: Buffer): [I
   // validate the static header field by field
   const protocolId = staticHeaderBuf.slice(0, PROTOCOL_SIZE).toString("ascii");
   if (protocolId !== "discv5") {
-    throw errcode(new Error(`Invalid protocol id: ${protocolId}`), ERR_INVALID_PROTOCOL_ID);
+    throw new CodeError(`Invalid protocol id: ${protocolId}`, ERR_INVALID_PROTOCOL_ID);
   }
 
   const version = bufferToNumber(staticHeaderBuf.slice(PROTOCOL_SIZE, PROTOCOL_SIZE + VERSION_SIZE), VERSION_SIZE);
   if (version !== 1) {
-    throw errcode(new Error(`Invalid version: ${version}`), ERR_INVALID_VERSION);
+    throw new CodeError(`Invalid version: ${version}`, ERR_INVALID_VERSION);
   }
 
   const flag = bufferToNumber(
@@ -95,7 +95,7 @@ export function decodeHeader(srcId: string, maskingIv: Buffer, data: Buffer): [I
     FLAG_SIZE
   );
   if (PacketType[flag] == null) {
-    throw errcode(new Error(`Invalid flag: ${flag}`), ERR_INVALID_FLAG);
+    throw new CodeError(`Invalid flag: ${flag}`, ERR_INVALID_FLAG);
   }
 
   const nonce = staticHeaderBuf.slice(
@@ -147,7 +147,7 @@ export function encodeHandshakeAuthdata(authdata: IHandshakeAuthdata): Buffer {
 
 export function decodeWhoAreYouAuthdata(data: Buffer): IWhoAreYouAuthdata {
   if (data.length !== WHOAREYOU_AUTHDATA_SIZE) {
-    throw errcode(new Error(`Invalid authdata length: ${data.length}`), ERR_INVALID_AUTHDATA_SIZE);
+    throw new CodeError(`Invalid authdata length: ${data.length}`, ERR_INVALID_AUTHDATA_SIZE);
   }
   return {
     idNonce: data.slice(0, ID_NONCE_SIZE),
@@ -157,7 +157,7 @@ export function decodeWhoAreYouAuthdata(data: Buffer): IWhoAreYouAuthdata {
 
 export function decodeMessageAuthdata(data: Buffer): IMessageAuthdata {
   if (data.length !== MESSAGE_AUTHDATA_SIZE) {
-    throw errcode(new Error(`Invalid authdata length: ${data.length}`), ERR_INVALID_AUTHDATA_SIZE);
+    throw new CodeError(`Invalid authdata length: ${data.length}`, ERR_INVALID_AUTHDATA_SIZE);
   }
   return {
     srcId: toHex(data),
@@ -166,7 +166,7 @@ export function decodeMessageAuthdata(data: Buffer): IMessageAuthdata {
 
 export function decodeHandshakeAuthdata(data: Buffer): IHandshakeAuthdata {
   if (data.length < MIN_HANDSHAKE_AUTHDATA_SIZE) {
-    throw errcode(new Error(`Invalid authdata length: ${data.length}`), ERR_INVALID_AUTHDATA_SIZE);
+    throw new CodeError(`Invalid authdata length: ${data.length}`, ERR_INVALID_AUTHDATA_SIZE);
   }
   const srcId = toHex(data.slice(0, 32));
   const sigSize = data[32];
