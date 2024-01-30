@@ -1,4 +1,4 @@
 {
-    "packages/discv5": "8.0.0",
-    "packages/enr": "2.1.0"
+    "packages/discv5": "9.0.0",
+    "packages/enr": "3.0.0"
 }

@@ -6,6 +6,35 @@
   * dependencies
     * @chainsafe/enr bumped from ^2.0.0 to ^2.0.1
 
+## [9.0.0](https://github.com/ChainSafe/discv5/compare/discv5-v8.0.0...discv5-v9.0.0) (2024-01-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove broadcastTalkReq ([#282](https://github.com/ChainSafe/discv5/issues/282))
+* update dependencies ([#273](https://github.com/ChainSafe/discv5/issues/273))
+
+### Features
+
+* create separate enr package ([#267](https://github.com/ChainSafe/discv5/issues/267)) ([2fa061b](https://github.com/ChainSafe/discv5/commit/2fa061bded9bdc5a2383b02db42cb08f8330ac00))
+* remove broadcastTalkReq ([#282](https://github.com/ChainSafe/discv5/issues/282)) ([1b70558](https://github.com/ChainSafe/discv5/commit/1b70558163bd48d7063a227c9816c74fc76247d7))
+* type safe metric labels ([#278](https://github.com/ChainSafe/discv5/issues/278)) ([acb4792](https://github.com/ChainSafe/discv5/commit/acb479222617f72aae1e9fc35e943eecc5b0ca06))
+* use ethereum-cryptography for enr crypto ([#285](https://github.com/ChainSafe/discv5/issues/285)) ([50cee57](https://github.com/ChainSafe/discv5/commit/50cee57f90a88307463b90c68f4800b6d7cb793f))
+
+
+### Bug Fixes
+
+* improve error handling ([#284](https://github.com/ChainSafe/discv5/issues/284)) ([594166c](https://github.com/ChainSafe/discv5/commit/594166c1f82e497cd1c2a630dfa5ba46e93d0990))
+* update dependencies ([#273](https://github.com/ChainSafe/discv5/issues/273)) ([f44d428](https://github.com/ChainSafe/discv5/commit/f44d428bdb39cf469d4d22ffef09a0958381a4c3))
+* update libp2p crypto ([#287](https://github.com/ChainSafe/discv5/issues/287)) ([d318cac](https://github.com/ChainSafe/discv5/commit/d318cac154c96348fe2e02bbecc668be390114b1))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @chainsafe/enr bumped from ^2.1.0 to ^3.0.0
+
 ## [8.0.0](https://github.com/ChainSafe/discv5/compare/discv5-v7.1.0...discv5-v8.0.0) (2024-01-25)
 
 
