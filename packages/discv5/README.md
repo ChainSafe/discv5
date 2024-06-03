@@ -36,7 +36,6 @@ const libp2p = new Libp2p({
     },
   },
 });
-
 ```
 
 ## Additional features
