@@ -14,29 +14,25 @@ Included is a libp2p peer-discovery compatibility module.
 #### Example
 
 ```typescript
-import { Discv5Discovery, ENR } from "@chainsafe/discv5";
-import Libp2p from "libp2p";
+import { Discv5Discovery } from "@chainsafe/discv5";
+import {createLibp2p} from "libp2p";
 import PeerId from "peer-id";
 
 const myPeerId: PeerId = ...;
 
-const bootstrapEnrs: ENR[] = [...];
+const bootEnrs: ENR[] = [...];
 
-const libp2p = new Libp2p({
+const libp2p = createLibp2p({
   peerId: myPeerId,
-  modules: {
-    peerDiscovery: [Discv5Discovery],
-  },
-  config: {
-    discv5: {
-      enr: ENR.createFromPeerId(myPeerInfo.id),
-      bindAddr: "/ip4/0.0.0.0/udp/9000",
-      bootstrapEnrs: bootstrapEnrs,
-      searchInterval: 30000, // wait 30s between searches
-    },
-  },
+  peerDiscovery: [() => new Discv5Discovery({
+    enabled: true,
+    enr: SignableENR.createFromPeerId(myPeerId),
+    peerId: myPeerId,
+    bindAddrs: {ip4: "/ip4/0.0.0.0/udp/9000"},
+    bootEnrs,
+    searchInterval: 30000, // wait 30s between searches
+  })]
 });
-
 ```
 
 ## Additional features
