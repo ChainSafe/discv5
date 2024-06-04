@@ -14,7 +14,8 @@ Included is a libp2p peer-discovery compatibility module.
 #### Example
 
 ```typescript
-import { Discv5Discovery } from "@chainsafe/discv5";
+import {Discv5Discovery} from "@chainsafe/discv5";
+import {ENR, SignableENR} from "@chainsafe/enr";
 import {createLibp2p} from "libp2p";
 import PeerId from "peer-id";
 
