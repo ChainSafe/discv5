@@ -30,6 +30,12 @@ export type SignableENRData = {
   privateKey: Uint8Array;
 };
 
+export type ClientInfo = {
+  name: string;
+  version: string;
+  opt: string | undefined;
+};
+
 export function id(kvs: ReadonlyMap<ENRKey, ENRValue>): IDScheme {
   const idBuf = kvs.get("id");
   if (!idBuf) throw new Error("id not found");
@@ -191,6 +197,31 @@ export function portToBuf(port: number): Uint8Array {
   return buf;
 }
 
+export function getClientInfoValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string): ClientInfo | undefined {
+  const rawClientInfo = kvs.get(key);
+  if (!rawClientInfo) { return undefined }
+  let notRawClientInfo = rawClientInfo! as unknown as Array<Buffer>;
+
+  if (notRawClientInfo.length != 2 && notRawClientInfo.length != 3) { return undefined; }
+
+  let softwareName, softwareVersion, opt;
+
+  [softwareName, softwareVersion, opt] = notRawClientInfo;
+
+  softwareName = new TextDecoder("ascii").decode(softwareName);
+  softwareVersion = new TextDecoder("ascii").decode(softwareVersion);
+
+  if (opt) {
+    opt = new TextDecoder("ascii").decode(opt);
+  }
+
+  return {
+    name: softwareName,
+    version: softwareVersion,
+    opt: opt,
+  };
+}
+
 // Classes
 
 export abstract class BaseENR {
@@ -290,6 +321,10 @@ export abstract class BaseENR {
       const peerId = await this.peerId();
       return locationMultiaddr.encapsulate(`/p2p/${peerId.toString()}`);
     }
+  }
+
+  get clientInfo(): ClientInfo | undefined {
+    return getClientInfoValue(this.kvs, "client");
   }
 
   // Serialization methods
@@ -534,6 +569,28 @@ export class SignableENR extends BaseENR {
       this.set("udp6", portToBuf(port));
     }
   }
+
+  get clientInfo(): ClientInfo | undefined {
+    return getClientInfoValue(this.kvs, "client");
+  }
+  set clientInfo(info: ClientInfo | undefined) {
+    throw new Error("Not implemented");
+    // if (info && info.opt) {
+    //   this.set("client", [
+    //     new TextEncoder().encode(info.name),
+    //     new TextEncoder().encode(info.version),
+    //     new TextEncoder().encode(info.opt),
+    //   ]);
+    // } else if (info) {
+    //   this.set("client", [
+    //     new TextEncoder().encode(info.name),
+    //     new TextEncoder().encode(info.version)
+    //   ]);
+    // } else {
+    //   this.delete("client");
+    // }
+  }
+
   setLocationMultiaddr(multiaddr: Multiaddr): void {
     const protoNames = multiaddr.protoNames();
     if (protoNames.length !== 2 && protoNames[1] !== "udp" && protoNames[1] !== "tcp") {

@@ -252,3 +252,43 @@ describe("ENR fuzzing testcases", () => {
     }
   });
 });
+
+describe("ENR EIP-7636 Support", () => {
+  const text = "enr:-MO4QBn4OF-y-dqULg4WOIlc8gQAt-arldNFe0_YQ4HNX28jDtg41xjDyKfCXGfZaPN97I-MCfogeK91TyqmWTpb0_AChmNsaWVudNqKTmV0aGVybWluZIYxLjkuNTOHN2ZjYjU2N4JpZIJ2NIJpcIR_AAABg2lwNpAAAAAAAAAAAAAAAAAAAAABiXNlY3AyNTZrMaECn-TTdCwfZP4XgJyq8Lxoj-SgEoIFgDLVBEUqQk4HnAqDdWRwgiMshHVkcDaCIyw"
+  it("should properly round trip decode and encode", () => {
+    expect(ENR.decodeTxt(text).encodeTxt()).to.equal(text);
+  });
+  it("should be able to read", () => {
+    let data = ENR.decodeTxt(text).clientInfo;
+    expect(data).to.not.be.undefined;
+    expect(data!.name == "Nethermind")
+    expect(data!.opt == "7fcb567")
+    expect(data!.version == "1.9.53")
+  });
+  // it("should properly round trip encode then decode. Incl. OPT", async () => {
+  //   const peerId = await createSecp256k1PeerId();
+  //   const enr = SignableENR.createFromPeerId(peerId);
+  //   enr.clientInfo = {
+  //     name: "Example",
+  //     version: "1234",
+  //     opt: "1234",
+  //   };
+  //   let round = ENR.decodeTxt(enr.encodeTxt()).clientInfo;
+  //   expect(round?.opt).to.equal("1234");
+  //   expect(round?.name).to.equal("Example");
+  //   expect(round?.version).to.equal("1234");
+  // });
+  // it("should properly round trip encode then decode. Excl. OPT", async () => {
+  //   const peerId = await createSecp256k1PeerId();
+  //   const enr = SignableENR.createFromPeerId(peerId);
+  //   enr.clientInfo = {
+  //     name: "Example",
+  //     version: "1234",
+  //     opt: undefined
+  //   };
+  //   let round = ENR.decodeTxt(enr.encodeTxt());
+  //   expect(round.clientInfo?.opt).to.be.undefined;
+  //   expect(round.clientInfo?.name).to.equal("Example");
+  //   expect(round.clientInfo?.version).to.equal("1234");
+  // });
+})
