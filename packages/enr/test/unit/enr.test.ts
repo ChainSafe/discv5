@@ -265,6 +265,7 @@ describe("ENR EIP-7636 Support", () => {
     expect(data!.opt == "7fcb567")
     expect(data!.version == "1.9.53")
   });
+  // Write tests
   // it("should properly round trip encode then decode. Incl. OPT", async () => {
   //   const peerId = await createSecp256k1PeerId();
   //   const enr = SignableENR.createFromPeerId(peerId);
