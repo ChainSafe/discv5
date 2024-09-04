@@ -161,7 +161,8 @@ export function decodeTxt(encoded: string): ENRData {
 
 // IP / Protocol
 
-export type Protocol = "udp" | "tcp" | "udp4" | "udp6" | "tcp4" | "tcp6";
+/** Protocols automagically supported by this library */
+export type Protocol = "udp" | "tcp" | "quic" | "udp4" | "udp6" | "tcp4" | "tcp6" | "quic4" | "quic6";
 
 export function getIPValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string, multifmtStr: string): string | undefined {
   const raw = kvs.get(key);
@@ -189,6 +190,57 @@ export function portToBuf(port: number): Uint8Array {
   buf[0] = port >> 8;
   buf[1] = port;
   return buf;
+}
+
+export function parseLocationMultiaddr(ma: Multiaddr): {
+  family: 4 | 6;
+  ip: Uint8Array;
+  protoName: "udp" | "tcp" | "quic";
+  protoVal: Uint8Array;
+} {
+  const protoNames = ma.protoNames();
+  const tuples = ma.tuples();
+  let family: 4 | 6;
+  let protoName: "udp" | "tcp" | "quic";
+
+  if (protoNames[0] === "ip4") {
+    family = 4;
+  } else if (protoNames[0] === "ip6") {
+    family = 6;
+  } else {
+    throw new Error("Invalid multiaddr: must start with ip4 or ip6");
+  }
+  if (tuples[0][1] == null) {
+    throw new Error("Invalid multiaddr: ip address is missing");
+  }
+  const ip = tuples[0][1];
+
+  if (protoNames[1] === "udp") {
+    protoName = "udp";
+  } else if (protoNames[1] === "tcp") {
+    protoName = "tcp";
+  } else {
+    throw new Error("Invalid multiaddr: must have udp or tcp protocol");
+  }
+  if (tuples[1][1] == null) {
+    throw new Error("Invalid multiaddr: udp or tcp port is missing");
+  }
+  const protoVal = tuples[1][1];
+
+  if (protoNames.length === 3) {
+    if (protoNames[2] === "quic-v1") {
+      if (protoName !== "udp") {
+        throw new Error("Invalid multiaddr: quic protocol must be used with udp");
+      }
+      protoName = "quic";
+    } else {
+      throw new Error("Invalid multiaddr: unknown protocol");
+    }
+  } else if (protoNames.length > 2) {
+    throw new Error("Invalid multiaddr: unknown protocol");
+  }
+
+  return { family, ip, protoName, protoVal };
 }
 
 // Classes
@@ -228,6 +280,9 @@ export abstract class BaseENR {
   get udp(): number | undefined {
     return getProtocolValue(this.kvs, "udp");
   }
+  get quic(): number | undefined {
+    return getProtocolValue(this.kvs, "quic");
+  }
   get ip6(): string | undefined {
     return getIPValue(this.kvs, "ip6", "ip6");
   }
@@ -237,12 +292,18 @@ export abstract class BaseENR {
   get udp6(): number | undefined {
     return getProtocolValue(this.kvs, "udp6");
   }
+  get quic6(): number | undefined {
+    return getProtocolValue(this.kvs, "quic6");
+  }
   getLocationMultiaddr(protocol: Protocol): Multiaddr | undefined {
     if (protocol === "udp") {
       return this.getLocationMultiaddr("udp4") || this.getLocationMultiaddr("udp6");
     }
     if (protocol === "tcp") {
       return this.getLocationMultiaddr("tcp4") || this.getLocationMultiaddr("tcp6");
+    }
+    if (protocol === "quic") {
+      return this.getLocationMultiaddr("quic4") || this.getLocationMultiaddr("quic6");
     }
     const isIpv6 = protocol.endsWith("6");
     const ipVal = this.kvs.get(isIpv6 ? "ip6" : "ip");
@@ -252,6 +313,7 @@ export abstract class BaseENR {
 
     const isUdp = protocol.startsWith("udp");
     const isTcp = protocol.startsWith("tcp");
+    const isQuic = protocol.startsWith("quic");
     let protoName, protoVal;
     if (isUdp) {
       protoName = "udp";
@@ -259,6 +321,9 @@ export abstract class BaseENR {
     } else if (isTcp) {
       protoName = "tcp";
       protoVal = isIpv6 ? this.kvs.get("tcp6") : this.kvs.get("tcp");
+    } else if (isQuic) {
+      protoName = "udp";
+      protoVal = isIpv6 ? this.kvs.get("quic6") : this.kvs.get("quic");
     } else {
       return undefined;
     }
@@ -282,7 +347,11 @@ export abstract class BaseENR {
     maBuf.set(protoBuf, 1 + ipByteLen);
     maBuf.set(protoVal, 1 + ipByteLen + protoBuf.length);
 
-    return multiaddr(maBuf);
+    const ma = multiaddr(maBuf);
+    if (isQuic) {
+      return ma.encapsulate("/quic-v1");
+    }
+    return ma;
   }
   async getFullMultiaddr(protocol: Protocol): Promise<Multiaddr | undefined> {
     const locationMultiaddr = this.getLocationMultiaddr(protocol);
@@ -504,6 +573,16 @@ export class SignableENR extends BaseENR {
       this.set("udp", portToBuf(port));
     }
   }
+  get quic(): number | undefined {
+    return getProtocolValue(this.kvs, "quic");
+  }
+  set quic(port: number | undefined) {
+    if (port === undefined) {
+      this.delete("quic");
+    } else {
+      this.set("quic", portToBuf(port));
+    }
+  }
   get ip6(): string | undefined {
     return getIPValue(this.kvs, "ip6", "ip6");
   }
@@ -534,23 +613,25 @@ export class SignableENR extends BaseENR {
       this.set("udp6", portToBuf(port));
     }
   }
-  setLocationMultiaddr(multiaddr: Multiaddr): void {
-    const protoNames = multiaddr.protoNames();
-    if (protoNames.length !== 2 && protoNames[1] !== "udp" && protoNames[1] !== "tcp") {
-      throw new Error("Invalid multiaddr");
-    }
-    const tuples = multiaddr.tuples();
-    if (!tuples[0][1] || !tuples[1][1]) {
-      throw new Error("Invalid multiaddr");
-    }
-
-    // IPv4
-    if (tuples[0][0] === 4) {
-      this.set("ip", tuples[0][1]);
-      this.set(protoNames[1], tuples[1][1]);
+  get quic6(): number | undefined {
+    return getProtocolValue(this.kvs, "quic6");
+  }
+  set quic6(port: number | undefined) {
+    if (port === undefined) {
+      this.delete("quic6");
     } else {
-      this.set("ip6", tuples[0][1]);
-      this.set(protoNames[1] + "6", tuples[1][1]);
+      this.set("quic6", portToBuf(port));
+    }
+  }
+  setLocationMultiaddr(multiaddr: Multiaddr): void {
+    const { family, ip, protoName, protoVal } = parseLocationMultiaddr(multiaddr);
+
+    if (family === 4) {
+      this.set("ip", ip);
+      this.set(protoName, protoVal);
+    } else {
+      this.set("ip6", ip);
+      this.set(protoName + "6", protoVal);
     }
   }
 
