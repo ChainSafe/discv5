@@ -1,6 +1,6 @@
 {
   "name": "@chainsafe/discv5",
-  "version": "9.0.0",
+  "version": "9.0.1",
   "description": "Discovery V5",
   "type": "module",
   "files": [
@@ -68,7 +68,7 @@
     "@libp2p/peer-id-factory": "^4.0.3"
   },
   "dependencies": {
-    "@chainsafe/enr": "^3.0.0",
+    "@chainsafe/enr": "^3.1.0",
     "@libp2p/crypto": "^4.0.1",
     "@libp2p/interface": "^1.1.1",
     "@multiformats/multiaddr": "^12.1.10",

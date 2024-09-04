@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/ChainSafe/discv5/compare/enr-v3.0.0...enr-v3.1.0) (2024-09-04)
+
+
+### Features
+
+* **enr:** add quic support ([#293](https://github.com/ChainSafe/discv5/issues/293)) ([31d54c9](https://github.com/ChainSafe/discv5/commit/31d54c92466b4623c871b7eb3e1b41ea7af5e34d))
+
 ## [3.0.0](https://github.com/ChainSafe/discv5/compare/enr-v2.1.0...enr-v3.0.0) (2024-01-30)
 
 
