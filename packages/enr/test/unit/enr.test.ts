@@ -117,12 +117,36 @@ describe("ENR multiaddr support", () => {
     expect(record.kvs.get("ip")).to.deep.equal(tuples1[0][1]);
     expect(record.kvs.get("tcp")).to.deep.equal(tuples1[1][1]);
   });
+  it("should get / set QUIC multiaddr", () => {
+    const multi0 = multiaddr("/ip4/127.0.0.1/udp/30303/quic-v1");
+    const tuples0 = multi0.tuples();
+
+    if (!tuples0[0][1] || !tuples0[1][1]) {
+      throw new Error("invalid multiaddr");
+    }
+
+    // set underlying records
+    record.set("ip", tuples0[0][1]);
+    record.set("quic", tuples0[1][1]);
+    // and get the multiaddr
+    expect(record.getLocationMultiaddr("quic")!.toString()).to.equal(multi0.toString());
+    // set the multiaddr
+    const multi1 = multiaddr("/ip4/0.0.0.0/udp/30300/quic-v1");
+    record.setLocationMultiaddr(multi1);
+    // and get the multiaddr
+    expect(record.getLocationMultiaddr("quic")!.toString()).to.equal(multi1.toString());
+    // and get the underlying records
+    const tuples1 = multi1.tuples();
+    expect(record.kvs.get("ip")).to.deep.equal(tuples1[0][1]);
+    expect(record.kvs.get("quic")).to.deep.equal(tuples1[1][1]);
+  });
 
   describe("location multiaddr", async () => {
     const ip4 = "127.0.0.1";
     const ip6 = "::1";
     const tcp = 8080;
     const udp = 8080;
+    const quic = 8081;
 
     const peerId = await createSecp256k1PeerId();
     const enr = SignableENR.createFromPeerId(peerId);
@@ -130,8 +154,10 @@ describe("ENR multiaddr support", () => {
     enr.ip6 = ip6;
     enr.tcp = tcp;
     enr.udp = udp;
+    enr.quic = quic;
     enr.tcp6 = tcp;
     enr.udp6 = udp;
+    enr.quic6 = quic;
 
     it("should properly create location multiaddrs - udp4", () => {
       expect(enr.getLocationMultiaddr("udp4")).to.deep.equal(multiaddr(`/ip4/${ip4}/udp/${udp}`));
@@ -141,12 +167,20 @@ describe("ENR multiaddr support", () => {
       expect(enr.getLocationMultiaddr("tcp4")).to.deep.equal(multiaddr(`/ip4/${ip4}/tcp/${tcp}`));
     });
 
+    it("should properly create location multiaddrs - quic4", () => {
+      expect(enr.getLocationMultiaddr("quic4")).to.deep.equal(multiaddr(`/ip4/${ip4}/udp/${quic}/quic-v1`));
+    });
+
     it("should properly create location multiaddrs - udp6", () => {
       expect(enr.getLocationMultiaddr("udp6")).to.deep.equal(multiaddr(`/ip6/${ip6}/udp/${udp}`));
     });
 
     it("should properly create location multiaddrs - tcp6", () => {
       expect(enr.getLocationMultiaddr("tcp6")).to.deep.equal(multiaddr(`/ip6/${ip6}/tcp/${tcp}`));
+    });
+
+    it("should properly create location multiaddrs - quic6", () => {
+      expect(enr.getLocationMultiaddr("quic6")).to.deep.equal(multiaddr(`/ip6/${ip6}/udp/${quic}/quic-v1`));
     });
 
     it("should properly create location multiaddrs - udp", () => {
@@ -172,6 +206,19 @@ describe("ENR multiaddr support", () => {
       enr.ip6 = undefined;
       enr.ip = ip4;
       expect(enr.getLocationMultiaddr("tcp")).to.deep.equal(multiaddr(`/ip4/${ip4}/tcp/${tcp}`));
+      enr.ip6 = ip6;
+    });
+
+    it("should properly create location multiaddrs - quic", () => {
+      // default to ip4
+      expect(enr.getLocationMultiaddr("quic")).to.deep.equal(multiaddr(`/ip4/${ip4}/udp/${quic}/quic-v1`));
+      // if ip6 is set, use it
+      enr.ip = undefined;
+      expect(enr.getLocationMultiaddr("quic")).to.deep.equal(multiaddr(`/ip6/${ip6}/udp/${quic}/quic-v1`));
+      // if ip6 does not exist, use ip4
+      enr.ip6 = undefined;
+      enr.ip = ip4;
+      expect(enr.getLocationMultiaddr("quic")).to.deep.equal(multiaddr(`/ip4/${ip4}/udp/${quic}/quic-v1`));
       enr.ip6 = ip6;
     });
   });
