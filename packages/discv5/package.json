@@ -1,6 +1,6 @@
 {
   "name": "@chainsafe/discv5",
-  "version": "9.0.1",
+  "version": "10.0.0",
   "description": "Discovery V5",
   "type": "module",
   "files": [
@@ -66,7 +66,7 @@
   "homepage": "https://github.com/ChainSafe/discv5#readme",
   "devDependencies": {},
   "dependencies": {
-    "@chainsafe/enr": "^3.1.0",
+    "@chainsafe/enr": "^4.0.0",
     "@libp2p/crypto": "^5.0.0",
     "@libp2p/interface": "^2.0.0",
     "@multiformats/multiaddr": "^12.1.10",
