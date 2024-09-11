@@ -1,10 +1,9 @@
 import {
-  CustomEvent,
   PeerDiscovery,
   PeerDiscoveryEvents,
   peerDiscoverySymbol,
-  PeerId,
   PeerInfo,
+  PrivateKey,
   TypedEventEmitter,
 } from "@libp2p/interface";
 import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
@@ -58,7 +57,7 @@ export interface IDiscv5DiscoveryInputOptions extends Partial<IDiscv5Config> {
 }
 
 export interface IDiscv5DiscoveryOptions extends IDiscv5DiscoveryInputOptions {
-  peerId: PeerId;
+  privateKey: PrivateKey;
 }
 
 /**
@@ -77,7 +76,7 @@ export class Discv5Discovery extends TypedEventEmitter<PeerDiscoveryEvents> impl
     super();
     this.discv5 = Discv5.create({
       enr: options.enr,
-      peerId: options.peerId,
+      privateKey: options.privateKey,
       bindAddrs: {
         ip4: options.bindAddrs.ip4 ? multiaddr(options.bindAddrs.ip4) : undefined,
         ip6: options.bindAddrs.ip6 ? multiaddr(options.bindAddrs.ip6) : undefined,
@@ -142,7 +141,7 @@ export class Discv5Discovery extends TypedEventEmitter<PeerDiscoveryEvents> impl
     this.dispatchEvent(
       new CustomEvent<PeerInfo>("peer", {
         detail: {
-          id: await enr.peerId(),
+          id: enr.peerId,
           multiaddrs,
         },
       })

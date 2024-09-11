@@ -1,8 +1,7 @@
-import { CodeError } from "@libp2p/interface";
 import cipher from "bcrypto/lib/cipher.js";
 import { toBigIntBE, toBufferBE } from "bigint-buffer";
 
-import { bufferToNumber, fromHex, numberToBuffer, toHex } from "../util/index.js";
+import { bufferToNumber, CodeError, fromHex, numberToBuffer, toHex } from "../util/index.js";
 import {
   AUTHDATA_SIZE_SIZE,
   EPH_KEY_SIZE_SIZE,

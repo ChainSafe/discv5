@@ -1,9 +1,8 @@
 /* eslint-env mocha */
 import { expect } from "chai";
+import { privateKeyFromProtobuf } from "@libp2p/crypto/keys";
+import { PrivateKey } from "@libp2p/interface";
 import { multiaddr } from "@multiformats/multiaddr";
-import { PeerId } from "@libp2p/interface";
-import { createFromPrivKey } from "@libp2p/peer-id-factory";
-import { unmarshalPrivateKey } from "@libp2p/crypto/keys";
 import { SignableENR } from "@chainsafe/enr";
 import { Discv5 } from "../../src/index.js";
 
@@ -14,15 +13,15 @@ describe("discv5 integration test", function () {
   const nodes: Discv5[] = [];
 
   type Node = {
-    peerId: PeerId;
+    privateKey: PrivateKey;
     enr: SignableENR;
     discv5: Discv5;
   };
   async function getDiscv5Node(): Promise<Node> {
     const idx = nodeIdx++;
     const port = portBase + idx;
-    const peerId = await getPeerId(idx);
-    const enr = SignableENR.createFromPeerId(peerId);
+    const privateKey = getPrivateKey(idx);
+    const enr = SignableENR.createFromPrivateKey(privateKey);
 
     const bindAddrUdp = `/ip4/127.0.0.1/udp/${port}`;
     const multiAddrUdp = multiaddr(bindAddrUdp);
@@ -30,7 +29,7 @@ describe("discv5 integration test", function () {
 
     const discv5 = Discv5.create({
       enr,
-      peerId,
+      privateKey,
       bindAddrs: { ip4: multiAddrUdp },
       config: {
         lookupTimeout: 2000,
@@ -41,7 +40,7 @@ describe("discv5 integration test", function () {
 
     await discv5.start();
 
-    return { peerId, enr, discv5 };
+    return { privateKey, enr, discv5 };
   }
 
   // 2862ae92fa59042fd4d4a3e3bddb92b33a53b72be15deafce07dfbd7c3b12812
@@ -87,7 +86,7 @@ describe("discv5 integration test", function () {
   });
 });
 
-async function getPeerId(i: number): Promise<PeerId> {
+function getPrivateKey(i: number): PrivateKey {
   const privKeysBase64 = [
     "CAISIF9nhmNn+vOoMPdR+adfKwjSdgqrVGmAX0AWe6Tgjj/p",
     "CAISIMSR1N4+3m62NGJ8pdgiUPzFR4vv8pZKG6q+iys+B2DL",
@@ -100,5 +99,5 @@ async function getPeerId(i: number): Promise<PeerId> {
     "CAISIHRKcVKLTpKhQOEIPwQjH2xx/nvJWWLUCr90/NOuuZ+l",
     "CAISIP3n7vFWZKye7duop0nhfttFJUXTVvQfd4q0dPpURLke",
   ];
-  return await createFromPrivKey(await unmarshalPrivateKey(Buffer.from(privKeysBase64[i], "base64")));
+  return privateKeyFromProtobuf(Buffer.from(privKeysBase64[i], "base64"));
 }

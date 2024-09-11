@@ -1,6 +1,5 @@
 import { EventEmitter } from "events";
 import StrictEventEmitter from "strict-event-emitter-types";
-import { CodeError } from "@libp2p/interface";
 import { Multiaddr } from "@multiformats/multiaddr";
 import { ENR, SequenceNumber, SignableENR } from "@chainsafe/enr";
 
@@ -14,7 +13,7 @@ import {
 } from "../message/index.js";
 import { INodeAddress, NodeContact } from "../session/nodeInfo.js";
 import { ConnectionDirection } from "../session/index.js";
-import { SocketAddress } from "../util/ip.js";
+import { CodeError, SocketAddress } from "../util/index.js";
 
 export interface IDiscv5Events {
   /**

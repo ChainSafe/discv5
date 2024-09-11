@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "description": "Discovery V5 monorepo",
   "type": "module",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "check-types": "lerna run check-types",
     "build": "lerna run build",
@@ -38,5 +40,6 @@
     "prettier": "^2.6.2",
     "ts-node": "^10.8.1",
     "typescript": "^4.7.3"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha256.c17d3797fb9a9115bf375e31bfd30058cac6bc9c3b8807a3d8cb2094794b51ca"
 }

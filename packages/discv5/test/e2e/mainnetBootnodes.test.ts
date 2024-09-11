@@ -1,8 +1,7 @@
 /* eslint-env mocha */
 import { expect } from "chai";
+import { generateKeyPair, privateKeyFromProtobuf } from "@libp2p/crypto/keys";
 import { multiaddr } from "@multiformats/multiaddr";
-import { createSecp256k1PeerId, createFromPrivKey } from "@libp2p/peer-id-factory";
-import { unmarshalPrivateKey } from "@libp2p/crypto/keys";
 import { ENR, SignableENR } from "@chainsafe/enr";
 import { Discv5 } from "../../src/index.js";
 
@@ -11,7 +10,7 @@ let port = 9000;
 describe("discv5 integration test", function () {
   this.timeout("5min");
 
-  const RANDOM_PEER_ID = true; // Otherwise uses a fixed private key
+  const RANDOM_PRIVATE_KEY = true; // Otherwise uses a fixed private key
   const bootnodesENRText = getMainnetBootnodesENRText();
 
   for (const bindAddrs of [
@@ -30,19 +29,17 @@ describe("discv5 integration test", function () {
       // ip6 test fails in github runner
       if (process.env.CI && bindAddrs.ip6) this.skip();
 
-      const peerId = RANDOM_PEER_ID
-        ? await createSecp256k1PeerId()
-        : await createFromPrivKey(
-            await unmarshalPrivateKey(
-              Buffer.from("080212205465237331224a07d9c7b9c458e0859f401ab49f01c971857d373a3e6f6fdf3a", "hex")
-            )
+      const privateKey = RANDOM_PRIVATE_KEY
+        ? await generateKeyPair("secp256k1")
+        : privateKeyFromProtobuf(
+            Buffer.from("080212205465237331224a07d9c7b9c458e0859f401ab49f01c971857d373a3e6f6fdf3a", "hex")
           );
 
-      const enr = SignableENR.createFromPeerId(peerId);
+      const enr = SignableENR.createFromPrivateKey(privateKey);
 
       const discv5 = Discv5.create({
         enr,
-        peerId,
+        privateKey,
         bindAddrs,
         config: {
           lookupTimeout: 2000,
