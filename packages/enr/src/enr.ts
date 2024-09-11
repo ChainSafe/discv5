@@ -1,12 +1,12 @@
 import { Multiaddr, multiaddr, protocols } from "@multiformats/multiaddr";
 import * as RLP from "rlp";
-import { KeyType, PeerId } from "@libp2p/interface";
+import { KeyType, PeerId, PrivateKey } from "@libp2p/interface";
 import { convertToString, convertToBytes } from "@multiformats/multiaddr/convert";
 import { encode as varintEncode } from "uint8-varint";
 
 import { ERR_INVALID_ID, MAX_RECORD_SIZE } from "./constants.js";
 import { ENRKey, ENRValue, SequenceNumber, NodeId } from "./types.js";
-import { createPeerIdFromPublicKey, createPrivateKeyFromPeerId } from "./peerId.js";
+import { createPeerIdFromPublicKey } from "./peerId.js";
 import { fromBase64url, toBase64url, toBigInt, toNewUint8Array } from "./util.js";
 import { getV4Crypto } from "./crypto.js";
 import { compare, fromString, toString } from "uint8arrays";
@@ -265,7 +265,7 @@ export abstract class BaseENR {
   get keypairType(): KeyType {
     return keyType(this.id);
   }
-  async peerId(): Promise<PeerId> {
+  get peerId(): PeerId {
     return createPeerIdFromPublicKey(this.keypairType, this.publicKey);
   }
 
@@ -356,7 +356,7 @@ export abstract class BaseENR {
   async getFullMultiaddr(protocol: Protocol): Promise<Multiaddr | undefined> {
     const locationMultiaddr = this.getLocationMultiaddr(protocol);
     if (locationMultiaddr) {
-      const peerId = await this.peerId();
+      const peerId = this.peerId;
       return locationMultiaddr.encapsulate(`/p2p/${peerId.toString()}`);
     }
   }
@@ -488,11 +488,10 @@ export class SignableENR extends BaseENR {
       privateKey
     );
   }
-  static createFromPeerId(peerId: PeerId, kvs: Record<ENRKey, ENRValue> = {}): SignableENR {
-    const { type, privateKey } = createPrivateKeyFromPeerId(peerId);
-    switch (type) {
+  static createFromPrivateKey(privateKey: PrivateKey, kvs: Record<ENRKey, ENRValue> = {}): SignableENR {
+    switch (privateKey.type) {
       case "secp256k1":
-        return SignableENR.createV4(privateKey, kvs);
+        return SignableENR.createV4(privateKey.raw, kvs);
       default:
         throw new Error();
     }
@@ -537,7 +536,7 @@ export class SignableENR extends BaseENR {
 
   // Identity methods
 
-  async peerId(): Promise<PeerId> {
+  get peerId(): PeerId {
     return createPeerIdFromPublicKey(this.keypairType, this.publicKey);
   }
 

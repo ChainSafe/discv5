@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import { expect } from "chai";
+import { generateKeyPair } from "@libp2p/crypto/keys";
 import { multiaddr } from "@multiformats/multiaddr";
-import { createSecp256k1PeerId } from "@libp2p/peer-id-factory";
 import { BaseENR, ENR, SignableENR, getV4Crypto } from "../../src/index.js";
 
 const toHex = (buf: Uint8Array): string => Buffer.from(buf).toString("hex");
@@ -148,8 +148,8 @@ describe("ENR multiaddr support", () => {
     const udp = 8080;
     const quic = 8081;
 
-    const peerId = await createSecp256k1PeerId();
-    const enr = SignableENR.createFromPeerId(peerId);
+    const privateKey = await generateKeyPair("secp256k1");
+    const enr = SignableENR.createFromPrivateKey(privateKey);
     enr.ip = ip4;
     enr.ip6 = ip6;
     enr.tcp = tcp;
@@ -227,8 +227,8 @@ describe("ENR multiaddr support", () => {
 describe("ENR", function () {
   describe("decodeTxt", () => {
     it("should encodeTxt and decodeTxt", async () => {
-      const peerId = await createSecp256k1PeerId();
-      const enr = SignableENR.createFromPeerId(peerId);
+      const privateKey = await generateKeyPair("secp256k1");
+      const enr = SignableENR.createFromPrivateKey(privateKey);
       enr.setLocationMultiaddr(multiaddr("/ip4/18.223.219.100/udp/9000"));
       const txt = enr.encodeTxt();
       expect(txt.slice(0, 4)).to.be.equal("enr:");
@@ -248,8 +248,8 @@ describe("ENR", function () {
     });
 
     it("should encodeTxt and decodeTxt ipv6 enr successfully", async () => {
-      const peerId = await createSecp256k1PeerId();
-      const enr = SignableENR.createFromPeerId(peerId);
+      const privateKey = await generateKeyPair("secp256k1");
+      const enr = SignableENR.createFromPrivateKey(privateKey);
       enr.setLocationMultiaddr(multiaddr("/ip6/aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:aaaa/udp/9000"));
       const enr2 = ENR.decodeTxt(enr.encodeTxt());
       expect(enr2.udp6).to.equal(9000);

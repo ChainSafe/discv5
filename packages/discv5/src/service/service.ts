@@ -2,16 +2,8 @@ import { EventEmitter } from "events";
 import debug from "debug";
 import { randomBytes } from "@libp2p/crypto";
 import { Multiaddr } from "@multiformats/multiaddr";
-import { CodeError, PeerId } from "@libp2p/interface";
-import {
-  createPeerIdFromPublicKey,
-  createPrivateKeyFromPeerId,
-  ENR,
-  NodeId,
-  MAX_RECORD_SIZE,
-  createNodeId,
-  SignableENR,
-} from "@chainsafe/enr";
+import { PeerId, PrivateKey } from "@libp2p/interface";
+import { createPeerIdFromPublicKey, ENR, NodeId, MAX_RECORD_SIZE, createNodeId, SignableENR } from "@chainsafe/enr";
 
 import { BindAddrs, IPMode, ITransportService, UDPTransportService } from "../transport/index.js";
 import { MAX_PACKET_SIZE } from "../packet/index.js";
@@ -44,7 +36,7 @@ import {
   RequestId,
 } from "../message/index.js";
 import { AddrVotes } from "./addrVotes.js";
-import { toBuffer } from "../util/index.js";
+import { CodeError, toBuffer } from "../util/index.js";
 import { IDiscv5Config, defaultConfig } from "../config/index.js";
 import { createNodeContact, getNodeAddress, getNodeId, INodeAddress, NodeContact } from "../session/nodeInfo.js";
 import {
@@ -89,7 +81,7 @@ const log = debug("discv5:service");
 
 export interface IDiscv5CreateOptions {
   enr: SignableENRInput;
-  peerId: PeerId;
+  privateKey: PrivateKey;
   bindAddrs: BindAddrs;
   config?: Partial<IDiscv5Config>;
   metricsRegistry?: MetricsRegister | null;
@@ -207,16 +199,15 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * Convenience method to create a new discv5 service.
    *
    * @param enr the ENR record identifying the current node.
-   * @param peerId the PeerId with the keypair that identifies the enr
+   * @param privateKey the PrivateKey that identifies the enr
    * @param multiaddr The multiaddr which contains the network interface and port to which the UDP server binds
    */
   public static create(opts: IDiscv5CreateOptions): Discv5 {
-    const { enr, peerId, bindAddrs, config = {}, metricsRegistry, transport } = opts;
+    const { enr, privateKey, bindAddrs, config = {}, metricsRegistry, transport } = opts;
     const fullConfig = { ...defaultConfig, ...config };
     const metrics = metricsRegistry ? createDiscv5Metrics(metricsRegistry) : undefined;
-    const { type, privateKey } = createPrivateKeyFromPeerId(peerId);
-    const keypair = createKeypair({ type, privateKey });
-    const decodedEnr = typeof enr === "string" ? SignableENR.decodeTxt(enr, privateKey) : enr;
+    const keypair = createKeypair({ type: privateKey.type, privateKey: privateKey.raw });
+    const decodedEnr = typeof enr === "string" ? SignableENR.decodeTxt(enr, privateKey.raw) : enr;
     const rateLimiter = opts.rateLimiterOpts && new RateLimiter(opts.rateLimiterOpts, metrics ?? null);
     const sessionService = new SessionService(
       fullConfig,
@@ -309,7 +300,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     return this.sessionService.keypair;
   }
 
-  public peerId(): Promise<PeerId> {
+  public get peerId(): PeerId {
     return createPeerIdFromPublicKey(this.keypair.type, this.keypair.publicKey);
   }
 

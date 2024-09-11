@@ -1,18 +1,19 @@
 /* eslint-env mocha */
 import { expect } from "chai";
+import { privateKeyFromRaw } from "@libp2p/crypto/keys";
 import { multiaddr } from "@multiformats/multiaddr";
-import { createPeerIdFromPrivateKey, SignableENR } from "@chainsafe/enr";
+import { SignableENR } from "@chainsafe/enr";
 
 import { Discv5 } from "../../../src/service/service.js";
 import { generateKeypair } from "../../../src/keypair/index.js";
 
 describe("Discv5", async () => {
   const kp0 = generateKeypair("secp256k1");
-  const peerId0 = await createPeerIdFromPrivateKey(kp0.type, kp0.privateKey);
+  const privateKey0 = privateKeyFromRaw(kp0.privateKey);
   const enr0 = SignableENR.createV4(kp0.privateKey);
   const mu0 = multiaddr("/ip4/127.0.0.1/udp/40000");
 
-  const service0 = Discv5.create({ enr: enr0, peerId: peerId0, bindAddrs: { ip4: mu0 } });
+  const service0 = Discv5.create({ enr: enr0, privateKey: privateKey0, bindAddrs: { ip4: mu0 } });
 
   beforeEach(async () => {
     await service0.start();
@@ -41,7 +42,7 @@ describe("Discv5", async () => {
   it("should complete a lookup to another node", async function () {
     this.timeout(10000);
     const kp1 = generateKeypair("secp256k1");
-    const peerId1 = await createPeerIdFromPrivateKey(kp1.type, kp1.privateKey);
+    const privateKey1 = privateKeyFromRaw(kp1.privateKey);
     const enr1 = SignableENR.createV4(kp1.privateKey);
     const mu1 = multiaddr("/ip4/127.0.0.1/udp/10360");
     const addr1 = mu1.tuples();
@@ -53,7 +54,7 @@ describe("Discv5", async () => {
     enr1.set("ip", addr1[0][1]);
     enr1.set("udp", addr1[1][1]);
     enr1.encode();
-    const service1 = Discv5.create({ enr: enr1, peerId: peerId1, bindAddrs: { ip4: mu1 } });
+    const service1 = Discv5.create({ enr: enr1, privateKey: privateKey1, bindAddrs: { ip4: mu1 } });
     await service1.start();
     for (let i = 0; i < 100; i++) {
       const kp = generateKeypair("secp256k1");
