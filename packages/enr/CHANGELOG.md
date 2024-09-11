@@ -1,5 +1,16 @@
 # Changelog
 
+## [4.0.0](https://github.com/ChainSafe/discv5/compare/enr-v3.1.0...enr-v4.0.0) (2024-09-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* update libp2p deps ([#295](https://github.com/ChainSafe/discv5/issues/295))
+
+### Features
+
+* update libp2p deps ([#295](https://github.com/ChainSafe/discv5/issues/295)) ([ead057d](https://github.com/ChainSafe/discv5/commit/ead057d4a56b05003f4e683db669f18b84a5e2f7))
+
 ## [3.1.0](https://github.com/ChainSafe/discv5/compare/enr-v3.0.0...enr-v3.1.0) (2024-09-04)
 
 

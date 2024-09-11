@@ -12,6 +12,24 @@
   * dependencies
     * @chainsafe/enr bumped from ^3.0.0 to ^3.1.0
 
+## [10.0.0](https://github.com/ChainSafe/discv5/compare/discv5-v9.0.1...discv5-v10.0.0) (2024-09-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* update libp2p deps ([#295](https://github.com/ChainSafe/discv5/issues/295))
+
+### Features
+
+* update libp2p deps ([#295](https://github.com/ChainSafe/discv5/issues/295)) ([ead057d](https://github.com/ChainSafe/discv5/commit/ead057d4a56b05003f4e683db669f18b84a5e2f7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @chainsafe/enr bumped from ^3.1.0 to ^4.0.0
+
 ## [9.0.0](https://github.com/ChainSafe/discv5/compare/discv5-v8.0.0...discv5-v9.0.0) (2024-01-30)
 
 
