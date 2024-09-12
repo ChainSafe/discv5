@@ -12,6 +12,20 @@
   * dependencies
     * @chainsafe/enr bumped from ^3.0.0 to ^3.1.0
 
+## [10.0.1](https://github.com/ChainSafe/discv5/compare/discv5-v10.0.0...discv5-v10.0.1) (2024-09-12)
+
+
+### Bug Fixes
+
+* @libp2p/crypto publicKey creation ([#297](https://github.com/ChainSafe/discv5/issues/297)) ([992fc70](https://github.com/ChainSafe/discv5/commit/992fc70d2b91ecc9f0284f124b7035a8adca39b2))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @chainsafe/enr bumped from ^4.0.0 to ^4.0.1
+
 ## [10.0.0](https://github.com/ChainSafe/discv5/compare/discv5-v9.0.1...discv5-v10.0.0) (2024-09-11)
 
 

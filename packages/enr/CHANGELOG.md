@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.1](https://github.com/ChainSafe/discv5/compare/enr-v4.0.0...enr-v4.0.1) (2024-09-12)
+
+
+### Bug Fixes
+
+* @libp2p/crypto publicKey creation ([#297](https://github.com/ChainSafe/discv5/issues/297)) ([992fc70](https://github.com/ChainSafe/discv5/commit/992fc70d2b91ecc9f0284f124b7035a8adca39b2))
+
 ## [4.0.0](https://github.com/ChainSafe/discv5/compare/enr-v3.1.0...enr-v4.0.0) (2024-09-11)
 
 
