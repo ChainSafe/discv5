@@ -3,6 +3,7 @@ import { expect } from "chai";
 import { generateKeyPair } from "@libp2p/crypto/keys";
 import { multiaddr } from "@multiformats/multiaddr";
 import { BaseENR, ENR, SignableENR, getV4Crypto } from "../../src/index.js";
+import { peerIdFromString } from "@libp2p/peer-id";
 
 const toHex = (buf: Uint8Array): string => Buffer.from(buf).toString("hex");
 
@@ -221,6 +222,14 @@ describe("ENR multiaddr support", () => {
       expect(enr.getLocationMultiaddr("quic")).to.deep.equal(multiaddr(`/ip4/${ip4}/udp/${quic}/quic-v1`));
       enr.ip6 = ip6;
     });
+  });
+
+  it("should properly get enr peer id", async () => {
+    const expectedPeerId = peerIdFromString("16Uiu2HAm5rokhpCBU7yBJHhMKXZ1xSVWwUcPMrzGKvU5Y7iBkmuK");
+    const enr = ENR.decodeTxt(
+      "enr:-LK4QDiPGwNomqUqNDaM3iHYvtdX7M5qngson6Qb2xGIg1LwC8-Nic0aQwO0rVbJt5xp32sRE3S1YqvVrWO7OgVNv0kBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpA7CIeVAAAgCf__________gmlkgnY0gmlwhBKNA4qJc2VjcDI1NmsxoQKbBS4ROQ_sldJm5tMgi36qm5I5exKJFb4C8dDVS_otAoN0Y3CCIyiDdWRwgiMo"
+    );
+    expect(enr.peerId.toString()).to.deep.equal(expectedPeerId.toString());
   });
 });
 
