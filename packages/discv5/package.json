@@ -67,8 +67,8 @@
   "devDependencies": {},
   "dependencies": {
     "@chainsafe/enr": "^4.0.0",
-    "@libp2p/crypto": "^5.0.0",
-    "@libp2p/interface": "^2.0.0",
+    "@libp2p/crypto": "^5.0.1",
+    "@libp2p/interface": "^2.0.1",
     "@multiformats/multiaddr": "^12.1.10",
     "bcrypto": "^5.4.0",
     "bigint-buffer": "^1.1.5",
