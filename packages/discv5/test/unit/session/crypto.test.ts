@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import { expect } from "chai";
 import secp256k1 from "bcrypto/lib/secp256k1.js";
-import { randomBytes } from "bcrypto/lib/random.js";
+import { randomBytes } from "@libp2p/crypto";
 import { getV4Crypto, SignableENR } from "@chainsafe/enr";
 
 import {
@@ -14,6 +14,7 @@ import {
   decryptMessage,
 } from "../../../src/session/index.js";
 import { createKeypair, generateKeypair } from "../../../src/keypair/index.js";
+import { toBuffer } from "../../../src/index.js";
 
 describe("session crypto", () => {
   it("ecdh should produce expected secret", () => {
@@ -53,7 +54,7 @@ describe("session crypto", () => {
     const kp2 = generateKeypair("secp256k1");
     const enr1 = SignableENR.createV4(kp1.privateKey);
     const enr2 = SignableENR.createV4(kp2.privateKey);
-    const nonce = randomBytes(32);
+    const nonce = toBuffer(randomBytes(32));
     const [a1, b1, pk] = generateSessionKeys(
       enr1.nodeId,
       enr2.nodeId,
@@ -105,10 +106,10 @@ describe("session crypto", () => {
   });
 
   it("encrypted data should successfully be decrypted", () => {
-    const key = randomBytes(16);
-    const nonce = randomBytes(12);
-    const msg = randomBytes(16);
-    const ad = randomBytes(16);
+    const key = toBuffer(randomBytes(16));
+    const nonce = toBuffer(randomBytes(12));
+    const msg = toBuffer(randomBytes(16));
+    const ad = toBuffer(randomBytes(16));
 
     const cipher = encryptMessage(key, nonce, msg, ad);
     const decrypted = decryptMessage(key, nonce, cipher, ad);

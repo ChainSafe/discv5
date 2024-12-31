@@ -19,10 +19,11 @@ import {
   idVerify,
 } from "./crypto.js";
 import { IKeypair, createKeypair } from "../keypair/index.js";
-import { randomBytes } from "crypto";
+import { randomBytes } from "@libp2p/crypto";
 import { RequestId } from "../message/index.js";
 import { IChallenge } from ".";
 import { getNodeId, getPublicKey, NodeContact } from "./nodeInfo.js";
+import { toBuffer } from "../util/toBuffer.js";
 
 // The `Session` struct handles the stages of creating and establishing a handshake with a
 // peer.
@@ -158,7 +159,7 @@ export class Session {
     });
 
     const header = createHeader(PacketType.Handshake, authdata);
-    const maskingIv = randomBytes(MASKING_IV_SIZE);
+    const maskingIv = toBuffer(randomBytes(MASKING_IV_SIZE));
     const aad = encodeChallengeData(maskingIv, header);
 
     // encrypt the message
@@ -190,7 +191,7 @@ export class Session {
   encryptMessage(srcId: NodeId, destId: NodeId, message: Buffer): IPacket {
     const authdata = encodeMessageAuthdata({ srcId });
     const header = createHeader(PacketType.Message, authdata);
-    const maskingIv = randomBytes(MASKING_IV_SIZE);
+    const maskingIv = toBuffer(randomBytes(MASKING_IV_SIZE));
     const aad = encodeChallengeData(maskingIv, header);
     const ciphertext = encryptMessage(this.keys.encryptionKey, header.nonce, message, aad);
     return {
