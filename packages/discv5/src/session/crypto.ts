@@ -1,6 +1,6 @@
 import hkdf from "bcrypto/lib/hkdf.js";
 import sha256 from "bcrypto/lib/sha256.js";
-import cipher from "bcrypto/lib/cipher.js";
+import Crypto from "node:crypto";
 import { NodeId } from "@chainsafe/enr";
 
 import { generateKeypair, IKeypair, createKeypair } from "../keypair/index.js";
@@ -82,8 +82,7 @@ export function decryptMessage(key: Buffer, nonce: Buffer, data: Buffer, aad: Bu
   if (data.length < MAC_LENGTH) {
     throw new Error("message data not long enough");
   }
-  const ctx = new cipher.Decipher("AES-128-GCM");
-  ctx.init(key, nonce);
+  const ctx = Crypto.createDecipheriv("aes-128-gcm", key, nonce);
   ctx.setAAD(aad);
   ctx.setAuthTag(data.slice(data.length - MAC_LENGTH));
   return Buffer.concat([
@@ -93,8 +92,7 @@ export function decryptMessage(key: Buffer, nonce: Buffer, data: Buffer, aad: Bu
 }
 
 export function encryptMessage(key: Buffer, nonce: Buffer, data: Buffer, aad: Buffer): Buffer {
-  const ctx = new cipher.Cipher("AES-128-GCM");
-  ctx.init(key, nonce);
+  const ctx = Crypto.createCipheriv("aes-128-gcm", key, nonce);
   ctx.setAAD(aad);
   return Buffer.concat([
     ctx.update(data),

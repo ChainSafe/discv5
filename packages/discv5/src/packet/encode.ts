@@ -1,4 +1,4 @@
-import cipher from "bcrypto/lib/cipher.js";
+import Crypto from "node:crypto";
 import { toBigIntBE, toBufferBE } from "bigint-buffer";
 
 import { bufferToNumber, CodeError, fromHex, numberToBuffer, toHex } from "../util/index.js";
@@ -33,8 +33,7 @@ export function encodePacket(destId: string, packet: IPacket): Buffer {
 }
 
 export function encodeHeader(destId: string, maskingIv: Buffer, header: IHeader): Buffer {
-  const ctx = new cipher.Cipher("AES-128-CTR");
-  ctx.init(fromHex(destId).slice(0, MASKING_KEY_SIZE), maskingIv);
+  const ctx = Crypto.createCipheriv("aes-128-ctr", fromHex(destId).slice(0, MASKING_KEY_SIZE), maskingIv);
   return ctx.update(
     Buffer.concat([
       // static header
@@ -73,8 +72,7 @@ export function decodePacket(srcId: string, data: Buffer): IPacket {
  * Return the decoded header and the header as a buffer
  */
 export function decodeHeader(srcId: string, maskingIv: Buffer, data: Buffer): [IHeader, Buffer] {
-  const ctx = new cipher.Decipher("AES-128-CTR");
-  ctx.init(fromHex(srcId).slice(0, MASKING_KEY_SIZE), maskingIv);
+  const ctx = Crypto.createDecipheriv("aes-128-ctr", fromHex(srcId).slice(0, MASKING_KEY_SIZE), maskingIv);
   // unmask the static header
   const staticHeaderBuf = ctx.update(data.slice(0, STATIC_HEADER_SIZE));
 
