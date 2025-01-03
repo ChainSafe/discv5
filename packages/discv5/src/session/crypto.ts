@@ -40,7 +40,14 @@ export function generateSessionKeys(
 
 export function deriveKey(secret: Buffer, firstId: NodeId, secondId: NodeId, challengeData: Buffer): [Buffer, Buffer] {
   const info = Buffer.concat([Buffer.from(KEY_AGREEMENT_STRING), fromHex(firstId), fromHex(secondId)]);
-  const output = toBuffer(getDiscv5Crypto().hkdf.expand(getDiscv5Crypto().sha256, getDiscv5Crypto().hkdf.extract(getDiscv5Crypto().sha256, secret, challengeData), info, 2 * KEY_LENGTH));
+  const output = toBuffer(
+    getDiscv5Crypto().hkdf.expand(
+      getDiscv5Crypto().sha256,
+      getDiscv5Crypto().hkdf.extract(getDiscv5Crypto().sha256, secret, challengeData),
+      info,
+      2 * KEY_LENGTH
+    )
+  );
   return [output.slice(0, KEY_LENGTH), output.slice(KEY_LENGTH, 2 * KEY_LENGTH)];
 }
 
@@ -74,7 +81,9 @@ export function idVerify(
 }
 
 export function generateIdSignatureInput(challengeData: Buffer, ephemPK: Buffer, nodeId: NodeId): Buffer {
-  return toBuffer(getDiscv5Crypto().sha256(Buffer.concat([Buffer.from(ID_SIGNATURE_TEXT), challengeData, ephemPK, fromHex(nodeId)])));
+  return toBuffer(
+    getDiscv5Crypto().sha256(Buffer.concat([Buffer.from(ID_SIGNATURE_TEXT), challengeData, ephemPK, fromHex(nodeId)]))
+  );
 }
 
 export function decryptMessage(key: Buffer, nonce: Buffer, data: Buffer, aad: Buffer): Buffer {
