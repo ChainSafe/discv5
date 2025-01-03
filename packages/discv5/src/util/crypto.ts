@@ -1,7 +1,9 @@
 import { sha256 } from "@noble/hashes/sha256";
+import { hmac } from '@noble/hashes/hmac';
 import { expand, extract } from "@noble/hashes/hkdf";
-import { sign, verify, ProjectivePoint as Point, getPublicKey, getSharedSecret, utils } from "@noble/secp256k1";
+import { sign, verify, ProjectivePoint as Point, getPublicKey, getSharedSecret, utils, etc } from "@noble/secp256k1";
 
+etc.hmacSha256Sync = (k, ...m) => hmac(sha256, k, etc.concatBytes(...m));
 export type discv5Crypto = {
     sha256: (data: Uint8Array) => Uint8Array;
     secp256k1: {
@@ -24,12 +26,17 @@ export const defaultCrypto: discv5Crypto = {
     sha256: sha256,
     secp256k1: {
         publicKeyVerify: (pk) => {
-            return Point.fromHex(pk).ok() instanceof Point;
+            try {
+                Point.fromHex(pk).assertValidity();
+                return true;
+            } catch {
+                return false;
+            }
         },
-        publicKeyCreate: (pk) => getPublicKey(pk, true),
+        publicKeyCreate: (pk) => getPublicKey(pk),
         publicKeyConvert: (pk, compress) => (Point.fromHex(pk).toRawBytes(compress)),
         sign: (msg, pk) => sign(msg, pk).toCompactRawBytes(),
-        verify: verify,
+        verify: (pk, msg, sig) => verify(sig, msg, pk),
         deriveSecret: (privKey, pubKey) => getSharedSecret(privKey, pubKey, true),
         generatePrivateKey: () => utils.randomPrivateKey(),
         privateKeyVerify: (pk) => {
