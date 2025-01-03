@@ -19,7 +19,7 @@ import {
   idVerify,
 } from "./crypto.js";
 import { IKeypair, createKeypair } from "../keypair/index.js";
-import { randomBytes } from "@libp2p/crypto";
+import { randomBytes } from "@noble/hashes/utils";
 import { RequestId } from "../message/index.js";
 import { IChallenge } from ".";
 import { getNodeId, getPublicKey, NodeContact } from "./nodeInfo.js";

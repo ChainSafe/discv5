@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import debug from "debug";
-import { randomBytes } from "@libp2p/crypto";
+import { randomBytes } from "@noble/hashes/utils";
 import { Multiaddr } from "@multiformats/multiaddr";
 import { PeerId, PrivateKey } from "@libp2p/interface";
 import { createPeerIdFromPublicKey, ENR, NodeId, MAX_RECORD_SIZE, createNodeId, SignableENR } from "@chainsafe/enr";

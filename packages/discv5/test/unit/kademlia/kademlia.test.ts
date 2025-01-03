@@ -3,7 +3,7 @@ import { KademliaRoutingTable } from "../../../src/kademlia/kademlia.js";
 import { expect } from "chai";
 import { ENR, createNodeId, SignableENR } from "@chainsafe/enr";
 import { EntryStatus, log2Distance } from "../../../src/kademlia/index.js";
-import { randomBytes } from "@libp2p/crypto";
+import { randomBytes } from "@noble/hashes/utils";
 import { toBuffer } from "../../../src/util/index.js";
 import { generateKeypair } from "../../../src/index.js";
 

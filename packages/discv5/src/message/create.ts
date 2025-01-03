@@ -1,4 +1,4 @@
-import { randomBytes } from "@libp2p/crypto";
+import { randomBytes } from "@noble/hashes/utils";
 import { toBigIntBE } from "bigint-buffer";
 import { SequenceNumber, ENR } from "@chainsafe/enr";
 

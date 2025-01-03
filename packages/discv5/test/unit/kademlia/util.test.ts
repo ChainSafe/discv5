@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import { expect } from "chai";
-import { randomBytes } from "@libp2p/crypto";
+import { randomBytes } from "@noble/hashes/utils";
 import { createNodeId } from "@chainsafe/enr";
 import { distance, log2Distance } from "../../../src/kademlia/index.js";
 
