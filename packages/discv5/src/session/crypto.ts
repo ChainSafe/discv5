@@ -1,10 +1,9 @@
-import hkdf from "bcrypto/lib/hkdf.js";
-import sha256 from "bcrypto/lib/sha256.js";
 import Crypto from "node:crypto";
 import { NodeId } from "@chainsafe/enr";
 
 import { generateKeypair, IKeypair, createKeypair } from "../keypair/index.js";
-import { fromHex } from "../util/index.js";
+import { fromHex, toBuffer } from "../util/index.js";
+import { getDiscv5Crypto } from "../util/crypto.js";
 
 // Implementation for generating session keys in the Discv5 protocol.
 // Currently, Diffie-Hellman key agreement is performed with known public key types. Session keys
@@ -41,7 +40,7 @@ export function generateSessionKeys(
 
 export function deriveKey(secret: Buffer, firstId: NodeId, secondId: NodeId, challengeData: Buffer): [Buffer, Buffer] {
   const info = Buffer.concat([Buffer.from(KEY_AGREEMENT_STRING), fromHex(firstId), fromHex(secondId)]);
-  const output = hkdf.expand(sha256, hkdf.extract(sha256, secret, challengeData), info, 2 * KEY_LENGTH);
+  const output = toBuffer(getDiscv5Crypto().hkdf.expand(getDiscv5Crypto().sha256, getDiscv5Crypto().hkdf.extract(getDiscv5Crypto().sha256, secret, challengeData), info, 2 * KEY_LENGTH));
   return [output.slice(0, KEY_LENGTH), output.slice(KEY_LENGTH, 2 * KEY_LENGTH)];
 }
 
@@ -75,7 +74,7 @@ export function idVerify(
 }
 
 export function generateIdSignatureInput(challengeData: Buffer, ephemPK: Buffer, nodeId: NodeId): Buffer {
-  return sha256.digest(Buffer.concat([Buffer.from(ID_SIGNATURE_TEXT), challengeData, ephemPK, fromHex(nodeId)]));
+  return toBuffer(getDiscv5Crypto().sha256(Buffer.concat([Buffer.from(ID_SIGNATURE_TEXT), challengeData, ephemPK, fromHex(nodeId)])));
 }
 
 export function decryptMessage(key: Buffer, nonce: Buffer, data: Buffer, aad: Buffer): Buffer {

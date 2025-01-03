@@ -10,7 +10,7 @@ export function createHeader(flag: PacketType, authdata: Buffer, nonce = randomB
     protocolId: "discv5",
     version: 1,
     flag,
-    nonce,
+    nonce: toBuffer(nonce),
     authdataSize: authdata.length,
     authdata,
   };
