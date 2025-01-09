@@ -1,4 +1,4 @@
-import { randomBytes } from "bcrypto/lib/random.js";
+import { randomBytes } from "@noble/hashes/utils";
 import { toBigIntBE } from "bigint-buffer";
 import { SequenceNumber, ENR } from "@chainsafe/enr";
 
@@ -11,9 +11,10 @@ import {
   ITalkReqMessage,
   ITalkRespMessage,
 } from "./types.js";
+import { toBuffer } from "../index.js";
 
 export function createRequestId(): RequestId {
-  return toBigIntBE(randomBytes(8));
+  return toBigIntBE(toBuffer(randomBytes(8)));
 }
 
 export function createPingMessage(enrSeq: SequenceNumber): IPingMessage {
@@ -53,6 +54,6 @@ export function createTalkResponseMessage(requestId: RequestId, payload: Uint8Ar
   return {
     type: MessageType.TALKRESP,
     id: requestId,
-    response: Buffer.from(payload),
+    response: toBuffer(payload),
   };
 }
