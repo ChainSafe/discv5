@@ -50,10 +50,20 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/acolytec3/discv5.git"
+    "url": "git+https://github.com/ChainSafe/discv5.git"
   },
-  "author": "Acolyte",
+  "keywords": [
+    "discovery",
+    "discv5",
+    "ethereum",
+    "p2p"
+  ],
+  "author": "ChainSafe Systems",
   "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/ChainSafe/discv5/issues"
+  },
+  "homepage": "https://github.com/ChainSafe/discv5#readme",
   "devDependencies": {},
   "dependencies": {
     "@chainsafe/enr": "^4.0.1",
@@ -67,8 +77,5 @@
     "lru-cache": "^10.1.0",
     "rlp": "^2.2.6",
     "strict-event-emitter-types": "^2.0.0"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }
