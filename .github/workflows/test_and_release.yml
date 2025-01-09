@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
-        node: [18]
+        node: [22]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2-beta
@@ -52,7 +52,7 @@ jobs:
         
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 22 
           registry-url: 'https://registry.npmjs.org'
         if: ${{ steps.release.outputs.releases_created }}
       
