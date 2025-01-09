@@ -12,6 +12,13 @@
   * dependencies
     * @chainsafe/enr bumped from ^3.0.0 to ^3.1.0
 
+## [10.1.0](https://github.com/ChainSafe/discv5/compare/discv5-v10.0.1...discv5-v10.1.0) (2025-01-09)
+
+
+### Features
+
+* replace bcrypto ([#302](https://github.com/ChainSafe/discv5/issues/302)) ([e6af632](https://github.com/ChainSafe/discv5/commit/e6af632b6ee268fb1d6d41395faf1261a4794f1f))
+
 ## [10.0.1](https://github.com/ChainSafe/discv5/compare/discv5-v10.0.0...discv5-v10.0.1) (2024-09-12)
 
 
