@@ -1,6 +1,6 @@
 import * as RLP from "@ethereumjs/rlp";
 import { ipToBytes } from "../util/ip.js";
-import { concatBytes } from "@noble/hashes/utils";
+import { concatBytes, hexToBytes } from "@noble/hashes/utils";
 import {
   IPingMessage,
   IPongMessage,
@@ -41,17 +41,9 @@ export function encode(message: Message): Uint8Array {
   }
 }
 
-// TODO remove when rlp supports bigint encoding directly
-function toBuffer(n: bigint): Buffer {
-  let hex = n.toString(16);
-  if (hex.length % 2 === 1) {
-    hex = "0" + hex;
-  }
-  return Buffer.from(hex, "hex");
-}
 
 export function encodePingMessage(m: IPingMessage): Uint8Array {
-  return concatBytes(Uint8Array.from([MessageType.PING]), RLP.encode([toBuffer(m.id), toBuffer(m.enrSeq)]));
+  return concatBytes(Uint8Array.from([MessageType.PING]), RLP.encode([bigintToBytes(m.id), bigintToBytes(m.enrSeq)]));
 }
 
 export function encodePongMessage(m: IPongMessage): Uint8Array {
@@ -60,50 +52,44 @@ export function encodePongMessage(m: IPongMessage): Uint8Array {
   }
   return concatBytes(
     Uint8Array.from([MessageType.PONG]),
-    RLP.encode([
-      //
-      toBuffer(m.id),
-      toBuffer(m.enrSeq),
-      ipToBytes(m.addr.ip),
-      m.addr.port,
-    ])
+    RLP.encode([bigintToBytes(m.id), bigintToBytes(m.enrSeq), ipToBytes(m.addr.ip), m.addr.port])
   );
 }
 
 export function encodeFindNodeMessage(m: IFindNodeMessage): Uint8Array {
-  return concatBytes(Uint8Array.from([MessageType.FINDNODE]), RLP.encode([toBuffer(m.id), m.distances]));
+  return concatBytes(Uint8Array.from([MessageType.FINDNODE]), RLP.encode([bigintToBytes(m.id), m.distances]));
 }
 
 export function encodeNodesMessage(m: INodesMessage): Uint8Array {
   return concatBytes(
     Uint8Array.from([MessageType.NODES]),
-    RLP.encode([toBuffer(m.id), m.total, m.enrs.map((enr) => enr.encodeToValues())])
+    RLP.encode([bigintToBytes(m.id), m.total, m.enrs.map((enr) => enr.encodeToValues())])
   );
 }
 
 export function encodeTalkReqMessage(m: ITalkReqMessage): Uint8Array {
-  return concatBytes(Uint8Array.from([MessageType.TALKREQ]), RLP.encode([toBuffer(m.id), m.protocol, m.request]));
+  return concatBytes(Uint8Array.from([MessageType.TALKREQ]), RLP.encode([bigintToBytes(m.id), m.protocol, m.request]));
 }
 
 export function encodeTalkRespMessage(m: ITalkRespMessage): Uint8Array {
-  return concatBytes(Uint8Array.from([MessageType.TALKRESP]), RLP.encode([toBuffer(m.id), m.response]));
+  return concatBytes(Uint8Array.from([MessageType.TALKRESP]), RLP.encode([bigintToBytes(m.id), m.response]));
 }
 
 export function encodeRegTopicMessage(m: IRegTopicMessage): Uint8Array {
   return concatBytes(
     Uint8Array.from([MessageType.REGTOPIC]),
-    RLP.encode([toBuffer(m.id), m.topic, m.enr.encodeToValues(), m.ticket])
+    RLP.encode([bigintToBytes(m.id), m.topic, m.enr.encodeToValues(), m.ticket])
   );
 }
 
 export function encodeTicketMessage(m: ITicketMessage): Uint8Array {
-  return concatBytes(Uint8Array.from([MessageType.TICKET]), RLP.encode([toBuffer(m.id), m.ticket, m.waitTime]));
+  return concatBytes(Uint8Array.from([MessageType.TICKET]), RLP.encode([bigintToBytes(m.id), m.ticket, m.waitTime]));
 }
 
 export function encodeRegConfirmMessage(m: IRegConfirmationMessage): Uint8Array {
-  return concatBytes(Uint8Array.from([MessageType.REGCONFIRMATION]), RLP.encode([toBuffer(m.id), m.topic]));
+  return concatBytes(Uint8Array.from([MessageType.REGCONFIRMATION]), RLP.encode([bigintToBytes(m.id), m.topic]));
 }
 
 export function encodeTopicQueryMessage(m: ITopicQueryMessage): Uint8Array {
-  return concatBytes(Uint8Array.from([MessageType.TOPICQUERY]), RLP.encode([toBuffer(m.id), m.topic]));
+  return concatBytes(Uint8Array.from([MessageType.TOPICQUERY]), RLP.encode([bigintToBytes(m.id), m.topic]));
 }

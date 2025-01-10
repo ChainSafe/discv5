@@ -73,7 +73,6 @@
     "@multiformats/multiaddr": "^12.1.10",
     "@noble/hashes": "^1.7.0",
     "@noble/secp256k1": "^2.2.2",
-    "bigint-buffer": "^1.1.5",
     "debug": "^4.3.1",
     "lru-cache": "^10.1.0",
     "strict-event-emitter-types": "^2.0.0"

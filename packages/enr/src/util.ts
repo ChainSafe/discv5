@@ -1,6 +1,5 @@
-import { toBigIntBE } from "bigint-buffer";
-import { fromString, toString } from "uint8arrays";
 import { NodeId } from "./types.js";
+import { bytesToHex, hexToBytes } from "ethereum-cryptography/utils";
 
 // multiaddr 8.0.0 expects an Uint8Array with internal buffer starting at 0 offset
 export function toNewUint8Array(buf: Uint8Array): Uint8Array {
@@ -22,26 +21,18 @@ export function fromBase64url(str: string): Uint8Array {
   return fromString(str, "base64url");
 }
 
-export function toBigInt(buf: Uint8Array): bigint {
-  if (globalThis.Buffer != null) {
-    return toBigIntBE(globalThis.Buffer.from(buf));
-  }
-
-  if (buf.length === 0) {
-    return BigInt(0);
-  }
-
-  return BigInt(`0x${toString(buf, "hex")}`);
-}
-
 export function createNodeId(buf: Uint8Array): NodeId {
   if (buf.length !== 32) {
     throw new Error("NodeId must be 32 bytes in length");
   }
 
-  if (globalThis.Buffer != null) {
-    return globalThis.Buffer.from(buf).toString("hex");
-  }
+  return bytesToHex(buf);
+}
 
-  return toString(buf, "hex");
+export function bigintToBytes(n: bigint): Uint8Array {
+  return hexToBytes(n.toString(16));
+}
+
+export function bytesToBigint(bytes: Uint8Array): bigint {
+  return BigInt(`0x${bytesToHex(bytes)}`);
 }

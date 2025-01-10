@@ -7,9 +7,9 @@ import { encode as varintEncode } from "uint8-varint";
 import { ERR_INVALID_ID, MAX_RECORD_SIZE } from "./constants.js";
 import { ENRKey, ENRValue, SequenceNumber, NodeId } from "./types.js";
 import { createPeerIdFromPublicKey } from "./peerId.js";
-import { fromBase64url, toBase64url, toBigInt, toNewUint8Array } from "./util.js";
+import { bytesToBigint, fromBase64url, toBase64url, toNewUint8Array } from "./util.js";
 import { getV4Crypto } from "./crypto.js";
-import { compare, fromString, toString } from "uint8arrays";
+import { bytesToUtf8, equalsBytes, utf8ToBytes } from "ethereum-cryptography/utils.js";
 
 /** ENR identity scheme */
 export enum IDScheme {
@@ -33,7 +33,7 @@ export type SignableENRData = {
 export function id(kvs: ReadonlyMap<ENRKey, ENRValue>): IDScheme {
   const idBuf = kvs.get("id");
   if (!idBuf) throw new Error("id not found");
-  const id = toString(idBuf, "utf8") as IDScheme;
+  const id = bytesToUtf8(idBuf) as IDScheme;
   if (IDScheme[id] == null) {
     throw new Error("Unknown enr id scheme: " + id);
   }
@@ -142,7 +142,7 @@ export function decodeFromValues(decoded: Uint8Array[]): ENRData {
   }
   return {
     kvs,
-    seq: toBigInt(seq),
+    seq: bytesToBigint(seq),
     signature,
   };
 }
@@ -467,7 +467,7 @@ export class SignableENR extends BaseENR {
     this._signature = signature;
 
     if (this.id === IDScheme.v4) {
-      if (compare(getV4Crypto().publicKey(this.privateKey), this.publicKey) !== 0) {
+      if (!equalsBytes(getV4Crypto().publicKey(this.privateKey), this.publicKey)) {
         throw new Error("Provided keypair doesn't match kv pubkey");
       }
     }
@@ -481,7 +481,7 @@ export class SignableENR extends BaseENR {
     return new SignableENR(
       {
         ...kvs,
-        id: fromString("v4"),
+        id: utf8ToBytes("v4"),
         secp256k1: getV4Crypto().publicKey(privateKey),
       },
       BigInt(1),

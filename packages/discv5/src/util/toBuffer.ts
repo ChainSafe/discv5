@@ -1,4 +1,4 @@
-export function numberToBuffer(value: number, length: number): Buffer {
+export function numberToBuffer(value: number, length: number): Uint8Array {
   const res = Buffer.alloc(length);
   res.writeUIntBE(value, 0, length);
   return res;

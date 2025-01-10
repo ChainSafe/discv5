@@ -53,13 +53,12 @@
     "@types/bn.js": "^4.11.5"
   },
   "dependencies": {
+    "@ethereumjs/rlp": "^5.0.2",
     "@libp2p/crypto": "^5.0.1",
     "@libp2p/interface": "^2.0.1",
     "@libp2p/peer-id": "^5.0.1",
     "@multiformats/multiaddr": "^12.1.10",
-    "bigint-buffer": "^1.1.5",
     "ethereum-cryptography": "^2.2.0",
-    "@ethereumjs/rlp": "^5.0.2",
     "uint8-varint": "^2.0.2",
     "uint8arrays": "^5.0.1"
   }
