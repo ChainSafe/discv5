@@ -1,5 +1,4 @@
 import Crypto from "node:crypto";
-import { toBigIntBE, toBufferBE } from "bigint-buffer";
 
 import { bufferToNumber, CodeError, numberToBuffer } from "../util/index.js";
 import {
@@ -27,7 +26,8 @@ import {
   MIN_HANDSHAKE_AUTHDATA_SIZE,
 } from "./constants.js";
 import { IHandshakeAuthdata, IHeader, IMessageAuthdata, IPacket, IWhoAreYouAuthdata, PacketType } from "./types.js";
-import { bytesToHex, concatBytes, hexToBytes } from "@noble/hashes/utils.js";
+import { bytesToHex, concatBytes, hexToBytes } from "ethereum-cryptography/utils.js";
+import { bigintToBytes, bytesToBigint } from "@chainsafe/enr";
 
 export function encodePacket(destId: string, packet: IPacket): Uint8Array {
   return concatBytes(packet.maskingIv, encodeHeader(destId, packet.maskingIv, packet.header), packet.message);
@@ -125,7 +125,7 @@ export function decodeHeader(srcId: string, maskingIv: Uint8Array, data: Uint8Ar
 // authdata
 
 export function encodeWhoAreYouAuthdata(authdata: IWhoAreYouAuthdata): Uint8Array {
-  return concatBytes(authdata.idNonce, toBufferBE(authdata.enrSeq, 8));
+  return concatBytes(authdata.idNonce, bigintToBytes(authdata.enrSeq));
 }
 
 export function encodeMessageAuthdata(authdata: IMessageAuthdata): Uint8Array {
@@ -149,7 +149,7 @@ export function decodeWhoAreYouAuthdata(data: Uint8Array): IWhoAreYouAuthdata {
   }
   return {
     idNonce: data.slice(0, ID_NONCE_SIZE),
-    enrSeq: toBigIntBE(data.slice(ID_NONCE_SIZE)),
+    enrSeq: bytesToBigint(data.slice(ID_NONCE_SIZE)),
   };
 }
 

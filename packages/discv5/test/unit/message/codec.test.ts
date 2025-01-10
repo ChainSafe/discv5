@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ENR } from "@chainsafe/enr";
 import { Message, MessageType, decode, encode } from "../../../src/message/index.js";
-import { hexToBytes } from "@noble/hashes/utils.js";
+import { hexToBytes } from "ethereum-cryptography/utils.js";
 
 describe("message", () => {
   const testCases: {

@@ -1,6 +1,5 @@
 import { randomBytes, toBytes } from "@noble/hashes/utils";
-import { toBigIntBE } from "bigint-buffer";
-import { SequenceNumber, ENR } from "@chainsafe/enr";
+import { bytesToBigint, SequenceNumber, ENR } from "@chainsafe/enr";
 
 import {
   RequestId,
@@ -13,7 +12,7 @@ import {
 } from "./types.js";
 
 export function createRequestId(): RequestId {
-  return toBigIntBE(randomBytes(8));
+  return bytesToBigint(randomBytes(8));
 }
 
 export function createPingMessage(enrSeq: SequenceNumber): IPingMessage {

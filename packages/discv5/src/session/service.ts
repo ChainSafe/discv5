@@ -3,7 +3,7 @@ import StrictEventEmitter from "strict-event-emitter-types";
 import debug from "debug";
 import { Multiaddr } from "@multiformats/multiaddr";
 import { ENR, SignableENR } from "@chainsafe/enr";
-
+import { bytesToHex, equalsBytes } from "ethereum-cryptography/utils.js";
 import { IPMode, ITransportService } from "../transport/index.js";
 import {
   PacketType,
@@ -43,7 +43,6 @@ import { LRUCache } from "lru-cache";
 import { TimeoutMap } from "../util/index.js";
 import { IDiscv5Metrics } from "../metrics.js";
 import { getSocketAddressMultiaddrOnENR } from "../util/ip.js";
-import { bytesToHex } from "@noble/hashes/utils.js";
 
 const log = debug("discv5:sessionService");
 

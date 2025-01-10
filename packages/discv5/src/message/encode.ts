@@ -1,6 +1,6 @@
 import * as RLP from "@ethereumjs/rlp";
 import { ipToBytes } from "../util/ip.js";
-import { concatBytes, hexToBytes } from "@noble/hashes/utils";
+import { concatBytes } from "@noble/hashes/utils";
 import {
   IPingMessage,
   IPongMessage,
@@ -15,6 +15,7 @@ import {
   ITalkReqMessage,
   ITalkRespMessage,
 } from "./types.js";
+import { bigintToBytes } from "@chainsafe/enr";
 
 export function encode(message: Message): Uint8Array {
   switch (message.type) {
@@ -40,7 +41,6 @@ export function encode(message: Message): Uint8Array {
       return encodeTopicQueryMessage(message as ITopicQueryMessage);
   }
 }
-
 
 export function encodePingMessage(m: IPingMessage): Uint8Array {
   return concatBytes(Uint8Array.from([MessageType.PING]), RLP.encode([bigintToBytes(m.id), bigintToBytes(m.enrSeq)]));

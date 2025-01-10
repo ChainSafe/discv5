@@ -1,6 +1,5 @@
 import * as RLP from "@ethereumjs/rlp";
-import { toBigIntBE } from "bigint-buffer";
-import { ENR } from "@chainsafe/enr";
+import { bytesToBigint, ENR } from "@chainsafe/enr";
 import {
   IPingMessage,
   IPongMessage,
@@ -54,8 +53,8 @@ function decodePing(data: Uint8Array): IPingMessage {
   }
   return {
     type: MessageType.PING,
-    id: toBigIntBE(rlpRaw[0]),
-    enrSeq: toBigIntBE(rlpRaw[1]),
+    id: bytesToBigint(rlpRaw[0]),
+    enrSeq: bytesToBigint(rlpRaw[1]),
   };
 }
 
@@ -75,12 +74,12 @@ function decodePong(data: Uint8Array): IPongMessage {
   if (rlpRaw[3].length > 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
-  const port = rlpRaw[3].length ? rlpRaw[3].readUIntBE(0, rlpRaw[3].length) : 0;
+  const port = rlpRaw[3].length ? new DataView(rlpRaw[3].buffer).getUint16(0, false) : 0;
 
   return {
     type: MessageType.PONG,
-    id: toBigIntBE(rlpRaw[0]),
-    enrSeq: toBigIntBE(rlpRaw[1]),
+    id: bytesToBigint(rlpRaw[0]),
+    enrSeq: bytesToBigint(rlpRaw[1]),
     addr: { ip, port },
   };
 }
@@ -93,24 +92,24 @@ function decodeFindNode(data: Uint8Array): IFindNodeMessage {
   if (!Array.isArray(rlpRaw[1])) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
-  const distances = (rlpRaw[1] as Uint8Array[]).map((x) => (x.length ? x.readUIntBE(0, x.length) : 0));
+  const distances = (rlpRaw[1] as Uint8Array[]).map((x) => (x.length ? Number(bytesToBigint(x)) : 0));
   return {
     type: MessageType.FINDNODE,
-    id: toBigIntBE(rlpRaw[0]),
+    id: bytesToBigint(rlpRaw[0]),
     distances,
   };
 }
 
 function decodeNodes(data: Uint8Array): INodesMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
+  const rlpRaw = RLP.decode(data.slice(1)) as RLP.NestedUint8Array;
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 3 || !Array.isArray(rlpRaw[2])) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
   return {
     type: MessageType.NODES,
-    id: toBigIntBE(rlpRaw[0]),
-    total: rlpRaw[1].length ? rlpRaw[1].readUIntBE(0, rlpRaw[1].length) : 0,
-    enrs: rlpRaw[2].map((enrRaw) => ENR.decodeFromValues(enrRaw)),
+    id: bytesToBigint(rlpRaw[0] as Uint8Array),
+    total: rlpRaw[1].length ? Number(bytesToBigint(rlpRaw[1] as Uint8Array)) : 0,
+    enrs: rlpRaw[2].map((enrRaw) => ENR.decodeFromValues(enrRaw as Uint8Array[])),
   };
 }
 
@@ -121,7 +120,7 @@ function decodeTalkReq(data: Uint8Array): ITalkReqMessage {
   }
   return {
     type: MessageType.TALKREQ,
-    id: toBigIntBE(rlpRaw[0]),
+    id: bytesToBigint(rlpRaw[0]),
     protocol: rlpRaw[1],
     request: rlpRaw[2],
   };
@@ -134,7 +133,7 @@ function decodeTalkResp(data: Uint8Array): ITalkRespMessage {
   }
   return {
     type: MessageType.TALKRESP,
-    id: toBigIntBE(rlpRaw[0]),
+    id: bytesToBigint(rlpRaw[0]),
     response: rlpRaw[1],
   };
 }
@@ -146,7 +145,7 @@ function decodeRegTopic(data: Uint8Array): IRegTopicMessage {
   }
   return {
     type: MessageType.REGTOPIC,
-    id: toBigIntBE(rlpRaw[0]),
+    id: bytesToBigint(rlpRaw[0]),
     topic: rlpRaw[1],
     enr: ENR.decodeFromValues(rlpRaw[2] as Uint8Array[]),
     ticket: rlpRaw[3],
@@ -160,9 +159,9 @@ function decodeTicket(data: Uint8Array): ITicketMessage {
   }
   return {
     type: MessageType.TICKET,
-    id: toBigIntBE(rlpRaw[0]),
+    id: bytesToBigint(rlpRaw[0]),
     ticket: rlpRaw[1],
-    waitTime: rlpRaw[2].length ? rlpRaw[2].readUIntBE(0, rlpRaw[2].length) : 0,
+    waitTime: rlpRaw[2].length ? Number(bytesToBigint(rlpRaw[2] as Uint8Array)) : 0,
   };
 }
 
@@ -173,7 +172,7 @@ function decodeRegConfirmation(data: Uint8Array): IRegConfirmationMessage {
   }
   return {
     type: MessageType.REGCONFIRMATION,
-    id: toBigIntBE(rlpRaw[0]),
+    id: bytesToBigint(rlpRaw[0]),
     topic: rlpRaw[1],
   };
 }
@@ -185,7 +184,7 @@ function decodeTopicQuery(data: Uint8Array): ITopicQueryMessage {
   }
   return {
     type: MessageType.TOPICQUERY,
-    id: toBigIntBE(rlpRaw[0]),
+    id: bytesToBigint(rlpRaw[0]),
     topic: rlpRaw[1],
   };
 }

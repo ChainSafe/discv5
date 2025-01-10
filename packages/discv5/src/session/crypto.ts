@@ -3,7 +3,7 @@ import { NodeId } from "@chainsafe/enr";
 
 import { generateKeypair, IKeypair, createKeypair } from "../keypair/index.js";
 import { getDiscv5Crypto } from "../util/crypto.js";
-import { concatBytes, hexToBytes, utf8ToBytes } from "@noble/hashes/utils.js";
+import { concatBytes, hexToBytes, utf8ToBytes } from "ethereum-cryptography/utils.js";
 
 // Implementation for generating session keys in the Discv5 protocol.
 // Currently, Diffie-Hellman key agreement is performed with known public key types. Session keys

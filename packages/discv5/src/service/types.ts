@@ -91,7 +91,7 @@ export type PongResponse = {
   addr: SocketAddress;
 };
 
-export type ResponseType = Buffer | ENR[] | PongResponse;
+export type ResponseType = Uint8Array | ENR[] | PongResponse;
 
 export function toResponseType(response: IPongMessage | INodesMessage | ITalkRespMessage): ResponseType {
   switch (response.type) {

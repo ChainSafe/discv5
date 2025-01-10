@@ -4,7 +4,7 @@ import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
 
 import { PacketType, IPacket, NONCE_SIZE, MASKING_IV_SIZE } from "../../../src/packet/index.js";
 import { UDPTransportService } from "../../../src/transport/index.js";
-import { bytesToHex } from "@noble/hashes/utils.js";
+import { bytesToHex } from "ethereum-cryptography/utils.js";
 
 describe("UDP4 transport", () => {
   const address = "127.0.0.1";

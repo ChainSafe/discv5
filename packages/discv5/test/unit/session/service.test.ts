@@ -10,7 +10,7 @@ import { SessionService } from "../../../src/session/index.js";
 import { createFindNodeMessage } from "../../../src/message/index.js";
 import { defaultConfig } from "../../../src/config/index.js";
 import { createNodeContact } from "../../../src/session/nodeInfo.js";
-import { hexToBytes } from "@noble/hashes/utils.js";
+import { hexToBytes } from "ethereum-cryptography/utils.js";
 
 describe("session service", () => {
   const kp0 = createKeypair({
