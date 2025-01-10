@@ -1,5 +1,5 @@
 import { Multiaddr, multiaddr, protocols } from "@multiformats/multiaddr";
-import * as RLP from "rlp";
+import * as RLP from "@ethereumjs/rlp";
 import { KeyType, PeerId, PrivateKey } from "@libp2p/interface";
 import { convertToString, convertToBytes } from "@multiformats/multiaddr/convert";
 import { encode as varintEncode } from "uint8-varint";

@@ -59,7 +59,7 @@
     "@multiformats/multiaddr": "^12.1.10",
     "bigint-buffer": "^1.1.5",
     "ethereum-cryptography": "^2.2.0",
-    "rlp": "^2.2.6",
+    "@ethereumjs/rlp": "^5.0.2",
     "uint8-varint": "^2.0.2",
     "uint8arrays": "^5.0.1"
   }

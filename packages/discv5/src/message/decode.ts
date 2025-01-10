@@ -1,5 +1,5 @@
-import * as RLP from "rlp";
-import { toBigIntBE } from "bigint-Uint8Array";
+import * as RLP from "@ethereumjs/rlp";
+import { toBigIntBE } from "bigint-buffer";
 import { ENR } from "@chainsafe/enr";
 import {
   IPingMessage,
