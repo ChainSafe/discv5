@@ -48,7 +48,7 @@ export function decode(data: Uint8Array): Message {
 }
 
 function decodePing(data: Uint8Array): IPingMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as unknown as Uint8Array[];
+  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -60,7 +60,7 @@ function decodePing(data: Uint8Array): IPingMessage {
 }
 
 function decodePong(data: Uint8Array): IPongMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as unknown as Uint8Array[];
+  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 4) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -86,14 +86,14 @@ function decodePong(data: Uint8Array): IPongMessage {
 }
 
 function decodeFindNode(data: Uint8Array): IFindNodeMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as unknown as Uint8Array[];
+  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
   if (!Array.isArray(rlpRaw[1])) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
-  const distances = (rlpRaw[1] as unknown as Uint8Array[]).map((x) => (x.length ? x.readUIntBE(0, x.length) : 0));
+  const distances = (rlpRaw[1] as Uint8Array[]).map((x) => (x.length ? x.readUIntBE(0, x.length) : 0));
   return {
     type: MessageType.FINDNODE,
     id: toBigIntBE(rlpRaw[0]),
@@ -102,7 +102,7 @@ function decodeFindNode(data: Uint8Array): IFindNodeMessage {
 }
 
 function decodeNodes(data: Uint8Array): INodesMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as unknown as RLP.Decoded;
+  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 3 || !Array.isArray(rlpRaw[2])) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -115,7 +115,7 @@ function decodeNodes(data: Uint8Array): INodesMessage {
 }
 
 function decodeTalkReq(data: Uint8Array): ITalkReqMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as unknown as RLP.Decoded;
+  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 3) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -128,7 +128,7 @@ function decodeTalkReq(data: Uint8Array): ITalkReqMessage {
 }
 
 function decodeTalkResp(data: Uint8Array): ITalkRespMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as unknown as RLP.Decoded;
+  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -140,7 +140,7 @@ function decodeTalkResp(data: Uint8Array): ITalkRespMessage {
 }
 
 function decodeRegTopic(data: Uint8Array): IRegTopicMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as unknown as Uint8Array[];
+  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 4 || !Array.isArray(rlpRaw[2])) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -148,13 +148,13 @@ function decodeRegTopic(data: Uint8Array): IRegTopicMessage {
     type: MessageType.REGTOPIC,
     id: toBigIntBE(rlpRaw[0]),
     topic: rlpRaw[1],
-    enr: ENR.decodeFromValues(rlpRaw[2] as unknown as Uint8Array[]),
+    enr: ENR.decodeFromValues(rlpRaw[2] as Uint8Array[]),
     ticket: rlpRaw[3],
   };
 }
 
 function decodeTicket(data: Uint8Array): ITicketMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as unknown as Uint8Array[];
+  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 3) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -167,7 +167,7 @@ function decodeTicket(data: Uint8Array): ITicketMessage {
 }
 
 function decodeRegConfirmation(data: Uint8Array): IRegConfirmationMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as unknown as Uint8Array[];
+  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -179,7 +179,7 @@ function decodeRegConfirmation(data: Uint8Array): IRegConfirmationMessage {
 }
 
 function decodeTopicQuery(data: Uint8Array): ITopicQueryMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as unknown as Uint8Array[];
+  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
