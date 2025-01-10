@@ -1,7 +1,7 @@
 import Crypto from "node:crypto";
 import { toBigIntBE, toBufferBE } from "bigint-buffer";
 
-import { bufferToNumber, CodeError, fromHex, numberToBuffer, toHex } from "../util/index.js";
+import { bufferToNumber, CodeError, numberToBuffer } from "../util/index.js";
 import {
   AUTHDATA_SIZE_SIZE,
   EPH_KEY_SIZE_SIZE,
@@ -27,15 +27,16 @@ import {
   MIN_HANDSHAKE_AUTHDATA_SIZE,
 } from "./constants.js";
 import { IHandshakeAuthdata, IHeader, IMessageAuthdata, IPacket, IWhoAreYouAuthdata, PacketType } from "./types.js";
+import { bytesToHex, concatBytes, hexToBytes } from "@noble/hashes/utils.js";
 
-export function encodePacket(destId: string, packet: IPacket): Buffer {
-  return Buffer.concat([packet.maskingIv, encodeHeader(destId, packet.maskingIv, packet.header), packet.message]);
+export function encodePacket(destId: string, packet: IPacket): Uint8Array {
+  return concatBytes(packet.maskingIv, encodeHeader(destId, packet.maskingIv, packet.header), packet.message);
 }
 
-export function encodeHeader(destId: string, maskingIv: Buffer, header: IHeader): Buffer {
-  const ctx = Crypto.createCipheriv("aes-128-ctr", fromHex(destId).slice(0, MASKING_KEY_SIZE), maskingIv);
+export function encodeHeader(destId: string, maskingIv: Uint8Array, header: IHeader): Uint8Array {
+  const ctx = Crypto.createCipheriv("aes-128-ctr", hexToBytes(destId).slice(0, MASKING_KEY_SIZE), maskingIv);
   return ctx.update(
-    Buffer.concat([
+    concatBytes(
       // static header
       Buffer.from(header.protocolId, "ascii"),
       numberToBuffer(header.version, VERSION_SIZE),
@@ -43,12 +44,12 @@ export function encodeHeader(destId: string, maskingIv: Buffer, header: IHeader)
       header.nonce,
       numberToBuffer(header.authdataSize, AUTHDATA_SIZE_SIZE),
       // authdata
-      header.authdata,
-    ])
+      header.authdata
+    )
   );
 }
 
-export function decodePacket(srcId: string, data: Buffer): IPacket {
+export function decodePacket(srcId: string, data: Uint8Array): IPacket {
   if (data.length < MIN_PACKET_SIZE) {
     throw new CodeError(`Packet too small: ${data.length}`, ERR_TOO_SMALL);
   }
@@ -64,15 +65,15 @@ export function decodePacket(srcId: string, data: Buffer): IPacket {
     maskingIv,
     header,
     message,
-    messageAd: Buffer.concat([maskingIv, headerBuf]),
+    messageAd: concatBytes(maskingIv, headerBuf),
   };
 }
 
 /**
  * Return the decoded header and the header as a buffer
  */
-export function decodeHeader(srcId: string, maskingIv: Buffer, data: Buffer): [IHeader, Buffer] {
-  const ctx = Crypto.createDecipheriv("aes-128-ctr", fromHex(srcId).slice(0, MASKING_KEY_SIZE), maskingIv);
+export function decodeHeader(srcId: string, maskingIv: Uint8Array, data: Uint8Array): [IHeader, Uint8Array] {
+  const ctx = Crypto.createDecipheriv("aes-128-ctr", hexToBytes(srcId).slice(0, MASKING_KEY_SIZE), maskingIv);
   // unmask the static header
   const staticHeaderBuf = ctx.update(data.slice(0, STATIC_HEADER_SIZE));
 
@@ -123,26 +124,26 @@ export function decodeHeader(srcId: string, maskingIv: Buffer, data: Buffer): [I
 
 // authdata
 
-export function encodeWhoAreYouAuthdata(authdata: IWhoAreYouAuthdata): Buffer {
-  return Buffer.concat([authdata.idNonce, toBufferBE(authdata.enrSeq, 8)]);
+export function encodeWhoAreYouAuthdata(authdata: IWhoAreYouAuthdata): Uint8Array {
+  return concatBytes(authdata.idNonce, toBufferBE(authdata.enrSeq, 8));
 }
 
-export function encodeMessageAuthdata(authdata: IMessageAuthdata): Buffer {
-  return fromHex(authdata.srcId);
+export function encodeMessageAuthdata(authdata: IMessageAuthdata): Uint8Array {
+  return hexToBytes(authdata.srcId);
 }
 
-export function encodeHandshakeAuthdata(authdata: IHandshakeAuthdata): Buffer {
-  return Buffer.concat([
-    fromHex(authdata.srcId),
+export function encodeHandshakeAuthdata(authdata: IHandshakeAuthdata): Uint8Array {
+  return concatBytes(
+    hexToBytes(authdata.srcId),
     numberToBuffer(authdata.sigSize, SIG_SIZE_SIZE),
     numberToBuffer(authdata.ephKeySize, EPH_KEY_SIZE_SIZE),
     authdata.idSignature,
     authdata.ephPubkey,
-    authdata.record || Buffer.alloc(0),
-  ]);
+    authdata.record || Buffer.alloc(0)
+  );
 }
 
-export function decodeWhoAreYouAuthdata(data: Buffer): IWhoAreYouAuthdata {
+export function decodeWhoAreYouAuthdata(data: Uint8Array): IWhoAreYouAuthdata {
   if (data.length !== WHOAREYOU_AUTHDATA_SIZE) {
     throw new CodeError(`Invalid authdata length: ${data.length}`, ERR_INVALID_AUTHDATA_SIZE);
   }
@@ -152,20 +153,20 @@ export function decodeWhoAreYouAuthdata(data: Buffer): IWhoAreYouAuthdata {
   };
 }
 
-export function decodeMessageAuthdata(data: Buffer): IMessageAuthdata {
+export function decodeMessageAuthdata(data: Uint8Array): IMessageAuthdata {
   if (data.length !== MESSAGE_AUTHDATA_SIZE) {
     throw new CodeError(`Invalid authdata length: ${data.length}`, ERR_INVALID_AUTHDATA_SIZE);
   }
   return {
-    srcId: toHex(data),
+    srcId: bytesToHex(data),
   };
 }
 
-export function decodeHandshakeAuthdata(data: Buffer): IHandshakeAuthdata {
+export function decodeHandshakeAuthdata(data: Uint8Array): IHandshakeAuthdata {
   if (data.length < MIN_HANDSHAKE_AUTHDATA_SIZE) {
     throw new CodeError(`Invalid authdata length: ${data.length}`, ERR_INVALID_AUTHDATA_SIZE);
   }
-  const srcId = toHex(data.slice(0, 32));
+  const srcId = bytesToHex(data.slice(0, 32));
   const sigSize = data[32];
   const ephKeySize = data[33];
   const idSignature = data.slice(34, 34 + sigSize);
@@ -185,14 +186,14 @@ export function decodeHandshakeAuthdata(data: Buffer): IHandshakeAuthdata {
  * Encode Challenge Data given masking IV and header
  * Challenge data doubles as message authenticated data
  */
-export function encodeChallengeData(maskingIv: Buffer, header: IHeader): Buffer {
-  return Buffer.concat([
+export function encodeChallengeData(maskingIv: Uint8Array, header: IHeader): Uint8Array {
+  return concatBytes(
     maskingIv,
     Buffer.from(header.protocolId),
     numberToBuffer(header.version, VERSION_SIZE),
     numberToBuffer(header.flag, FLAG_SIZE),
     header.nonce,
     numberToBuffer(header.authdataSize, AUTHDATA_SIZE_SIZE),
-    header.authdata,
-  ]);
+    header.authdata
+  );
 }

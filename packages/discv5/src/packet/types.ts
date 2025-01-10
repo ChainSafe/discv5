@@ -35,7 +35,7 @@ export interface IStaticHeader {
   /**
    * 12 bytes
    */
-  nonce: Buffer;
+  nonce: Uint8Array;
   /**
    * 2 bytes
    */
@@ -43,7 +43,7 @@ export interface IStaticHeader {
 }
 
 export interface IHeader extends IStaticHeader {
-  authdata: Buffer;
+  authdata: Uint8Array;
 }
 
 // A IHeader contains an "authdata
@@ -60,7 +60,7 @@ export interface IWhoAreYouAuthdata {
   /**
    * 16 bytes
    */
-  idNonce: Buffer;
+  idNonce: Uint8Array;
   /**
    * 8 bytes
    */
@@ -71,15 +71,15 @@ export interface IHandshakeAuthdata {
   srcId: NodeId;
   sigSize: number;
   ephKeySize: number;
-  idSignature: Buffer;
-  ephPubkey: Buffer;
+  idSignature: Uint8Array;
+  ephPubkey: Uint8Array;
   // pre-encoded ENR
   record?: Uint8Array;
 }
 
 export interface IPacket {
-  maskingIv: Buffer;
+  maskingIv: Uint8Array;
   header: IHeader;
-  message: Buffer;
-  messageAd?: Buffer;
+  message: Uint8Array;
+  messageAd?: Uint8Array;
 }

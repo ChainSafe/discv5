@@ -1,4 +1,4 @@
-import { randomBytes } from "@noble/hashes/utils";
+import { randomBytes, toBytes } from "@noble/hashes/utils";
 import { toBigIntBE } from "bigint-buffer";
 import { SequenceNumber, ENR } from "@chainsafe/enr";
 
@@ -11,10 +11,9 @@ import {
   ITalkReqMessage,
   ITalkRespMessage,
 } from "./types.js";
-import { toBuffer } from "../index.js";
 
 export function createRequestId(): RequestId {
-  return toBigIntBE(toBuffer(randomBytes(8)));
+  return toBigIntBE(randomBytes(8));
 }
 
 export function createPingMessage(enrSeq: SequenceNumber): IPingMessage {
@@ -46,14 +45,14 @@ export function createTalkRequestMessage(request: string | Uint8Array, protocol:
   return {
     type: MessageType.TALKREQ,
     id: createRequestId(),
-    protocol: Buffer.from(protocol),
-    request: Buffer.from(request),
+    protocol: toBytes(protocol),
+    request: toBytes(request),
   };
 }
 export function createTalkResponseMessage(requestId: RequestId, payload: Uint8Array): ITalkRespMessage {
   return {
     type: MessageType.TALKRESP,
     id: requestId,
-    response: toBuffer(payload),
+    response: payload,
   };
 }

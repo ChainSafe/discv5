@@ -36,7 +36,7 @@ import {
   RequestId,
 } from "../message/index.js";
 import { AddrVotes } from "./addrVotes.js";
-import { CodeError, toBuffer } from "../util/index.js";
+import { CodeError } from "../util/index.js";
 import { IDiscv5Config, defaultConfig } from "../config/index.js";
 import { createNodeContact, getNodeAddress, getNodeId, INodeAddress, NodeContact } from "../session/nodeInfo.js";
 import {
@@ -324,7 +324,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   }
 
   public async findRandomNode(): Promise<ENR[]> {
-    return await this.findNode(createNodeId(toBuffer(randomBytes(32))));
+    return await this.findNode(createNodeId(randomBytes(32)));
   }
 
   /**
@@ -398,7 +398,11 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Send TALKREQ message to dstId and returns response
    */
-  public async sendTalkReq(remote: ENR | Multiaddr, payload: Buffer, protocol: string | Uint8Array): Promise<Buffer> {
+  public async sendTalkReq(
+    remote: ENR | Multiaddr,
+    payload: Uint8Array,
+    protocol: string | Uint8Array
+  ): Promise<Uint8Array> {
     const contact = createNodeContact(remote, this.ipMode);
     const request = createTalkRequestMessage(payload, protocol);
 
@@ -407,7 +411,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
         contact,
         request,
         callbackPromise: {
-          resolve: resolve as (val: Buffer) => void,
+          resolve: resolve as (val: Uint8Array) => void,
           reject,
         },
       });
@@ -703,7 +707,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.connectionUpdated(nodeId, { type: ConnectionStatusType.Connected, enr, direction });
   };
 
-  private handleWhoAreYouRequest = (nodeAddr: INodeAddress, nonce: Buffer): void => {
+  private handleWhoAreYouRequest = (nodeAddr: INodeAddress, nonce: Uint8Array): void => {
     // Check what our latest known ENR is for this node
     const enr = this.findEnr(nodeAddr.nodeId) ?? null;
     if (enr) {

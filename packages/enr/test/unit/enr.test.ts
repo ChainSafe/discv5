@@ -4,8 +4,8 @@ import { generateKeyPair } from "@libp2p/crypto/keys";
 import { multiaddr } from "@multiformats/multiaddr";
 import { BaseENR, ENR, SignableENR, getV4Crypto } from "../../src/index.js";
 import { peerIdFromString } from "@libp2p/peer-id";
-
-const toHex = (buf: Uint8Array): string => Buffer.from(buf).toString("hex");
+import { utf8ToBytes } from "@noble/hashes/utils.js";
+import { bytesToHex } from "ccxt/js/src/static_dependencies/noble-hashes/utils.js";
 
 describe("ENR spec test vector", () => {
   // spec enr https://eips.ethereum.org/EIPS/eip-778
@@ -20,10 +20,10 @@ describe("ENR spec test vector", () => {
   );
   const kvs = new Map(
     Object.entries({
-      id: Buffer.from("v4"),
+      id: utf8ToBytes("v4"),
       secp256k1: publicKey,
-      ip: Buffer.from("7f000001", "hex"),
-      udp: Buffer.from((30303).toString(16), "hex"),
+      ip: utf8ToBytes("7f000001"),
+      udp: utf8ToBytes((30303).toString(16)),
     })
   );
   const nodeId = "a448f24c6d18e575453db13171562b71999873db5b286df957af199ec94617f7";
@@ -242,7 +242,7 @@ describe("ENR", function () {
       const txt = enr.encodeTxt();
       expect(txt.slice(0, 4)).to.be.equal("enr:");
       const enr2 = ENR.decodeTxt(txt);
-      expect(toHex(enr2.signature as Buffer)).to.be.equal(toHex(enr.signature as Buffer));
+      expect(bytesToHex(enr2.signature as Buffer)).to.be.equal(bytesToHex(enr.signature as Buffer));
       const mu = enr2.getLocationMultiaddr("udp")!;
       expect(mu.toString()).to.be.equal("/ip4/18.223.219.100/udp/9000");
     });
@@ -253,7 +253,7 @@ describe("ENR", function () {
       const enr = ENR.decodeTxt(txt);
       const eth2 = enr.kvs.get("eth2") as Buffer;
       expect(eth2).to.not.be.undefined;
-      expect(toHex(eth2)).to.be.equal("f6775d0700000113ffffffffffff1f00");
+      expect(bytesToHex(eth2)).to.be.equal("f6775d0700000113ffffffffffff1f00");
     });
 
     it("should encodeTxt and decodeTxt ipv6 enr successfully", async () => {

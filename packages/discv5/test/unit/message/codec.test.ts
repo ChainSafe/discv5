@@ -1,11 +1,12 @@
 import { expect } from "chai";
 import { ENR } from "@chainsafe/enr";
 import { Message, MessageType, decode, encode } from "../../../src/message/index.js";
+import { hexToBytes } from "@noble/hashes/utils.js";
 
 describe("message", () => {
   const testCases: {
     message: Message;
-    expected: Buffer;
+    expected: Uint8Array;
   }[] = [
     {
       message: {
@@ -13,7 +14,7 @@ describe("message", () => {
         id: 1n,
         enrSeq: 1n,
       },
-      expected: Buffer.from("01c20101", "hex"),
+      expected: hexToBytes("01c20101"),
     },
     {
       message: {
@@ -21,7 +22,7 @@ describe("message", () => {
         id: 1n,
         enrSeq: 0n, // < test 0 enrSeq
       },
-      expected: Buffer.from("01c20100", "hex"),
+      expected: hexToBytes("01c20100"),
     },
     {
       message: {
@@ -30,7 +31,7 @@ describe("message", () => {
         enrSeq: 1n,
         addr: { ip: { type: 4, octets: new Uint8Array([127, 0, 0, 1]) }, port: 255 }, // 1 byte
       },
-      expected: Buffer.from("02c90101847f00000181ff", "hex"),
+      expected: hexToBytes("02c90101847f00000181ff"),
     },
     {
       message: {
@@ -39,16 +40,16 @@ describe("message", () => {
         enrSeq: 1n,
         addr: { ip: { type: 4, octets: new Uint8Array([127, 0, 0, 1]) }, port: 5000 },
       },
-      expected: Buffer.from("02ca0101847f000001821388", "hex"),
+      expected: hexToBytes("02ca0101847f000001821388"),
     },
     {
       message: {
         type: MessageType.PONG,
         id: 1n,
         enrSeq: 1n,
-        addr: { ip: { type: 6, octets: Buffer.alloc(16, 0xaa) }, port: 5000 }, // 2 bytes
+        addr: { ip: { type: 6, octets: new Uint8Array(16).fill(0xaa) }, port: 5000 }, // 2 bytes
       },
-      expected: Buffer.from("02d6010190aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa821388", "hex"),
+      expected: hexToBytes("02d6010190aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa821388"),
     },
     {
       message: {
@@ -56,7 +57,7 @@ describe("message", () => {
         id: 1n,
         distances: [250],
       },
-      expected: Buffer.from("03c401c281fa", "hex"),
+      expected: hexToBytes("03c401c281fa"),
     },
     {
       message: {
@@ -65,7 +66,7 @@ describe("message", () => {
         total: 1,
         enrs: [],
       },
-      expected: Buffer.from("04c30101c0", "hex"),
+      expected: hexToBytes("04c30101c0"),
     },
     {
       message: {
@@ -81,9 +82,8 @@ describe("message", () => {
           ),
         ],
       },
-      expected: Buffer.from(
-        "04f8f20101f8eef875b8401ce2991c64993d7c84c29a00bdc871917551c7d330fca2dd0d69c706596dc655448f030b98a77d4001fd46ae0112ce26d613c5a6a02a81a6223cd0c4edaa53280182696482763489736563703235366b31a103ca634cae0d49acb401d8a4c6b6fe8c55b70d115bf400769cc1400f3258cd3138f875b840d7f1c39e376297f81d7297758c64cb37dcc5c3beea9f57f7ce9695d7d5a67553417d719539d6ae4b445946de4d99e680eb8063f29485b555d45b7df16a1850130182696482763489736563703235366b31a1030e2cb74241c0c4fc8e8166f1a79a05d5b0dd95813a74b094529f317d5c39d235",
-        "hex"
+      expected: hexToBytes(
+        "04f8f20101f8eef875b8401ce2991c64993d7c84c29a00bdc871917551c7d330fca2dd0d69c706596dc655448f030b98a77d4001fd46ae0112ce26d613c5a6a02a81a6223cd0c4edaa53280182696482763489736563703235366b31a103ca634cae0d49acb401d8a4c6b6fe8c55b70d115bf400769cc1400f3258cd3138f875b840d7f1c39e376297f81d7297758c64cb37dcc5c3beea9f57f7ce9695d7d5a67553417d719539d6ae4b445946de4d99e680eb8063f29485b555d45b7df16a1850130182696482763489736563703235366b31a1030e2cb74241c0c4fc8e8166f1a79a05d5b0dd95813a74b094529f317d5c39d235"
       ),
     },
   ];

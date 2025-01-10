@@ -23,7 +23,6 @@ import { randomBytes } from "@noble/hashes/utils";
 import { RequestId } from "../message/index.js";
 import { IChallenge } from ".";
 import { getNodeId, getPublicKey, NodeContact } from "./nodeInfo.js";
-import { toBuffer } from "../util/toBuffer.js";
 
 // The `Session` struct handles the stages of creating and establishing a handshake with a
 // peer.
@@ -79,8 +78,8 @@ export class Session {
     localId: NodeId,
     remoteId: NodeId,
     challenge: IChallenge,
-    idSignature: Buffer,
-    ephPubkey: Buffer,
+    idSignature: Uint8Array,
+    ephPubkey: Uint8Array,
     enrRecord?: Uint8Array
   ): [Session, ENR] {
     let enr: ENR;
@@ -133,8 +132,8 @@ export class Session {
     localKey: IKeypair,
     localNodeId: NodeId,
     updatedEnr: Uint8Array | null,
-    challengeData: Buffer,
-    message: Buffer
+    challengeData: Uint8Array,
+    message: Uint8Array
   ): [IPacket, Session] {
     // generate session keys
     const [encryptionKey, decryptionKey, ephPubkey] = generateSessionKeys(
@@ -159,7 +158,7 @@ export class Session {
     });
 
     const header = createHeader(PacketType.Handshake, authdata);
-    const maskingIv = toBuffer(randomBytes(MASKING_IV_SIZE));
+    const maskingIv = randomBytes(MASKING_IV_SIZE);
     const aad = encodeChallengeData(maskingIv, header);
 
     // encrypt the message
@@ -188,10 +187,10 @@ export class Session {
    * Encrypt packets with the current session key if we are awaiting a response from an
    * IAuthMessagePacket.
    */
-  encryptMessage(srcId: NodeId, destId: NodeId, message: Buffer): IPacket {
+  encryptMessage(srcId: NodeId, destId: NodeId, message: Uint8Array): IPacket {
     const authdata = encodeMessageAuthdata({ srcId });
     const header = createHeader(PacketType.Message, authdata);
-    const maskingIv = toBuffer(randomBytes(MASKING_IV_SIZE));
+    const maskingIv = randomBytes(MASKING_IV_SIZE);
     const aad = encodeChallengeData(maskingIv, header);
     const ciphertext = encryptMessage(this.keys.encryptionKey, header.nonce, message, aad);
     return {
@@ -207,7 +206,7 @@ export class Session {
    * upon failure, the new keys are attempted. If the new keys succeed,
    * the session keys are updated along with the Session state.
    */
-  decryptMessage(nonce: Buffer, message: Buffer, aad: Buffer): Buffer {
+  decryptMessage(nonce: Uint8Array, message: Uint8Array, aad: Uint8Array): Uint8Array {
     // try with the new keys
     if (this.awaitingKeys) {
       const newKeys = this.awaitingKeys;
