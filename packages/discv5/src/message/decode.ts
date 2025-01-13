@@ -74,7 +74,7 @@ function decodePong(data: Uint8Array): IPongMessage {
   if (rlpRaw[3].length > 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
-  const port = rlpRaw[3].length ? new DataView(rlpRaw[3].buffer).getUint16(0, false) : 0;
+  const port = rlpRaw[3].length ? Number(bytesToBigint(rlpRaw[3])) : 0;
 
   return {
     type: MessageType.PONG,
