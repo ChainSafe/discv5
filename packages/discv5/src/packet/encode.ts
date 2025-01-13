@@ -125,7 +125,10 @@ export function decodeHeader(srcId: string, maskingIv: Uint8Array, data: Uint8Ar
 // authdata
 
 export function encodeWhoAreYouAuthdata(authdata: IWhoAreYouAuthdata): Uint8Array {
-  return concatBytes(authdata.idNonce, bigintToBytes(authdata.enrSeq));
+  // Pad sequence to 8 bytes
+  const seqBytes = new Uint8Array(8);
+  seqBytes.set(bigintToBytes(authdata.enrSeq), 0);
+  return concatBytes(authdata.idNonce, seqBytes);
 }
 
 export function encodeMessageAuthdata(authdata: IMessageAuthdata): Uint8Array {
