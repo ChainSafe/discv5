@@ -135,7 +135,7 @@ export class UDPTransportService
     return getSocketAddressOnENR(enr, this.ipMode);
   }
 
-  private handleIncoming = (data: Buffer, rinfo: IRemoteInfo): void => {
+  private handleIncoming = (data: Uint8Array, rinfo: IRemoteInfo): void => {
     if (this.rateLimiter && !this.rateLimiter.allowEncodedPacket(rinfo.address)) {
       return;
     }

@@ -72,39 +72,39 @@ export interface INodesMessage {
 export interface ITalkReqMessage {
   type: MessageType.TALKREQ;
   id: RequestId;
-  protocol: Buffer;
-  request: Buffer;
+  protocol: Uint8Array;
+  request: Uint8Array;
 }
 
 export interface ITalkRespMessage {
   type: MessageType.TALKRESP;
   id: RequestId;
-  response: Buffer;
+  response: Uint8Array;
 }
 
 export interface IRegTopicMessage {
   type: MessageType.REGTOPIC;
   id: RequestId;
-  topic: Buffer;
+  topic: Uint8Array;
   enr: ENR;
-  ticket: Buffer;
+  ticket: Uint8Array;
 }
 
 export interface ITicketMessage {
   type: MessageType.TICKET;
   id: RequestId;
-  ticket: Buffer;
+  ticket: Uint8Array;
   waitTime: number;
 }
 
 export interface IRegConfirmationMessage {
   type: MessageType.REGCONFIRMATION;
   id: RequestId;
-  topic: Buffer;
+  topic: Uint8Array;
 }
 
 export interface ITopicQueryMessage {
   type: MessageType.TOPICQUERY;
   id: RequestId;
-  topic: Buffer;
+  topic: Uint8Array;
 }

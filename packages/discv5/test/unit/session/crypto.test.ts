@@ -13,7 +13,6 @@ import {
   decryptMessage,
 } from "../../../src/session/index.js";
 import { createKeypair, generateKeypair } from "../../../src/keypair/index.js";
-import { toBuffer } from "../../../src/index.js";
 import { getDiscv5Crypto } from "../../../src/util/crypto.js";
 
 describe("session crypto", () => {
@@ -46,7 +45,7 @@ describe("session crypto", () => {
       "hex"
     );
 
-    expect(deriveKey(toBuffer(secret), firstNodeId, secondNodeId, challengeData)).to.deep.equal(expected);
+    expect(deriveKey(secret, firstNodeId, secondNodeId, challengeData)).to.deep.equal(expected);
   });
 
   it("symmetric keys should be derived correctly", () => {
@@ -54,7 +53,7 @@ describe("session crypto", () => {
     const kp2 = generateKeypair("secp256k1");
     const enr1 = SignableENR.createV4(kp1.privateKey);
     const enr2 = SignableENR.createV4(kp2.privateKey);
-    const nonce = toBuffer(randomBytes(32));
+    const nonce = randomBytes(32);
     const [a1, b1, pk] = generateSessionKeys(
       enr1.nodeId,
       enr2.nodeId,
@@ -106,10 +105,10 @@ describe("session crypto", () => {
   });
 
   it("encrypted data should successfully be decrypted", () => {
-    const key = toBuffer(randomBytes(16));
-    const nonce = toBuffer(randomBytes(12));
-    const msg = toBuffer(randomBytes(16));
-    const ad = toBuffer(randomBytes(16));
+    const key = randomBytes(16);
+    const nonce = randomBytes(12);
+    const msg = randomBytes(16);
+    const ad = randomBytes(16);
 
     const cipher = encryptMessage(key, nonce, msg, ad);
     const decrypted = decryptMessage(key, nonce, cipher, ad);

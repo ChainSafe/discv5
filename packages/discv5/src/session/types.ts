@@ -66,8 +66,8 @@ export enum ResponseErrorType {
   InternalError,
 }
 export interface IKeys {
-  encryptionKey: Buffer;
-  decryptionKey: Buffer;
+  encryptionKey: Uint8Array;
+  decryptionKey: Uint8Array;
 }
 
 /** How we connected to the node. */
@@ -81,7 +81,7 @@ export enum ConnectionDirection {
 /** A Challenge (WHOAREYOU) object used to handle and send WHOAREYOU requests. */
 export interface IChallenge {
   /** The challenge data received from the node. */
-  data: Buffer; // length 63
+  data: Uint8Array; // length 63
   /** The remote's ENR if we know it. We can receive a challenge from an unknown node. */
   remoteEnr?: ENR;
 }
@@ -148,7 +148,7 @@ export interface ISessionEvents {
    * A WHOAREYOU packet needs to be sent.
    * This requests the protocol layer to send back the highest known ENR.
    */
-  whoAreYouRequest: (nodeAddr: INodeAddress, nonce: Buffer) => void;
+  whoAreYouRequest: (nodeAddr: INodeAddress, nonce: Uint8Array) => void;
   /**
    * An RPC request failed.
    */
