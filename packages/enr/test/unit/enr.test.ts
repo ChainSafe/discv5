@@ -20,8 +20,8 @@ describe("ENR spec test vector", () => {
     Object.entries({
       id: utf8ToBytes("v4"),
       secp256k1: publicKey,
-      ip: utf8ToBytes("7f000001"),
-      udp: utf8ToBytes((30303).toString(16)),
+      ip: hexToBytes("7f000001"),
+      udp: hexToBytes((30303).toString(16)),
     })
   );
   const nodeId = "a448f24c6d18e575453db13171562b71999873db5b286df957af199ec94617f7";
@@ -39,7 +39,7 @@ describe("ENR spec test vector", () => {
   });
 
   it("should properly create and encode", () => {
-    expect(new SignableENR(kvs, seq, privateKey).encodeTxt()).to.equal(text);
+    expect(new SignableENR(kvs, seq, privateKey, signature).encodeTxt()).to.equal(text);
   });
 
   it("should properly compute the node id", () => {

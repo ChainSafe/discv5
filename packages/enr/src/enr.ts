@@ -133,9 +133,10 @@ export function decodeFromValues(decoded: Uint8Array[]): ENRData {
   for (let i = 2; i < decoded.length; i += 2) {
     const k = decoded[i];
     const v = decoded[i + 1];
-    kvs.set(k.toString(), v);
+    kvs.set(bytesToUtf8(k), v);
     signed.push(k, v);
   }
+
   const _id = id(kvs);
   if (!verify(_id, RLP.encode(signed), publicKey(_id, kvs), signature)) {
     throw new Error("Unable to verify enr signature");
