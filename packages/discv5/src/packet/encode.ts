@@ -1,6 +1,6 @@
 import Crypto from "node:crypto";
 
-import { bufferToNumber, CodeError, numberToBuffer } from "../util/index.js";
+import { bytesToNumber, CodeError, numberToBytes } from "../util/index.js";
 import {
   AUTHDATA_SIZE_SIZE,
   EPH_KEY_SIZE_SIZE,
@@ -26,7 +26,7 @@ import {
   MIN_HANDSHAKE_AUTHDATA_SIZE,
 } from "./constants.js";
 import { IHandshakeAuthdata, IHeader, IMessageAuthdata, IPacket, IWhoAreYouAuthdata, PacketType } from "./types.js";
-import { bytesToHex, concatBytes, hexToBytes } from "ethereum-cryptography/utils.js";
+import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes, bytesToUtf8 } from "ethereum-cryptography/utils.js";
 import { bigintToBytes, bytesToBigint } from "@chainsafe/enr";
 
 export function encodePacket(destId: string, packet: IPacket): Uint8Array {
@@ -38,11 +38,11 @@ export function encodeHeader(destId: string, maskingIv: Uint8Array, header: IHea
   return ctx.update(
     concatBytes(
       // static header
-      Buffer.from(header.protocolId, "ascii"),
-      numberToBuffer(header.version, VERSION_SIZE),
-      numberToBuffer(header.flag, FLAG_SIZE),
+      utf8ToBytes(header.protocolId),
+      numberToBytes(header.version, VERSION_SIZE),
+      numberToBytes(header.flag, FLAG_SIZE),
       header.nonce,
-      numberToBuffer(header.authdataSize, AUTHDATA_SIZE_SIZE),
+      numberToBytes(header.authdataSize, AUTHDATA_SIZE_SIZE),
       // authdata
       header.authdata
     )
@@ -78,17 +78,17 @@ export function decodeHeader(srcId: string, maskingIv: Uint8Array, data: Uint8Ar
   const staticHeaderBuf = ctx.update(data.slice(0, STATIC_HEADER_SIZE));
 
   // validate the static header field by field
-  const protocolId = staticHeaderBuf.slice(0, PROTOCOL_SIZE).toString("ascii");
+  const protocolId = bytesToUtf8(staticHeaderBuf.slice(0, PROTOCOL_SIZE));
   if (protocolId !== "discv5") {
     throw new CodeError(`Invalid protocol id: ${protocolId}`, ERR_INVALID_PROTOCOL_ID);
   }
 
-  const version = bufferToNumber(staticHeaderBuf.slice(PROTOCOL_SIZE, PROTOCOL_SIZE + VERSION_SIZE), VERSION_SIZE);
+  const version = bytesToNumber(staticHeaderBuf.slice(PROTOCOL_SIZE, PROTOCOL_SIZE + VERSION_SIZE), VERSION_SIZE);
   if (version !== 1) {
     throw new CodeError(`Invalid version: ${version}`, ERR_INVALID_VERSION);
   }
 
-  const flag = bufferToNumber(
+  const flag = bytesToNumber(
     staticHeaderBuf.slice(PROTOCOL_SIZE + VERSION_SIZE, PROTOCOL_SIZE + VERSION_SIZE + FLAG_SIZE),
     FLAG_SIZE
   );
@@ -101,7 +101,7 @@ export function decodeHeader(srcId: string, maskingIv: Uint8Array, data: Uint8Ar
     PROTOCOL_SIZE + VERSION_SIZE + FLAG_SIZE + NONCE_SIZE
   );
 
-  const authdataSize = bufferToNumber(
+  const authdataSize = bytesToNumber(
     staticHeaderBuf.slice(PROTOCOL_SIZE + VERSION_SIZE + FLAG_SIZE + NONCE_SIZE),
     AUTHDATA_SIZE_SIZE
   );
@@ -138,11 +138,11 @@ export function encodeMessageAuthdata(authdata: IMessageAuthdata): Uint8Array {
 export function encodeHandshakeAuthdata(authdata: IHandshakeAuthdata): Uint8Array {
   return concatBytes(
     hexToBytes(authdata.srcId),
-    numberToBuffer(authdata.sigSize, SIG_SIZE_SIZE),
-    numberToBuffer(authdata.ephKeySize, EPH_KEY_SIZE_SIZE),
+    numberToBytes(authdata.sigSize, SIG_SIZE_SIZE),
+    numberToBytes(authdata.ephKeySize, EPH_KEY_SIZE_SIZE),
     authdata.idSignature,
     authdata.ephPubkey,
-    authdata.record || Buffer.alloc(0)
+    authdata.record || new Uint8Array(0)
   );
 }
 
@@ -192,11 +192,11 @@ export function decodeHandshakeAuthdata(data: Uint8Array): IHandshakeAuthdata {
 export function encodeChallengeData(maskingIv: Uint8Array, header: IHeader): Uint8Array {
   return concatBytes(
     maskingIv,
-    Buffer.from(header.protocolId),
-    numberToBuffer(header.version, VERSION_SIZE),
-    numberToBuffer(header.flag, FLAG_SIZE),
+    utf8ToBytes(header.protocolId),
+    numberToBytes(header.version, VERSION_SIZE),
+    numberToBytes(header.flag, FLAG_SIZE),
     header.nonce,
-    numberToBuffer(header.authdataSize, AUTHDATA_SIZE_SIZE),
+    numberToBytes(header.authdataSize, AUTHDATA_SIZE_SIZE),
     header.authdata
   );
 }
