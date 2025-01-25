@@ -2,25 +2,25 @@ import { KeyType } from "@libp2p/interface";
 
 export interface IKeypair {
   type: KeyType;
-  privateKey: Buffer;
-  publicKey: Buffer;
+  privateKey: Uint8Array;
+  publicKey: Uint8Array;
   privateKeyVerify(): boolean;
   publicKeyVerify(): boolean;
-  sign(msg: Buffer): Buffer;
-  verify(msg: Buffer, sig: Buffer): boolean;
-  deriveSecret(keypair: IKeypair): Buffer;
+  sign(msg: Uint8Array): Uint8Array;
+  verify(msg: Uint8Array, sig: Uint8Array): boolean;
+  deriveSecret(keypair: IKeypair): Uint8Array;
   hasPrivateKey(): boolean;
 }
 
 export interface IKeypairClass {
-  new (privateKey?: Buffer, publicKey?: Buffer): IKeypair;
+  new (privateKey?: Uint8Array, publicKey?: Uint8Array): IKeypair;
   generate(): IKeypair;
 }
 
 export abstract class AbstractKeypair {
-  readonly _privateKey?: Buffer;
-  readonly _publicKey?: Buffer;
-  constructor(privateKey?: Buffer, publicKey?: Buffer) {
+  readonly _privateKey?: Uint8Array;
+  readonly _publicKey?: Uint8Array;
+  constructor(privateKey?: Uint8Array, publicKey?: Uint8Array) {
     if ((this._privateKey = privateKey) && !this.privateKeyVerify()) {
       throw new Error("Invalid private key");
     }
@@ -28,13 +28,13 @@ export abstract class AbstractKeypair {
       throw new Error("Invalid private key");
     }
   }
-  get privateKey(): Buffer {
+  get privateKey(): Uint8Array {
     if (!this._privateKey) {
       throw new Error();
     }
     return this._privateKey;
   }
-  get publicKey(): Buffer {
+  get publicKey(): Uint8Array {
     if (!this._publicKey) {
       throw new Error();
     }

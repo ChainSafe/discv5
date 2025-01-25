@@ -3,7 +3,7 @@ import StrictEventEmitter from "strict-event-emitter-types";
 import debug from "debug";
 import { Multiaddr } from "@multiformats/multiaddr";
 import { ENR, SignableENR } from "@chainsafe/enr";
-
+import { bytesToHex, equalsBytes } from "ethereum-cryptography/utils.js";
 import { IPMode, ITransportService } from "../transport/index.js";
 import {
   PacketType,
@@ -141,7 +141,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     super();
 
     // ensure the keypair matches the one that signed the ENR
-    if (!keypair.publicKey.equals(enr.publicKey)) {
+    if (!equalsBytes(keypair.publicKey, enr.publicKey)) {
       throw new Error("Provided keypair does not match the provided ENR keypair");
     }
     this.config = config;
@@ -239,7 +239,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
 
     this.send(nodeAddr, packet);
 
-    this.activeRequestsNonceMapping.set(packet.header.nonce.toString("hex"), nodeAddr);
+    this.activeRequestsNonceMapping.set(bytesToHex(packet.header.nonce), nodeAddr);
     this.activeRequests.set(nodeAddrStr, call);
   }
 
@@ -272,7 +272,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * This is called in response to a "whoAreYouRequest" event.
    * The application finds the highest known ENR for a node then we respond to the node with a WHOAREYOU packet.
    */
-  public sendChallenge(nodeAddr: INodeAddress, nonce: Buffer, remoteEnr: ENR | null): void {
+  public sendChallenge(nodeAddr: INodeAddress, nonce: Uint8Array, remoteEnr: ENR | null): void {
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
     if (this.activeChallenges.peek(nodeAddrStr)) {
@@ -322,7 +322,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       log("Cannot decode WHOAREYOU authdata from %s: %s", src, e);
       return;
     }
-    const nonce = packet.header.nonce.toString("hex");
+    const nonce = bytesToHex(packet.header.nonce);
 
     // Check that this challenge matches a known active request.
     // If this message passes all the requisite checks, a request call is returned.
@@ -368,7 +368,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     this.activeRequests.delete(nodeAddrStr);
 
     // double check the message nonces match
-    const requestNonce = requestCall.packet.header.nonce.toString("hex");
+    const requestNonce = bytesToHex(requestCall.packet.header.nonce);
     if (requestNonce !== nonce) {
       // This could theoretically happen if a peer uses the same node id across
       // different connections.
@@ -730,7 +730,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     }
 
     // Remove the associated nonce mapping.
-    this.activeRequestsNonceMapping.delete(requestCall.packet.header.nonce.toString("hex"));
+    this.activeRequestsNonceMapping.delete(bytesToHex(requestCall.packet.header.nonce));
 
     // Remove the expected response
     this.removeExpectedResponse(nodeAddr.socketAddr);
@@ -747,7 +747,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   private insertActiveRequest(requestCall: IRequestCall): void {
     const nodeAddr = getNodeAddress(requestCall.contact);
     const nodeAddrStr = nodeAddressToString(nodeAddr);
-    this.activeRequestsNonceMapping.set(requestCall.packet.header.nonce.toString("hex"), nodeAddr);
+    this.activeRequestsNonceMapping.set(bytesToHex(requestCall.packet.header.nonce), nodeAddr);
     this.activeRequests.set(nodeAddrStr, requestCall);
   }
 
@@ -776,7 +776,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       log("Request timed out with %o", nodeAddr);
 
       // Remove the associated nonce mapping
-      this.activeRequestsNonceMapping.delete(requestCall.packet.header.nonce.toString("hex"));
+      this.activeRequestsNonceMapping.delete(bytesToHex(requestCall.packet.header.nonce));
       this.removeExpectedResponse(nodeAddr.socketAddr);
 
       // The request has timed out.
@@ -818,7 +818,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   private failRequest(requestCall: IRequestCall, error: RequestErrorType, removeSession: boolean): void {
     // The request has exported, remove the session.
     // Remove the associated nonce mapping.
-    this.activeRequestsNonceMapping.delete(requestCall.packet.header.nonce.toString("hex"));
+    this.activeRequestsNonceMapping.delete(bytesToHex(requestCall.packet.header.nonce));
 
     // Fail the current request
     this.emit("requestFailed", requestCall.request.id, error);

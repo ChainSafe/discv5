@@ -10,17 +10,18 @@ import { SessionService } from "../../../src/session/index.js";
 import { createFindNodeMessage } from "../../../src/message/index.js";
 import { defaultConfig } from "../../../src/config/index.js";
 import { createNodeContact } from "../../../src/session/nodeInfo.js";
+import { hexToBytes } from "ethereum-cryptography/utils.js";
 
 describe("session service", () => {
   const kp0 = createKeypair({
     type: "secp256k1",
-    privateKey: Buffer.from("a93bedf04784c937059557c9dcb328f5f59fdb6e89295c30e918579250b7b01f", "hex"),
-    publicKey: Buffer.from("022663242e1092ea19e6bb41d67aa69850541a623b94bbea840ddceaab39789894", "hex"),
+    privateKey: hexToBytes("a93bedf04784c937059557c9dcb328f5f59fdb6e89295c30e918579250b7b01f"),
+    publicKey: hexToBytes("022663242e1092ea19e6bb41d67aa69850541a623b94bbea840ddceaab39789894"),
   });
   const kp1 = createKeypair({
     type: "secp256k1",
-    privateKey: Buffer.from("bd04e55f2a1424a4e69e96aad41cf763d2468d4358472e9f851569bdf47fb24c", "hex"),
-    publicKey: Buffer.from("03eae9945b354e9212566bc3f2740f3a62b3e1eb227dbed809f6dc2d3ea848c82e", "hex"),
+    privateKey: hexToBytes("bd04e55f2a1424a4e69e96aad41cf763d2468d4358472e9f851569bdf47fb24c"),
+    publicKey: hexToBytes("03eae9945b354e9212566bc3f2740f3a62b3e1eb227dbed809f6dc2d3ea848c82e"),
   });
 
   const addr0 = multiaddr("/ip4/127.0.0.1/udp/49020");
