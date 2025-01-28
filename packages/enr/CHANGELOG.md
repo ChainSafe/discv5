@@ -1,5 +1,16 @@
 # Changelog
 
+## [5.0.0](https://github.com/ChainSafe/discv5/compare/enr-v4.0.1...enr-v5.0.0) (2025-01-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* Convert `buffer` usage to `Uint8Array` ([#306](https://github.com/ChainSafe/discv5/issues/306))
+
+### Features
+
+* Convert `buffer` usage to `Uint8Array` ([#306](https://github.com/ChainSafe/discv5/issues/306)) ([1cdc424](https://github.com/ChainSafe/discv5/commit/1cdc424bca9efa8c260276514460f42b2e2593dd))
+
 ## [4.0.1](https://github.com/ChainSafe/discv5/compare/enr-v4.0.0...enr-v4.0.1) (2024-09-12)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@chainsafe/enr",
-  "version": "4.0.1",
+  "version": "5.0.0",
   "description": "Ethereum name record",
   "type": "module",
   "files": [
