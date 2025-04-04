@@ -32,5 +32,8 @@ export function bigintToBytes(n: bigint): Uint8Array {
 }
 
 export function bytesToBigint(bytes: Uint8Array): bigint {
+  if (bytes.length === 0) {
+    return 0n;
+  }
   return BigInt(`0x${bytesToHex(bytes)}`);
 }
