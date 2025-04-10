@@ -1,7 +1,7 @@
 import { SequenceNumber, ENR } from "@chainsafe/enr";
 import { SocketAddress } from "../util/ip.js";
 
-export type RequestId = bigint;
+export type RequestId = Uint8Array;
 
 export type NodeAddressIP = {
   family: 4 | 6;
