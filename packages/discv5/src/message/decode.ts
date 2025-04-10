@@ -53,7 +53,7 @@ function decodePing(data: Uint8Array): IPingMessage {
   }
   return {
     type: MessageType.PING,
-    id: bytesToBigint(rlpRaw[0]),
+    id: rlpRaw[0],
     enrSeq: bytesToBigint(rlpRaw[1]),
   };
 }
@@ -78,7 +78,7 @@ function decodePong(data: Uint8Array): IPongMessage {
 
   return {
     type: MessageType.PONG,
-    id: bytesToBigint(rlpRaw[0]),
+    id: rlpRaw[0],
     enrSeq: bytesToBigint(rlpRaw[1]),
     addr: { ip, port },
   };
@@ -95,7 +95,7 @@ function decodeFindNode(data: Uint8Array): IFindNodeMessage {
   const distances = (rlpRaw[1] as Uint8Array[]).map((x) => (x.length ? Number(bytesToBigint(x)) : 0));
   return {
     type: MessageType.FINDNODE,
-    id: bytesToBigint(rlpRaw[0]),
+    id: rlpRaw[0],
     distances,
   };
 }
@@ -107,7 +107,7 @@ function decodeNodes(data: Uint8Array): INodesMessage {
   }
   return {
     type: MessageType.NODES,
-    id: bytesToBigint(rlpRaw[0] as Uint8Array),
+    id: rlpRaw[0] as Uint8Array,
     total: rlpRaw[1].length ? Number(bytesToBigint(rlpRaw[1] as Uint8Array)) : 0,
     enrs: rlpRaw[2].map((enrRaw) => ENR.decodeFromValues(enrRaw as Uint8Array[])),
   };
@@ -120,7 +120,7 @@ function decodeTalkReq(data: Uint8Array): ITalkReqMessage {
   }
   return {
     type: MessageType.TALKREQ,
-    id: bytesToBigint(rlpRaw[0]),
+    id: rlpRaw[0],
     protocol: rlpRaw[1],
     request: rlpRaw[2],
   };
@@ -133,7 +133,7 @@ function decodeTalkResp(data: Uint8Array): ITalkRespMessage {
   }
   return {
     type: MessageType.TALKRESP,
-    id: bytesToBigint(rlpRaw[0]),
+    id: rlpRaw[0],
     response: rlpRaw[1],
   };
 }
@@ -145,7 +145,7 @@ function decodeRegTopic(data: Uint8Array): IRegTopicMessage {
   }
   return {
     type: MessageType.REGTOPIC,
-    id: bytesToBigint(rlpRaw[0]),
+    id: rlpRaw[0],
     topic: rlpRaw[1],
     enr: ENR.decodeFromValues(rlpRaw[2] as Uint8Array[]),
     ticket: rlpRaw[3],
@@ -159,7 +159,7 @@ function decodeTicket(data: Uint8Array): ITicketMessage {
   }
   return {
     type: MessageType.TICKET,
-    id: bytesToBigint(rlpRaw[0]),
+    id: rlpRaw[0],
     ticket: rlpRaw[1],
     waitTime: rlpRaw[2].length ? Number(bytesToBigint(rlpRaw[2] as Uint8Array)) : 0,
   };
@@ -172,7 +172,7 @@ function decodeRegConfirmation(data: Uint8Array): IRegConfirmationMessage {
   }
   return {
     type: MessageType.REGCONFIRMATION,
-    id: bytesToBigint(rlpRaw[0]),
+    id: rlpRaw[0],
     topic: rlpRaw[1],
   };
 }
@@ -184,7 +184,7 @@ function decodeTopicQuery(data: Uint8Array): ITopicQueryMessage {
   }
   return {
     type: MessageType.TOPICQUERY,
-    id: bytesToBigint(rlpRaw[0]),
+    id: rlpRaw[0],
     topic: rlpRaw[1],
   };
 }

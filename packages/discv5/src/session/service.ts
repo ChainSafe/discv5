@@ -643,7 +643,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       // Check if this response matches these
       const requestId = session.awaitingEnr;
       if (requestId !== undefined) {
-        if (requestId === message.id) {
+        if (equalsBytes(requestId, message.id)) {
           delete session.awaitingEnr;
           if (message.type === MessageType.NODES) {
             // Received the requested ENR
@@ -696,7 +696,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       return;
     }
 
-    if (requestCall.request.id !== response.id) {
+    if (!equalsBytes(requestCall.request.id, response.id)) {
       log("Received an RPC Response to an unknown request. Likely late response. %o", nodeAddr);
       return;
     }

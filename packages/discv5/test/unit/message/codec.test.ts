@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { ENR } from "@chainsafe/enr";
+import { bigintToBytes, ENR } from "@chainsafe/enr";
 import { Message, MessageType, decode, encode } from "../../../src/message/index.js";
 import { hexToBytes } from "ethereum-cryptography/utils.js";
 
@@ -11,7 +11,7 @@ describe("message", () => {
     {
       message: {
         type: MessageType.PING,
-        id: 1n,
+        id: bigintToBytes(1n),
         enrSeq: 1n,
       },
       expected: hexToBytes("01c20101"),
@@ -19,7 +19,7 @@ describe("message", () => {
     {
       message: {
         type: MessageType.PING,
-        id: 1n,
+        id: bigintToBytes(1n),
         enrSeq: 0n, // < test 0 enrSeq
       },
       expected: hexToBytes("01c20100"),
@@ -27,7 +27,7 @@ describe("message", () => {
     {
       message: {
         type: MessageType.PONG,
-        id: 1n,
+        id: bigintToBytes(1n),
         enrSeq: 1n,
         addr: { ip: { type: 4, octets: new Uint8Array([127, 0, 0, 1]) }, port: 255 }, // 1 byte
       },
@@ -36,7 +36,7 @@ describe("message", () => {
     {
       message: {
         type: MessageType.PONG,
-        id: 1n,
+        id: bigintToBytes(1n),
         enrSeq: 1n,
         addr: { ip: { type: 4, octets: new Uint8Array([127, 0, 0, 1]) }, port: 5000 },
       },
@@ -45,7 +45,7 @@ describe("message", () => {
     {
       message: {
         type: MessageType.PONG,
-        id: 1n,
+        id: bigintToBytes(1n),
         enrSeq: 1n,
         addr: { ip: { type: 6, octets: new Uint8Array(16).fill(0xaa) }, port: 5000 }, // 2 bytes
       },
@@ -54,7 +54,7 @@ describe("message", () => {
     {
       message: {
         type: MessageType.FINDNODE,
-        id: 1n,
+        id: bigintToBytes(1n),
         distances: [250],
       },
       expected: hexToBytes("03c401c281fa"),
@@ -62,7 +62,7 @@ describe("message", () => {
     {
       message: {
         type: MessageType.NODES,
-        id: 1n,
+        id: bigintToBytes(1n),
         total: 1,
         enrs: [],
       },
@@ -71,7 +71,7 @@ describe("message", () => {
     {
       message: {
         type: MessageType.NODES,
-        id: 1n,
+        id: bigintToBytes(1n),
         total: 1,
         enrs: [
           ENR.decodeTxt(
@@ -107,7 +107,7 @@ describe("invalid messages", () => {
     {
       message: {
         type: MessageType.PONG,
-        id: 1n,
+        id: bigintToBytes(1n),
         enrSeq: 1n,
         // Negative port is invalid.
         addr: { ip: { type: 4, octets: new Uint8Array([127, 0, 0, 1]) }, port: -1 },
@@ -117,7 +117,7 @@ describe("invalid messages", () => {
     {
       message: {
         type: MessageType.PONG,
-        id: 1n,
+        id: bigintToBytes(1n),
         enrSeq: 1n,
         // This port is greater than 16 bits.
         addr: { ip: { type: 4, octets: new Uint8Array([127, 0, 0, 1]) }, port: 65536 },

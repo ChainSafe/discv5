@@ -2,7 +2,7 @@ import { Multiaddr } from "@multiformats/multiaddr";
 import { NodeId, ENR } from "@chainsafe/enr";
 
 import { IPacket } from "../packet/index.js";
-import { RequestMessage, ResponseMessage } from "../message/index.js";
+import { RequestId, RequestMessage, ResponseMessage } from "../message/index.js";
 import { INodeAddress, NodeContact } from "./nodeInfo.js";
 
 export type NodeAddressString = string;
@@ -152,5 +152,5 @@ export interface ISessionEvents {
   /**
    * An RPC request failed.
    */
-  requestFailed: (requestId: bigint, error: RequestErrorType) => void;
+  requestFailed: (requestId: RequestId, error: RequestErrorType) => void;
 }
