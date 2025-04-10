@@ -275,11 +275,6 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   public sendChallenge(nodeAddr: INodeAddress, nonce: Uint8Array, remoteEnr: ENR | null): void {
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
-    if (this.activeChallenges.peek(nodeAddrStr)) {
-      log("WHOAREYOU already sent. %o", nodeAddr);
-      return;
-    }
-
     // Ignore this request if the session is already established
     if (this.sessions.get(nodeAddrStr)) {
       log("Session already established. WHOAREYOU not sent to %o", nodeAddr);
