@@ -3,7 +3,15 @@ import debug from "debug";
 import { randomBytes } from "@noble/hashes/utils";
 import { Multiaddr } from "@multiformats/multiaddr";
 import { PeerId, PrivateKey } from "@libp2p/interface";
-import { createPeerIdFromPublicKey, ENR, NodeId, MAX_RECORD_SIZE, createNodeId, SignableENR } from "@chainsafe/enr";
+import {
+  createPeerIdFromPublicKey,
+  ENR,
+  NodeId,
+  MAX_RECORD_SIZE,
+  createNodeId,
+  SignableENR,
+  bytesToBigint,
+} from "@chainsafe/enr";
 
 import { BindAddrs, IPMode, ITransportService, UDPTransportService } from "../transport/index.js";
 import { MAX_PACKET_SIZE } from "../packet/index.js";
@@ -496,7 +504,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    */
   private sendRpcRequest<T extends RequestMessage, U extends ResponseType>(activeRequest: IActiveRequest<T, U>): void {
     this.activeRequests.set(
-      activeRequest.request.id,
+      bytesToBigint(activeRequest.request.id),
       activeRequest as unknown as IActiveRequest<RequestMessage, ResponseType>
     );
 
@@ -506,7 +514,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       this.sessionService.sendRequest(activeRequest.contact, activeRequest.request);
       this.metrics?.sentMessageCount.inc({ type: MessageType[activeRequest.request.type] });
     } catch (e) {
-      this.activeRequests.delete(activeRequest.request.id);
+      this.activeRequests.delete(bytesToBigint(activeRequest.request.id));
       log("Error sending RPC to node: %o, :Error: %s", nodeAddr, (e as Error).message);
     }
   }
@@ -843,12 +851,12 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
 
     // verify we know of the rpc id
 
-    const activeRequest = this.activeRequests.get(response.id);
+    const activeRequest = this.activeRequests.get(bytesToBigint(response.id));
     if (!activeRequest) {
       log("Received an RPC response which doesn't match a request. Id: &s", response.id);
       return;
     }
-    this.activeRequests.delete(response.id);
+    this.activeRequests.delete(bytesToBigint(response.id));
 
     // Check that the responder matches the expected request
     const requestNodeAddr = getNodeAddress(activeRequest.contact);
@@ -962,15 +970,15 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
 
     // handle the case that there is more than one response
     if (message.total > 1) {
-      const currentResponse = this.activeNodesResponses.get(message.id) || { count: 1, enrs: [] };
-      this.activeNodesResponses.delete(message.id);
+      const currentResponse = this.activeNodesResponses.get(bytesToBigint(message.id)) || { count: 1, enrs: [] };
+      this.activeNodesResponses.delete(bytesToBigint(message.id));
       log("NODES response: %d of %d received, length: %d", currentResponse.count, message.total, message.enrs.length);
       // If there are more requests coming, store the nodes and wait for another response
       if (currentResponse.count < 5 && currentResponse.count < message.total) {
         currentResponse.count += 1;
         currentResponse.enrs.push(...message.enrs);
-        this.activeRequests.set(message.id, activeRequest as IActiveRequest<RequestMessage>);
-        this.activeNodesResponses.set(message.id, currentResponse);
+        this.activeRequests.set(bytesToBigint(message.id), activeRequest as IActiveRequest<RequestMessage>);
+        this.activeNodesResponses.set(bytesToBigint(message.id), currentResponse);
         return false;
       }
 
@@ -984,7 +992,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       nodeAddr
     );
 
-    this.activeNodesResponses.delete(message.id);
+    this.activeNodesResponses.delete(bytesToBigint(message.id));
 
     this.discovered(nodeAddr.nodeId, message.enrs, lookupId);
 
@@ -1003,22 +1011,22 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * A session could not be established or an RPC request timed out
    */
-  private rpcFailure = (rpcId: bigint, error: RequestErrorType): void => {
+  private rpcFailure = (rpcId: RequestId, error: RequestErrorType): void => {
     log("RPC error, removing request. Reason: %s, id %s", RequestErrorType[error], rpcId);
-    const req = this.activeRequests.get(rpcId);
+    const req = this.activeRequests.get(bytesToBigint(rpcId));
     if (!req) {
       return;
     }
     const { request, contact, lookupId, callbackPromise } = req;
-    this.activeRequests.delete(request.id);
+    this.activeRequests.delete(bytesToBigint(request.id));
 
     const nodeId = getNodeId(contact);
     // If a failed FindNodes Request, ensure we haven't partially received responses.
     // If so, process the partially found nodes
     if (request.type === MessageType.FINDNODE) {
-      const nodesResponse = this.activeNodesResponses.get(request.id);
+      const nodesResponse = this.activeNodesResponses.get(bytesToBigint(request.id));
       if (nodesResponse) {
-        this.activeNodesResponses.delete(request.id);
+        this.activeNodesResponses.delete(bytesToBigint(request.id));
 
         if (nodesResponse.enrs.length) {
           log("NODES response failed, but was partially processed from Node: %s", nodeId);
