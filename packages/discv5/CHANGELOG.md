@@ -12,6 +12,21 @@
   * dependencies
     * @chainsafe/enr bumped from ^3.0.0 to ^3.1.0
 
+## [11.0.1](https://github.com/ChainSafe/discv5/compare/discv5-v11.0.0...discv5-v11.0.1) (2025-04-15)
+
+
+### Bug Fixes
+
+* leading zeros stripped from request id ([#312](https://github.com/ChainSafe/discv5/issues/312)) ([c6a8739](https://github.com/ChainSafe/discv5/commit/c6a87395dd7b42cb39ffb68e0c570b63d1a80dab))
+* SessionService should send challenge even with active challenge ([#311](https://github.com/ChainSafe/discv5/issues/311)) ([62c1054](https://github.com/ChainSafe/discv5/commit/62c10546174844bc014ed7ead8a184aa39872f3c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @chainsafe/enr bumped from ^5.0.0 to ^5.0.1
+
 ## [11.0.0](https://github.com/ChainSafe/discv5/compare/discv5-v10.0.1...discv5-v11.0.0) (2025-01-25)
 
 

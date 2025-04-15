@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.1](https://github.com/ChainSafe/discv5/compare/enr-v5.0.0...enr-v5.0.1) (2025-04-15)
+
+
+### Bug Fixes
+
+* BigInt conversion bug ([#308](https://github.com/ChainSafe/discv5/issues/308)) ([585eece](https://github.com/ChainSafe/discv5/commit/585eecefb578d53edd2f288f32de18675ea589e5))
+
 ## [5.0.0](https://github.com/ChainSafe/discv5/compare/enr-v4.0.1...enr-v5.0.0) (2025-01-25)
 
 
