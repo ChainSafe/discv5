@@ -18,6 +18,13 @@ import { ipFromBytes } from "../util/ip.js";
 
 const ERR_INVALID_MESSAGE = "invalid message";
 
+export function decodeRequestId(rlpRaw: Uint8Array[]): Uint8Array {
+  if (rlpRaw[0].length > 8) {
+    throw new Error(ERR_INVALID_MESSAGE);
+  }
+  return rlpRaw[0];
+}
+
 export function decode(data: Uint8Array): Message {
   const type = data[0];
   switch (type) {
