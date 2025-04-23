@@ -18,6 +18,13 @@ import { ipFromBytes } from "../util/ip.js";
 
 const ERR_INVALID_MESSAGE = "invalid message";
 
+export function decodeRequestId(rlpRaw: Uint8Array[]): Uint8Array {
+  if (rlpRaw[0].length > 8) {
+    throw new Error(ERR_INVALID_MESSAGE);
+  }
+  return rlpRaw[0];
+}
+
 export function decode(data: Uint8Array): Message {
   const type = data[0];
   switch (type) {
@@ -53,7 +60,7 @@ function decodePing(data: Uint8Array): IPingMessage {
   }
   return {
     type: MessageType.PING,
-    id: rlpRaw[0],
+    id: decodeRequestId(rlpRaw),
     enrSeq: bytesToBigint(rlpRaw[1]),
   };
 }
@@ -78,7 +85,7 @@ function decodePong(data: Uint8Array): IPongMessage {
 
   return {
     type: MessageType.PONG,
-    id: rlpRaw[0],
+    id: decodeRequestId(rlpRaw),
     enrSeq: bytesToBigint(rlpRaw[1]),
     addr: { ip, port },
   };
@@ -95,7 +102,7 @@ function decodeFindNode(data: Uint8Array): IFindNodeMessage {
   const distances = (rlpRaw[1] as Uint8Array[]).map((x) => (x.length ? Number(bytesToBigint(x)) : 0));
   return {
     type: MessageType.FINDNODE,
-    id: rlpRaw[0],
+    id: decodeRequestId(rlpRaw),
     distances,
   };
 }
@@ -107,7 +114,7 @@ function decodeNodes(data: Uint8Array): INodesMessage {
   }
   return {
     type: MessageType.NODES,
-    id: rlpRaw[0] as Uint8Array,
+    id: decodeRequestId(rlpRaw as Uint8Array[]),
     total: rlpRaw[1].length ? Number(bytesToBigint(rlpRaw[1] as Uint8Array)) : 0,
     enrs: rlpRaw[2].map((enrRaw) => ENR.decodeFromValues(enrRaw as Uint8Array[])),
   };
@@ -120,7 +127,7 @@ function decodeTalkReq(data: Uint8Array): ITalkReqMessage {
   }
   return {
     type: MessageType.TALKREQ,
-    id: rlpRaw[0],
+    id: decodeRequestId(rlpRaw),
     protocol: rlpRaw[1],
     request: rlpRaw[2],
   };
@@ -133,7 +140,7 @@ function decodeTalkResp(data: Uint8Array): ITalkRespMessage {
   }
   return {
     type: MessageType.TALKRESP,
-    id: rlpRaw[0],
+    id: decodeRequestId(rlpRaw),
     response: rlpRaw[1],
   };
 }
@@ -145,7 +152,7 @@ function decodeRegTopic(data: Uint8Array): IRegTopicMessage {
   }
   return {
     type: MessageType.REGTOPIC,
-    id: rlpRaw[0],
+    id: decodeRequestId(rlpRaw),
     topic: rlpRaw[1],
     enr: ENR.decodeFromValues(rlpRaw[2] as Uint8Array[]),
     ticket: rlpRaw[3],
@@ -159,7 +166,7 @@ function decodeTicket(data: Uint8Array): ITicketMessage {
   }
   return {
     type: MessageType.TICKET,
-    id: rlpRaw[0],
+    id: decodeRequestId(rlpRaw),
     ticket: rlpRaw[1],
     waitTime: rlpRaw[2].length ? Number(bytesToBigint(rlpRaw[2] as Uint8Array)) : 0,
   };
@@ -172,7 +179,7 @@ function decodeRegConfirmation(data: Uint8Array): IRegConfirmationMessage {
   }
   return {
     type: MessageType.REGCONFIRMATION,
-    id: rlpRaw[0],
+    id: decodeRequestId(rlpRaw),
     topic: rlpRaw[1],
   };
 }
