@@ -12,6 +12,13 @@
   * dependencies
     * @chainsafe/enr bumped from ^3.0.0 to ^3.1.0
 
+## [11.0.2](https://github.com/ChainSafe/discv5/compare/discv5-v11.0.1...discv5-v11.0.2) (2025-04-23)
+
+
+### Bug Fixes
+
+* should not respond to oversized id ([#313](https://github.com/ChainSafe/discv5/issues/313)) ([a9dd2d4](https://github.com/ChainSafe/discv5/commit/a9dd2d4076743c64e78350972aa35ed784790e6c))
+
 ## [11.0.1](https://github.com/ChainSafe/discv5/compare/discv5-v11.0.0...discv5-v11.0.1) (2025-04-15)
 
 
