@@ -86,26 +86,29 @@ export class UDPTransportService
   }
 
   public async start(): Promise<void> {
-    const [socket4, socket6] = await Promise.all([
-      this.ip4 ? openSocket(this.ip4.opts) : undefined,
-      this.ip6 ? openSocket(this.ip6.opts) : undefined,
-    ]);
-    if (this.ip4) {
-      socket4?.on("message", this.handleIncoming);
-      this.ip4.socket = socket4;
-    }
-    if (this.ip6) {
-      socket6?.on("message", this.handleIncoming);
-      this.ip6.socket = socket6;
-    }
+    const configs: SocketOpts[] = [];
+    if (this.ip4) configs.push(this.ip4);
+    if (this.ip6) configs.push(this.ip6);
+
+    const sockets = await Promise.all(configs.map((c) => openSocket(c.opts)));
+
+    configs.forEach((config, index) => {
+      const socket = sockets[index];
+      socket.on("message", this.handleIncoming);
+      config.socket = socket;
+    });
   }
 
   public async stop(): Promise<void> {
-    const socket4 = this.ip4?.socket;
-    const socket6 = this.ip6?.socket;
-    socket4?.off("message", this.handleIncoming);
-    socket6?.off("message", this.handleIncoming);
-    await Promise.all([closeSocket(socket4), closeSocket(socket6)]);
+    const sockets: dgram.Socket[] = [];
+    if (this.ip4 && this.ip4.socket) sockets.push(this.ip4.socket);
+    if (this.ip6 && this.ip6.socket) sockets.push(this.ip6.socket);
+
+    sockets.forEach((socket) => {
+      socket.off("message", this.handleIncoming);
+    });
+
+    await Promise.all(sockets.map((socket) => closeSocket(socket)));
   }
 
   public async send(to: Multiaddr, toId: string, packet: IPacket): Promise<void> {
@@ -114,21 +117,27 @@ export class UDPTransportService
       if (!this.ip4) {
         throw new Error("Cannot send to an IPv4 address without a bound IPv4 socket");
       }
-      this.ip4.socket?.send(encodePacket(toId, packet), nodeAddr.port, nodeAddr.host);
+      if (this.ip4.socket) {
+        this.ip4.socket.send(encodePacket(toId, packet), nodeAddr.port, nodeAddr.host);
+      }
     } else if (nodeAddr.family === 6) {
       if (!this.ip6) {
         throw new Error("Cannot send to an IPv6 address without a bound IPv6 socket");
       }
-      this.ip6.socket?.send(encodePacket(toId, packet), nodeAddr.port, nodeAddr.host);
+      if (this.ip6.socket) {
+        this.ip6.socket.send(encodePacket(toId, packet), nodeAddr.port, nodeAddr.host);
+      }
     }
   }
 
   addExpectedResponse(ipAddress: string): void {
-    this.rateLimiter?.addExpectedResponse(ipAddress);
+    if (!this.rateLimiter) return;
+    this.rateLimiter.addExpectedResponse(ipAddress);
   }
 
   removeExpectedResponse(ipAddress: string): void {
-    this.rateLimiter?.removeExpectedResponse(ipAddress);
+    if (!this.rateLimiter) return;
+    this.rateLimiter.removeExpectedResponse(ipAddress);
   }
 
   getContactableAddr(enr: ENR): SocketAddress | undefined {

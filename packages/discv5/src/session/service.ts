@@ -286,7 +286,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     // table (remote_enr is None) then we re-request the ENR to keep the session up to date.
 
     // send the challenge
-    const enrSeq = remoteEnr?.seq ?? 0n;
+    const enrSeq = (remoteEnr && remoteEnr.seq) ?? 0n;
     const packet = createWhoAreYouPacket(nonce, enrSeq);
     const challengeData = encodeChallengeData(packet.maskingIv, packet.header);
 
@@ -485,7 +485,9 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     const enrMultiaddrIP6 = getSocketAddressMultiaddrOnENR(enr, { ...this.ipMode, ip4: false } as IPMode);
     return (
       enr.nodeId === nodeAddr.nodeId &&
-      (enrMultiaddrIP4?.equals(nodeAddr.socketAddr) ?? enrMultiaddrIP6?.equals(nodeAddr.socketAddr) ?? true)
+      ((enrMultiaddrIP4 && enrMultiaddrIP4.equals(nodeAddr.socketAddr)) ??
+        (enrMultiaddrIP6 && enrMultiaddrIP6.equals(nodeAddr.socketAddr)) ??
+        true)
     );
   }
 
@@ -759,11 +761,15 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   }
 
   private removeExpectedResponse(socketAddr: Multiaddr): void {
-    this.transport.addExpectedResponse?.(socketAddr.toOptions().host);
+    if (this.transport.addExpectedResponse) {
+      this.transport.addExpectedResponse(socketAddr.toOptions().host);
+    }
   }
 
   private addExpectedResponse(socketAddr: Multiaddr): void {
-    this.transport.removeExpectedResponse?.(socketAddr.toOptions().host);
+    if (this.transport.removeExpectedResponse) {
+      this.transport.removeExpectedResponse(socketAddr.toOptions().host);
+    }
   }
 
   private handleRequestTimeout(nodeAddr: INodeAddress, requestCall: IRequestCall): void {

@@ -22,7 +22,7 @@ export class AddrVotes {
     const socketAddrStr = serializeSocketAddr(ip);
 
     const prevVote = this.votes.get(voter);
-    if (prevVote?.socketAddrStr === socketAddrStr) {
+    if (prevVote && prevVote.socketAddrStr === socketAddrStr) {
       // Same vote, ignore
       return false;
     } else if (prevVote !== undefined) {

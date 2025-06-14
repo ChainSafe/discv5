@@ -82,7 +82,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
       return InsertResult.NodeExists;
     }
 
-    const isPendingNode = this.pending?.value.nodeId === value.nodeId;
+    const isPendingNode = this.pending && this.pending.value.nodeId === value.nodeId;
 
     switch (status) {
       case EntryStatus.Connected: {
@@ -141,7 +141,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
       } else {
         return UpdateResult.NotModified;
       }
-    } else if (this.pending?.value.nodeId === value.nodeId) {
+    } else if (this.pending && this.pending.value.nodeId === value.nodeId) {
       this.pending.value = value;
       return UpdateResult.UpdatedPending;
     } else {
@@ -192,7 +192,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
         default:
           throw new Error("Unreachable");
       }
-    } else if (this.pending?.value.nodeId === id) {
+    } else if (this.pending && this.pending.value.nodeId === id) {
       this.pending.status = status;
       return UpdateResult.UpdatedPending;
     } else {
