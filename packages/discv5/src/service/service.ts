@@ -485,7 +485,8 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     const enr = this.findEnr(peer);
     if (!enr || !getSocketAddressMultiaddrOnENR(enr, this.ipMode)) {
       log("Lookup %s requested an unknown ENR or ENR w/o UDP", lookupId);
-      this.activeLookups.get(lookupId)?.onFailure(peer);
+      const lookup = this.activeLookups.get(lookupId);
+      if (lookup) lookup.onFailure(peer);
       return;
     }
 
@@ -512,7 +513,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     log("Sending %s to node: %o", MessageType[activeRequest.request.type], nodeAddr);
     try {
       this.sessionService.sendRequest(activeRequest.contact, activeRequest.request);
-      this.metrics?.sentMessageCount.inc({ type: MessageType[activeRequest.request.type] });
+      if (this.metrics) {
+        this.metrics.sentMessageCount.inc({ type: MessageType[activeRequest.request.type] });
+      }
     } catch (e) {
       this.activeRequests.delete(bytesToBigint(activeRequest.request.id));
       log("Error sending RPC to node: %o, :Error: %s", nodeAddr, (e as Error).message);
@@ -526,7 +529,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     log("Sending %s to node: %o", MessageType[response.type], nodeAddr);
     try {
       this.sessionService.sendResponse(nodeAddr, response);
-      this.metrics?.sentMessageCount.inc({ type: MessageType[response.type] });
+      if (this.metrics) {
+        this.metrics.sentMessageCount.inc({ type: MessageType[response.type] });
+      }
     } catch (e) {
       log("Error sending RPC to node: %o, :Error: %s", nodeAddr, (e as Error).message);
     }
@@ -735,7 +740,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    */
   private handleRpcRequest = (nodeAddr: INodeAddress, request: RequestMessage): void => {
     const requestType = MessageType[request.type];
-    this.metrics?.rcvdMessageCount.inc({ type: requestType });
+    if (this.metrics) {
+      this.metrics.rcvdMessageCount.inc({ type: requestType });
+    }
 
     try {
       switch (request.type) {
@@ -777,7 +784,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     log("Sending PONG response to node: %o", nodeAddr);
     try {
       this.sessionService.sendResponse(nodeAddr, pongMessage);
-      this.metrics?.sentMessageCount.inc({ type: MessageType[MessageType.PONG] });
+      if (this.metrics) {
+        this.metrics.sentMessageCount.inc({ type: MessageType[MessageType.PONG] });
+      }
     } catch (e) {
       log("Failed to send Pong. Error %s", (e as Error).message);
     }
@@ -809,7 +818,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       log("Sending empty NODES response to %o", nodeAddr);
       try {
         this.sessionService.sendResponse(nodeAddr, createNodesMessage(id, 1, nodes));
-        this.metrics?.sentMessageCount.inc({ type: MessageType[MessageType.NODES] });
+        if (this.metrics) {
+          this.metrics.sentMessageCount.inc({ type: MessageType[MessageType.NODES] });
+        }
       } catch (e) {
         log("Failed to send a NODES response. Error: %s", (e as Error).message);
       }
@@ -828,7 +839,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       const _nodes = nodes.slice(i, i + nodesPerPacket);
       try {
         this.sessionService.sendResponse(nodeAddr, createNodesMessage(id, total, _nodes));
-        this.metrics?.sentMessageCount.inc({ type: MessageType[MessageType.NODES] });
+        if (this.metrics) {
+          this.metrics.sentMessageCount.inc({ type: MessageType[MessageType.NODES] });
+        }
       } catch (e) {
         log("Failed to send a NODES response. Error: %s", (e as Error).message);
       }
@@ -847,7 +860,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    */
   private handleRpcResponse = (nodeAddr: INodeAddress, response: ResponseMessage): void => {
     const responseType = MessageType[response.type];
-    this.metrics?.rcvdMessageCount.inc({ type: responseType });
+    if (this.metrics) {
+      this.metrics.rcvdMessageCount.inc({ type: responseType });
+    }
 
     // verify we know of the rpc id
 
@@ -867,21 +882,25 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
         nodeAddr,
         response.id
       );
-      activeRequest.callbackPromise?.reject(
-        new CodeError(
-          "Received a response from an nexpected address",
-          ResponseErrorType[ResponseErrorType.WrongAddress]
-        )
-      );
+      if (activeRequest.callbackPromise) {
+        activeRequest.callbackPromise.reject(
+          new CodeError(
+            "Received a response from an nexpected address",
+            ResponseErrorType[ResponseErrorType.WrongAddress]
+          )
+        );
+      }
       return;
     }
 
     // Check that the response type matches the request
     if (!requestMatchesResponse(activeRequest.request, response)) {
       log("Node gave an incorrect response type. Ignoring response from: %o", nodeAddr);
-      activeRequest.callbackPromise?.reject(
-        new CodeError("Response has incorrect response type", ResponseErrorType[ResponseErrorType.WrongResponseType])
-      );
+      if (activeRequest.callbackPromise) {
+        activeRequest.callbackPromise.reject(
+          new CodeError("Response has incorrect response type", ResponseErrorType[ResponseErrorType.WrongResponseType])
+        );
+      }
       return;
     }
 
@@ -901,13 +920,16 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
           // TODO Implement all RPC methods
           return;
       }
-
-      activeRequest.callbackPromise?.resolve(toResponseType(response));
+      if (activeRequest.callbackPromise) {
+        activeRequest.callbackPromise.resolve(toResponseType(response));
+      }
     } catch (e) {
       log("Error handling rpc response: node: %o response: %s", nodeAddr, responseType);
-      activeRequest.callbackPromise?.reject(
-        new CodeError((e as Error).message, ResponseErrorType[ResponseErrorType.InternalError])
-      );
+      if (activeRequest.callbackPromise) {
+        activeRequest.callbackPromise.reject(
+          new CodeError((e as Error).message, ResponseErrorType[ResponseErrorType.InternalError])
+        );
+      }
     }
   };
 
@@ -1056,6 +1078,8 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.connectionUpdated(nodeId, { type: ConnectionStatusType.Disconnected });
 
     // If this is initiated by the user, return the error on the callback.
-    callbackPromise?.reject(new CodeError("RPC failure", RequestErrorType[error]));
+    if (callbackPromise) {
+      callbackPromise.reject(new CodeError("RPC failure", RequestErrorType[error]));
+    }
   };
 }

@@ -43,7 +43,9 @@ export class RateLimiter implements IRateLimiter {
     }
 
     if (!this.rateLimiterIP.allows(ip, 1)) {
-      this.metrics?.rateLimitHitIP.inc();
+      if (this.metrics) {
+        this.metrics.rateLimitHitIP.inc();
+      }
 
       this.bannedIPs.set(ip, Date.now());
 
@@ -51,7 +53,9 @@ export class RateLimiter implements IRateLimiter {
     }
 
     if (!this.rateLimiterGlobal.allows(null, 1)) {
-      this.metrics?.rateLimitHitTotal.inc();
+      if (this.metrics) {
+        this.metrics.rateLimitHitTotal.inc();
+      }
       return false;
     }
 
