@@ -106,13 +106,13 @@ describe("UDP4+6 transport", () => {
   const nodeIdA = bytesToHex(new Uint8Array(32).fill(1));
   const portA = 49523;
   const multiaddr4A = multiaddr(`/ip4/${address4}/udp/${portA}`);
-  const multiaddr6A = multiaddr(`/ip6/${address6}/udp/${portA + 1}`);
+  const multiaddr6A = multiaddr(`/ip6/${address6}/udp/${portA}`);
   const a = new UDPTransportService({ bindAddrs: { ip4: multiaddr4A, ip6: multiaddr6A }, nodeId: nodeIdA });
 
   const nodeIdB = bytesToHex(new Uint8Array(32).fill(2));
   const portB = portA + 1;
   const multiaddr4B = multiaddr(`/ip4/${address4}/udp/${portB}`);
-  const multiaddr6B = multiaddr(`/ip6/${address6}/udp/${portB + 1}`);
+  const multiaddr6B = multiaddr(`/ip6/${address6}/udp/${portB}`);
   const b = new UDPTransportService({ bindAddrs: { ip4: multiaddr4B, ip6: multiaddr6B }, nodeId: nodeIdB });
 
   before(async () => {
