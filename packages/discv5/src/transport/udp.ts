@@ -78,11 +78,6 @@ export class UDPTransportService
       this.bindAddrs.push(this.ip6.addr);
       this.ipMode.ip6 = true;
     }
-    if (this.ip4 && this.ip6) {
-      if (this.ip4.opts.port === this.ip6.opts.port) {
-        throw new Error("Configured bind multiaddrs must have different ports");
-      }
-    }
   }
 
   public async start(): Promise<void> {
