@@ -1,6 +1,6 @@
 {
   "name": "@chainsafe/discv5",
-  "version": "11.0.2",
+  "version": "11.0.3",
   "description": "Discovery V5",
   "type": "module",
   "files": [
