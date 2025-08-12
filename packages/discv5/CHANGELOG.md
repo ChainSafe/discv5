@@ -12,6 +12,13 @@
   * dependencies
     * @chainsafe/enr bumped from ^3.0.0 to ^3.1.0
 
+## [11.0.3](https://github.com/ChainSafe/discv5/compare/discv5-v11.0.2...discv5-v11.0.3) (2025-08-12)
+
+
+### Bug Fixes
+
+* allow dual stack to use the same port ([#316](https://github.com/ChainSafe/discv5/issues/316)) ([bba43cf](https://github.com/ChainSafe/discv5/commit/bba43cfbe4a2ec2f3643853101febb7ea3d1646e))
+
 ## [11.0.2](https://github.com/ChainSafe/discv5/compare/discv5-v11.0.1...discv5-v11.0.2) (2025-04-23)
 
 
