@@ -12,6 +12,13 @@
   * dependencies
     * @chainsafe/enr bumped from ^3.0.0 to ^3.1.0
 
+## [11.0.4](https://github.com/ChainSafe/discv5/compare/discv5-v11.0.3...discv5-v11.0.4) (2025-09-10)
+
+
+### Bug Fixes
+
+* allow IPv4 and IPv6 to bind to the same port in dual-stack mode ([#318](https://github.com/ChainSafe/discv5/issues/318)) ([fe2e35e](https://github.com/ChainSafe/discv5/commit/fe2e35eb629a468c3cc986914e1f000b9b4f8691))
+
 ## [11.0.3](https://github.com/ChainSafe/discv5/compare/discv5-v11.0.2...discv5-v11.0.3) (2025-08-12)
 
 
