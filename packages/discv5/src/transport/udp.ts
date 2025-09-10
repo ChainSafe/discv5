@@ -154,6 +154,7 @@ async function openSocket(opts: MultiaddrObject): Promise<dgram.Socket> {
     recvBufferSize: 16 * MAX_PACKET_SIZE,
     sendBufferSize: MAX_PACKET_SIZE,
     type: opts.family === 4 ? "udp4" : "udp6",
+    ipv6Only: opts.family === 6,
   });
   await new Promise((resolve) => socket.bind(opts.port, opts.host, resolve as () => void));
   return socket;
