@@ -22,16 +22,16 @@ jobs:
       - uses: actions/setup-node@v2-beta
         with:
           node-version: ${{matrix.node}}
-      - run: yarn install
-      - run: yarn build
+      - run: pnpm install
+      - run: pnpm build
       - name: Lint
-        run: yarn lint
+        run: pnpm lint
       - name: Check Types
-        run: yarn run check-types
+        run: pnpm run check-types
       - name: Unit tests
-        run: yarn test:unit
+        run: pnpm test:unit
       - name: E2e tests
-        run: yarn test:e2e
+        run: pnpm test:e2e
   
   maybe-release:
     name: release
@@ -56,13 +56,13 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
         if: ${{ steps.release.outputs.releases_created }}
       
-      - run: yarn install
+      - run: pnpm install
         if: ${{ steps.release.outputs.releases_created }}
       
-      - run: yarn build
+      - run: pnpm build
         if: ${{ steps.release.outputs.releases_created }}
 
-      - run: yarn run publish
+      - run: pnpm run publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
         if: ${{ steps.release.outputs.releases_created }}

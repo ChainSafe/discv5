@@ -1,0 +1,10 @@
+packages:
+  - packages/*
+
+linkWorkspacePackages: true
+
+nodeLinker: isolated
+
+catalog:
+  "@multiformats/multiaddr": ^12.1.10
+  "@libp2p/interface": ^2.0.1

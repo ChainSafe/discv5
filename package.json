@@ -8,14 +8,14 @@
     "packages/*"
   ],
   "scripts": {
-    "check-types": "lerna run check-types",
-    "build": "lerna run build",
-    "lint": "lerna run lint",
-    "prepublishOnly": "yarn build",
-    "publish": "lerna publish from-package --yes --no-verify-access",
-    "test": "lerna run test",
-    "test:unit": "lerna run test:unit",
-    "test:e2e": "lerna run test:e2e"
+    "check-types": "pnpm -r check-types",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "prepublishOnly": "pnpm build",
+    "publish": "pnpm publish -r --access public --no-git-check",
+    "test": "pnpm -r test",
+    "test:unit": "pnpm -r test:unit",
+    "test:e2e": "pnpm -r test:e2e"
   },
   "pre-push": [
     "lint"
@@ -34,12 +34,11 @@
     "eslint": "^8.17.0",
     "eslint-plugin-prettier": "^4.0.0",
     "karma": "^4.3.0",
-    "lerna": "^7.4.2",
     "mocha": "^10.0.0",
     "nyc": "^14.1.1",
     "prettier": "^2.6.2",
     "ts-node": "^10.8.1",
     "typescript": "^4.7.3"
   },
-  "packageManager": "yarn@1.22.22+sha256.c17d3797fb9a9115bf375e31bfd30058cac6bc9c3b8807a3d8cb2094794b51ca"
+  "packageManager": "pnpm@10.24.0"
 }
