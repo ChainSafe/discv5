@@ -8,6 +8,11 @@ on:
     branches:
       - '**'
 
+permissions:
+  id-token: write       # Required for OIDC
+  contents: write       # Required to create a Github release
+  pull-requests: write  # Required to add tags to pull requests
+  
 jobs:
   tests:
     name: tests
@@ -18,11 +23,10 @@ jobs:
         os: [windows-latest, ubuntu-latest, macos-latest]
         node: [22]
     steps:
-      - uses: actions/checkout@v2
-      - name: Install pnpm before setup node
-        shell: bash
-        run: npm install -g pnpm      
-      - uses: actions/setup-node@v2-beta
+      - uses: actions/checkout@v6
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{matrix.node}}
       - run: pnpm install
@@ -42,34 +46,32 @@ jobs:
     needs: tests
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     steps:
-      - uses: google-github-actions/release-please-action@v3
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
-          command: manifest
           release-type: node
           monorepo-tags: true
           changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
       
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         if: ${{ steps.release.outputs.releases_created }}
 
-      - name: Install pnpm before setup node
-        shell: bash
-        run: npm install -g pnpm        
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        if: ${{ steps.release.outputs.releases_created }}
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v6
         with:
           node-version: 22 
-          registry-url: 'https://registry.npmjs.org'
         if: ${{ steps.release.outputs.releases_created }}
       
-      - run: pnpm install
+      - name: Install dependencies
+        run: pnpm install
         if: ${{ steps.release.outputs.releases_created }}
       
-      - run: pnpm build
+      - name: Build packages
+        run: pnpm build
         if: ${{ steps.release.outputs.releases_created }}
 
-      - run: pnpm run publish
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+      - run: pnpm run publish --recursive --access public --provenance
         if: ${{ steps.release.outputs.releases_created }}
