@@ -39,9 +39,9 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
-    "prepublishOnly": "yarn build",
+    "prepublishOnly": "pnpm build",
     "lint": "eslint --color --ext .ts src/ test/",
-    "test": "yarn test:unit && yarn test:e2e",
+    "test": "pnpm test:unit && pnpm test:e2e",
     "test:unit": "mocha 'test/unit/**/*.test.ts'",
     "test:e2e": "mocha 'test/e2e/**/*.test.ts'"
   },
@@ -66,14 +66,16 @@
   "homepage": "https://github.com/ChainSafe/discv5#readme",
   "devDependencies": {},
   "dependencies": {
-    "@chainsafe/enr": "^5.0.1",
+    "@chainsafe/enr": "workspace:^",
     "@ethereumjs/rlp": "^5.0.2",
     "@libp2p/crypto": "^5.0.1",
     "@libp2p/interface": "^2.0.1",
+    "@libp2p/peer-id": "^5.0.1",
     "@multiformats/multiaddr": "^12.1.10",
     "@noble/hashes": "^1.7.0",
     "@noble/secp256k1": "^2.2.2",
     "debug": "^4.3.1",
+    "ethereum-cryptography": "^2.2.0",
     "lru-cache": "^10.1.0",
     "strict-event-emitter-types": "^2.0.0"
   }
