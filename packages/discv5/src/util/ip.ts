@@ -120,7 +120,8 @@ export function multiaddrFromSocketAddress(s: SocketAddress): Multiaddr {
 export function multiaddrToSocketAddress(multiaddr: Multiaddr): SocketAddress {
   let ip: Ip | undefined;
   let port: number | undefined;
-  multiaddr.bytes; // populate internal cache
+  // Force cache population of bytes property to ensure getComponents() works correctly
+  void multiaddr.bytes;
   for (const component of multiaddr.getComponents()) {
     switch (component.code) {
       case PROTOCOL["4"]:
