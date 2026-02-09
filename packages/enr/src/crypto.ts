@@ -1,5 +1,5 @@
-import { NodeId } from "./types.js";
 import * as defaultCrypto from "./defaultCrypto.js";
+import type {NodeId} from "./types.js";
 
 /**
  * In order to support different environments (eg: browser vs high performance), a pluggable crypto interface is provided

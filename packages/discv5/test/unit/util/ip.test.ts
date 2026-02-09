@@ -1,10 +1,10 @@
-import { multiaddr } from "@multiformats/multiaddr";
-import { expect } from "chai";
-import { SignableENR } from "@chainsafe/enr";
-import { generateKeypair } from "../../../src/index.js";
+import {SignableENR} from "@chainsafe/enr";
+import {multiaddr} from "@multiformats/multiaddr";
+import {describe, expect, it} from "vitest";
+import {generateKeypair} from "../../../src/index.js";
 import {
+  type SocketAddress,
   getSocketAddressOnENR,
-  SocketAddress,
   isEqualSocketAddress,
   multiaddrFromSocketAddress,
   multiaddrToSocketAddress,
@@ -13,19 +13,19 @@ import {
 
 describe("isEqualSocketAddress", () => {
   it("equal", () => {
-    const testCases: { addr1: SocketAddress; addr2: SocketAddress }[] = [
+    const testCases: {addr1: SocketAddress; addr2: SocketAddress}[] = [
       {
         addr1: {
           ip: {
-            type: 4,
             octets: new Uint8Array(4),
+            type: 4,
           },
           port: 0,
         },
         addr2: {
           ip: {
-            type: 4,
             octets: new Uint8Array(4),
+            type: 4,
           },
           port: 0,
         },
@@ -33,15 +33,15 @@ describe("isEqualSocketAddress", () => {
       {
         addr1: {
           ip: {
-            type: 6,
             octets: new Uint8Array(16),
+            type: 6,
           },
           port: 0,
         },
         addr2: {
           ip: {
-            type: 6,
             octets: new Uint8Array(16),
+            type: 6,
           },
           port: 0,
         },
@@ -49,39 +49,39 @@ describe("isEqualSocketAddress", () => {
       {
         addr1: {
           ip: {
-            type: 4,
             octets: new Uint8Array(4),
+            type: 4,
           },
           port: 1,
         },
         addr2: {
           ip: {
-            type: 4,
             octets: new Uint8Array(4),
+            type: 4,
           },
           port: 1,
         },
       },
     ];
-    for (const { addr1: ip1, addr2: ip2 } of testCases) {
+    for (const {addr1: ip1, addr2: ip2} of testCases) {
       expect(isEqualSocketAddress(ip1, ip2), `isEqualSocketAddress(${ip1}, ${ip2}) should be true`).to.be.equal(true);
     }
   });
 
   it("not equal", () => {
-    const testCases: { ip1: SocketAddress; ip2: SocketAddress }[] = [
+    const testCases: {ip1: SocketAddress; ip2: SocketAddress}[] = [
       {
         ip1: {
           ip: {
-            type: 4,
             octets: new Uint8Array(4),
+            type: 4,
           },
           port: 0,
         },
         ip2: {
           ip: {
+            octets: new Uint8Array(4),
             type: 6,
-            octets: new Uint8Array(4),
           },
           port: 0,
         },
@@ -89,15 +89,15 @@ describe("isEqualSocketAddress", () => {
       {
         ip1: {
           ip: {
-            type: 4,
             octets: Uint8Array.from([0, 0, 0, 0]),
+            type: 4,
           },
           port: 0,
         },
         ip2: {
           ip: {
-            type: 4,
             octets: Uint8Array.from([0, 0, 0, 1]),
+            type: 4,
           },
           port: 0,
         },
@@ -105,21 +105,21 @@ describe("isEqualSocketAddress", () => {
       {
         ip1: {
           ip: {
-            type: 4,
             octets: new Uint8Array(4),
+            type: 4,
           },
           port: 0,
         },
         ip2: {
           ip: {
-            type: 4,
             octets: new Uint8Array(4),
+            type: 4,
           },
           port: 1,
         },
       },
     ];
-    for (const { ip1, ip2 } of testCases) {
+    for (const {ip1, ip2} of testCases) {
       expect(isEqualSocketAddress(ip1, ip2), `isEqualSocketAddress(${ip1}, ${ip2}) should be false`).to.be.equal(false);
     }
   });
@@ -129,16 +129,16 @@ describe("get/set SocketAddress on ENR", () => {
   it("roundtrip", () => {
     const addr: SocketAddress = {
       ip: {
-        type: 4,
         octets: Uint8Array.from([127, 0, 0, 1]),
+        type: 4,
       },
       port: 53,
     };
     const enr = SignableENR.createV4(generateKeypair("secp256k1").privateKey);
-    expect(getSocketAddressOnENR(enr, { ip4: true, ip6: false })).to.equal(undefined);
+    expect(getSocketAddressOnENR(enr, {ip4: true, ip6: false})).to.equal(undefined);
 
     setSocketAddressOnENR(enr, addr);
-    expect(getSocketAddressOnENR(enr, { ip4: true, ip6: false })).to.deep.equal(addr);
+    expect(getSocketAddressOnENR(enr, {ip4: true, ip6: false})).to.deep.equal(addr);
   });
 });
 
@@ -146,8 +146,8 @@ describe("multiaddr to/from SocketAddress", () => {
   it("roundtrip", () => {
     const addr: SocketAddress = {
       ip: {
-        type: 4,
         octets: Uint8Array.from([127, 0, 0, 1]),
+        type: 4,
       },
       port: 53,
     };
@@ -157,8 +157,8 @@ describe("multiaddr to/from SocketAddress", () => {
   it("different implementations yield same results", () => {
     const numTries = 50;
     const randPort = (): number => Math.floor(Math.random() * 65535);
-    const randIp4 = (): Uint8Array => Uint8Array.from({ length: 4 }, () => Math.floor(Math.random() * 255));
-    const randIp6 = (): Uint8Array => Uint8Array.from({ length: 16 }, () => Math.floor(Math.random() * 255));
+    const randIp4 = (): Uint8Array => Uint8Array.from({length: 4}, () => Math.floor(Math.random() * 255));
+    const randIp6 = (): Uint8Array => Uint8Array.from({length: 16}, () => Math.floor(Math.random() * 255));
     const ip4ToStr = (bytes: Uint8Array): string => bytes.join(".");
     const ip6ToStr = (bytes: Uint8Array): string =>
       Array.from(bytes)
@@ -179,8 +179,8 @@ describe("multiaddr to/from SocketAddress", () => {
       if (i % 2 === 0) {
         addr = {
           ip: {
-            type: 4,
             octets: randIp4(),
+            type: 4,
           },
           port: randPort(),
         };
@@ -188,8 +188,8 @@ describe("multiaddr to/from SocketAddress", () => {
       } else {
         addr = {
           ip: {
-            type: 6,
             octets: randIp6(),
+            type: 6,
           },
           port: randPort(),
         };

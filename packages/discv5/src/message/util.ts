@@ -1,4 +1,4 @@
-import { MessageType, RequestMessage, ResponseMessage } from "./types.js";
+import {MessageType, type RequestMessage, type ResponseMessage} from "./types.js";
 
 export function requestMatchesResponse(req: RequestMessage, res: ResponseMessage): boolean {
   switch (req.type) {

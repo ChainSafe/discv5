@@ -1,27 +1,25 @@
-/* eslint-env mocha */
-import { expect } from "chai";
-import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
-import { SignableENR } from "@chainsafe/enr";
-
-import { createKeypair } from "../../../src/keypair/index.js";
-import { createWhoAreYouPacket, IPacket, PacketType } from "../../../src/packet/index.js";
-import { UDPTransportService } from "../../../src/transport/index.js";
-import { SessionService } from "../../../src/session/index.js";
-import { createFindNodeMessage } from "../../../src/message/index.js";
-import { defaultConfig } from "../../../src/config/index.js";
-import { createNodeContact } from "../../../src/session/nodeInfo.js";
-import { hexToBytes } from "ethereum-cryptography/utils.js";
+import {SignableENR} from "@chainsafe/enr";
+import {type Multiaddr, multiaddr} from "@multiformats/multiaddr";
+import {hexToBytes} from "ethereum-cryptography/utils.js";
+import {afterEach, beforeEach, describe, expect, it} from "vitest";
+import {defaultConfig} from "../../../src/config/index.js";
+import {createKeypair} from "../../../src/keypair/index.js";
+import {createFindNodeMessage} from "../../../src/message/index.js";
+import {type IPacket, PacketType, createWhoAreYouPacket} from "../../../src/packet/index.js";
+import {SessionService} from "../../../src/session/index.js";
+import {createNodeContact} from "../../../src/session/nodeInfo.js";
+import {UDPTransportService} from "../../../src/transport/index.js";
 
 describe("session service", () => {
   const kp0 = createKeypair({
-    type: "secp256k1",
     privateKey: hexToBytes("a93bedf04784c937059557c9dcb328f5f59fdb6e89295c30e918579250b7b01f"),
     publicKey: hexToBytes("022663242e1092ea19e6bb41d67aa69850541a623b94bbea840ddceaab39789894"),
+    type: "secp256k1",
   });
   const kp1 = createKeypair({
-    type: "secp256k1",
     privateKey: hexToBytes("bd04e55f2a1424a4e69e96aad41cf763d2468d4358472e9f851569bdf47fb24c"),
     publicKey: hexToBytes("03eae9945b354e9212566bc3f2740f3a62b3e1eb227dbed809f6dc2d3ea848c82e"),
+    type: "secp256k1",
   });
 
   const addr0 = multiaddr("/ip4/127.0.0.1/udp/49020");
@@ -40,8 +38,8 @@ describe("session service", () => {
   let service1: SessionService;
 
   beforeEach(async () => {
-    transport0 = new UDPTransportService({ bindAddrs: { ip4: addr0 }, nodeId: enr0.nodeId });
-    transport1 = new UDPTransportService({ bindAddrs: { ip4: addr1 }, nodeId: enr1.nodeId });
+    transport0 = new UDPTransportService({bindAddrs: {ip4: addr0}, nodeId: enr0.nodeId});
+    transport1 = new UDPTransportService({bindAddrs: {ip4: addr1}, nodeId: enr1.nodeId});
 
     service0 = new SessionService(defaultConfig, enr0, kp0, transport0);
     service1 = new SessionService(defaultConfig, enr1, kp1, transport1);
@@ -85,7 +83,7 @@ describe("session service", () => {
         resolve();
       })
     );
-    service0.sendRequest(createNodeContact(enr1.toENR(), { ip4: true, ip6: true }), createFindNodeMessage([0]));
+    service0.sendRequest(createNodeContact(enr1.toENR(), {ip4: true, ip6: true}), createFindNodeMessage([0]));
     await Promise.all([receivedRandom, receivedWhoAreYou, establishedSession, receivedMsg]);
   });
   it("receiver should drop WhoAreYou packets from destinations without existing pending requests", async () => {

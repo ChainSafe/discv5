@@ -1,6 +1,6 @@
-import { EventEmitter } from "events";
-import StrictEventEmitter from "strict-event-emitter-types";
-import { ENR, NodeId } from "@chainsafe/enr";
+import type {EventEmitter} from "node:events";
+import type {ENR, NodeId} from "@chainsafe/enr";
+import type {StrictEventEmitter} from "strict-event-emitter-types";
 
 export interface IBucketEvents {
   /**
@@ -23,53 +23,53 @@ export type BucketEventEmitter = StrictEventEmitter<EventEmitter, IBucketEvents>
 /** The result of inserting an entry into a bucket. */
 export enum InsertResult {
   /** The entry has been successfully inserted */
-  Inserted,
+  Inserted = 0,
   /**
    * The entry is pending insertion because the relevant bucket is currently full.
    *
    * The entry is inserted after a timeout elapsed, if the status of the least-recently connected
    * (and currently disconnected) node in the bucket is not updated before the timeout expires.
    */
-  Pending,
+  Pending = 1,
   /** The node existed and the status was updated */
-  StatusUpdated,
+  StatusUpdated = 2,
   /** The node existed and the status was updated and the node was promoted to a connected state */
-  StatusUpdatedAndPromoted,
+  StatusUpdatedAndPromoted = 3,
   /** The node existed and the value was updated. */
-  ValueUpdated,
+  ValueUpdated = 4,
   /** Both the status and value were updated. */
-  Updated,
+  Updated = 5,
   /** Both the status and value were promoted and the node was promoted to a connected state */
-  UpdatedAndPromoted,
+  UpdatedAndPromoted = 6,
   /** The pending slot was updated. */
-  UpdatedPending,
+  UpdatedPending = 7,
   /** The entry was not inserted because the relevant bucket is full. */
-  FailedBucketFull,
+  FailedBucketFull = 8,
   /** Cannot update self */
-  FailedInvalidSelfUpdate,
+  FailedInvalidSelfUpdate = 9,
   /** The entry already exists. */
-  NodeExists,
+  NodeExists = 10,
 }
 
 /** The result of performing an update on a bucket. */
 export enum UpdateResult {
   /** The node was updated successfully */
-  Updated,
+  Updated = 0,
   /** The update promoted the node to a connected state from a disconnected state. */
-  UpdatedAndPromoted,
+  UpdatedAndPromoted = 1,
   /** The pending entry was updated. */
-  UpdatedPending,
+  UpdatedPending = 2,
   /** The update removed the node. The node didn't exist. */
-  FailedKeyNonExistent,
+  FailedKeyNonExistent = 3,
   /** The update removed the node. The bucket was full. */
-  FailedBucketFull,
+  FailedBucketFull = 4,
   /** There were no changes made to the value of the node. */
-  NotModified,
+  NotModified = 5,
 }
 
 export enum EntryStatus {
-  Connected,
-  Disconnected,
+  Connected = 0,
+  Disconnected = 1,
 }
 
 export interface IEntry<T> {
@@ -124,7 +124,7 @@ export enum LookupState {
    * The query is making progress by iterating towards `numResults` closest peers
    * to the target with a maximum of `parallelism` peers at a time
    */
-  Iterating,
+  Iterating = 0,
   /**
    * A query is stalled when it did not make progress after `parallelism` consecutive
    * successful results.
@@ -134,7 +134,7 @@ export enum LookupState {
    * If the query can make progress again upon receiving the remaining results,
    * it switches back to `Iterating`. Otherwise it will be finished.
    */
-  Stalled,
+  Stalled = 1,
   /**
    * The query is finished.
    *
@@ -142,7 +142,7 @@ export enum LookupState {
    * closes peers (not counting those that failed or are unresponsive)
    * or because the query ran out of peers that have not yet delivered results (or failed).
    */
-  Finished,
+  Finished = 2,
 }
 
 export interface ILookupPeer {
@@ -166,17 +166,17 @@ export enum LookupPeerState {
    *
    * This is the starting state for every peer known or discovered by a lookup
    */
-  NotContacted,
+  NotContacted = 0,
   /**
    * The lookup is waiting for a result from the peer
    */
-  Waiting,
+  Waiting = 1,
   /**
    * Obtaining a result from the peer has failed
    */
-  Failed,
+  Failed = 2,
   /**
    * A successful result from the peer has been delivered
    */
-  Succeeded,
+  Succeeded = 3,
 }

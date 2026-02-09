@@ -1,10 +1,12 @@
-import { sha256 } from "@noble/hashes/sha256";
-import { hmac } from "@noble/hashes/hmac";
-import { expand, extract } from "@noble/hashes/hkdf";
-import { sign, verify, ProjectivePoint as Point, getPublicKey, getSharedSecret, utils, etc } from "@noble/secp256k1";
+import {expand, extract} from "@noble/hashes/hkdf.js";
+import {hmac} from "@noble/hashes/hmac.js";
+import {sha256} from "@noble/hashes/sha2.js";
+import {Point, etc, getPublicKey, getSharedSecret, hashes, sign, utils, verify} from "@noble/secp256k1";
 
-etc.hmacSha256Sync = (k, ...m) => hmac(sha256, k, etc.concatBytes(...m));
-export type discv5Crypto = {
+hashes.hmacSha256 = (k, ...m) => hmac(sha256, k, etc.concatBytes(...m));
+hashes.sha256 = sha256;
+
+export type Discv5Crypto = {
   sha256: (data: Uint8Array) => Uint8Array;
   secp256k1: {
     publicKeyVerify: (publicKey: Uint8Array) => boolean;
@@ -27,38 +29,38 @@ export type discv5Crypto = {
   };
 };
 
-export const defaultCrypto: discv5Crypto = {
-  sha256: sha256,
+export const defaultCrypto: Discv5Crypto = {
+  hkdf: {
+    expand: (hash, key, info, outputLen) => expand(hash as never, key, info, outputLen),
+    extract: (hash, secret, info) => extract(hash as never, secret, info),
+  },
   secp256k1: {
+    deriveSecret: (privKey, pubKey) => getSharedSecret(privKey, pubKey, true),
+    generatePrivateKey: () => utils.randomSecretKey(),
+    privateKeyVerify: (pk) => {
+      return utils.isValidSecretKey(pk);
+    },
+    publicKeyConvert: (pk, compress) => Point.fromBytes(pk).toBytes(compress),
+    publicKeyCreate: (pk) => getPublicKey(pk),
     publicKeyVerify: (pk) => {
       try {
-        Point.fromHex(pk).assertValidity();
+        Point.fromBytes(pk).assertValidity();
         return true;
       } catch {
         return false;
       }
     },
-    publicKeyCreate: (pk) => getPublicKey(pk),
-    publicKeyConvert: (pk, compress) => Point.fromHex(pk).toRawBytes(compress),
-    sign: (msg, pk) => sign(msg, pk).toCompactRawBytes(),
-    verify: (pk, msg, sig) => verify(sig, msg, pk),
-    deriveSecret: (privKey, pubKey) => getSharedSecret(privKey, pubKey, true),
-    generatePrivateKey: () => utils.randomPrivateKey(),
-    privateKeyVerify: (pk) => {
-      return utils.isValidPrivateKey(pk);
-    },
+    sign: (msg, pk) => sign(msg, pk, {prehash: false}),
+    verify: (pk, msg, sig) => verify(sig, msg, pk, {prehash: false}),
   },
-  hkdf: {
-    extract: (hash, secret, info) => extract(hash as never, secret, info),
-    expand: (hash, key, info, outputLen) => expand(hash as never, key, info, outputLen),
-  },
+  sha256: sha256,
 };
 
-let crypto: discv5Crypto = defaultCrypto;
-export const getDiscv5Crypto = (): discv5Crypto => {
+let crypto: Discv5Crypto = defaultCrypto;
+export const getDiscv5Crypto = (): Discv5Crypto => {
   return crypto;
 };
 
-export const setDiscv5Crypto = (c: discv5Crypto): void => {
+export const setDiscv5Crypto = (c: Discv5Crypto): void => {
   crypto = c;
 };

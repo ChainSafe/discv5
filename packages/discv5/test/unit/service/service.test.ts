@@ -1,19 +1,16 @@
-/* eslint-env mocha */
-import { expect } from "chai";
-import { privateKeyFromRaw } from "@libp2p/crypto/keys";
-import { multiaddr } from "@multiformats/multiaddr";
-import { SignableENR } from "@chainsafe/enr";
+import {SignableENR} from "@chainsafe/enr";
+import {generateKeyPair} from "@libp2p/crypto/keys";
+import {multiaddr} from "@multiformats/multiaddr";
+import {afterEach, beforeEach, describe, expect, it} from "vitest";
 
-import { Discv5 } from "../../../src/service/service.js";
-import { generateKeypair } from "../../../src/keypair/index.js";
+import {Discv5} from "../../../src/service/service.js";
 
 describe("Discv5", async () => {
-  const kp0 = generateKeypair("secp256k1");
-  const privateKey0 = privateKeyFromRaw(kp0.privateKey);
-  const enr0 = SignableENR.createV4(kp0.privateKey);
+  const kp0 = await generateKeyPair("secp256k1");
+  const enr0 = SignableENR.createV4(kp0.raw);
   const mu0 = multiaddr("/ip4/127.0.0.1/udp/40000");
 
-  const service0 = Discv5.create({ enr: enr0, privateKey: privateKey0, bindAddrs: { ip4: mu0 } });
+  const service0 = Discv5.create({bindAddrs: {ip4: mu0}, enr: enr0, privateKey: kp0});
 
   beforeEach(async () => {
     await service0.start();
@@ -32,33 +29,31 @@ describe("Discv5", async () => {
   });
 
   it("should add new enrs", async () => {
-    const kp1 = generateKeypair("secp256k1");
-    const enr1 = SignableENR.createV4(kp1.privateKey);
+    const kp1 = await generateKeyPair("secp256k1");
+    const enr1 = SignableENR.createV4(kp1.raw);
     enr1.encode();
     service0.addEnr(enr1.toENR());
     expect(service0.kadValues().length).eq(1);
   });
 
-  it("should complete a lookup to another node", async function () {
-    this.timeout(10000);
-    const kp1 = generateKeypair("secp256k1");
-    const privateKey1 = privateKeyFromRaw(kp1.privateKey);
-    const enr1 = SignableENR.createV4(kp1.privateKey);
+  it("should complete a lookup to another node", async () => {
+    const kp1 = await generateKeyPair("secp256k1");
+    const enr1 = SignableENR.createV4(kp1.raw);
     const mu1 = multiaddr("/ip4/127.0.0.1/udp/10360");
-    const addr1 = mu1.tuples();
+    const components1 = mu1.getComponents();
 
-    if (!addr1[0][1] || !addr1[1][1]) {
+    if (!components1[0].value || !components1[1].value) {
       throw new Error("invalid multiaddr");
     }
 
-    enr1.set("ip", addr1[0][1]);
-    enr1.set("udp", addr1[1][1]);
+    enr1.ip = components1[0].value;
+    enr1.udp = Number(components1[1].value);
     enr1.encode();
-    const service1 = Discv5.create({ enr: enr1, privateKey: privateKey1, bindAddrs: { ip4: mu1 } });
+    const service1 = Discv5.create({bindAddrs: {ip4: mu1}, enr: enr1, privateKey: kp1});
     await service1.start();
     for (let i = 0; i < 100; i++) {
-      const kp = generateKeypair("secp256k1");
-      const enr = SignableENR.createV4(kp.privateKey);
+      const kp = await generateKeyPair("secp256k1");
+      const enr = SignableENR.createV4(kp.raw);
       enr.encode();
       service1.addEnr(enr.toENR());
     }
@@ -66,4 +61,4 @@ describe("Discv5", async () => {
     await service0.findNode(Buffer.alloc(32).toString("hex"));
     await service1.stop();
   });
-});
+}, 10_000);

@@ -1,5 +1,6 @@
-import { SequenceNumber, ENR } from "@chainsafe/enr";
-import { SocketAddress } from "../util/ip.js";
+/** biome-ignore-all lint/style/useNamingConvention: Preexisting code */
+import type {ENR, SequenceNumber} from "@chainsafe/enr";
+import type {SocketAddress} from "../util/ip.js";
 
 export type RequestId = Uint8Array;
 

@@ -1,48 +1,57 @@
-import { EventEmitter } from "events";
-import StrictEventEmitter from "strict-event-emitter-types";
-import debug from "debug";
-import { Multiaddr } from "@multiformats/multiaddr";
-import { ENR, SignableENR } from "@chainsafe/enr";
-import { bytesToHex, equalsBytes } from "ethereum-cryptography/utils.js";
-import { IPMode, ITransportService } from "../transport/index.js";
+import {EventEmitter} from "node:events";
+import type {ENR, SignableENR} from "@chainsafe/enr";
+import type {Multiaddr} from "@multiformats/multiaddr";
+import {bytesToHex, equalsBytes} from "ethereum-cryptography/utils.js";
+import {LRUCache} from "lru-cache";
+import type {StrictEventEmitter} from "strict-event-emitter-types";
+import debug from "weald";
+import type {IKeypair} from "../keypair/index.js";
 import {
+  type Message,
+  MessageType,
+  type RequestMessage,
+  type ResponseMessage,
+  createFindNodeMessage,
+  decode,
+  encode,
+  isRequestType,
+} from "../message/index.js";
+import type {IDiscv5Metrics} from "../metrics.js";
+import {
+  type IHandshakeAuthdata,
+  type IMessageAuthdata,
+  type IPacket,
+  type IWhoAreYouAuthdata,
   PacketType,
-  IPacket,
+  createHeader,
+  createRandomPacket,
+  createWhoAreYouPacket,
   decodeHandshakeAuthdata,
   decodeMessageAuthdata,
   decodeWhoAreYouAuthdata,
   encodeChallengeData,
-  createHeader,
   encodeMessageAuthdata,
-  createRandomPacket,
-  createWhoAreYouPacket,
 } from "../packet/index.js";
-import { ERR_INVALID_SIG, Session } from "./session.js";
-import { IKeypair } from "../keypair/index.js";
+import type {IPMode, ITransportService} from "../transport/index.js";
+import {TimeoutMap, multiaddrToObject} from "../util/index.js";
+import {getSocketAddressMultiaddrOnENR} from "../util/ip.js";
 import {
-  Message,
-  RequestMessage,
-  encode,
-  decode,
-  ResponseMessage,
-  MessageType,
-  createFindNodeMessage,
-  isRequestType,
-} from "../message/index.js";
+  type INodeAddress,
+  INodeContactType,
+  type NodeContact,
+  getNodeAddress,
+  nodeAddressToString,
+} from "./nodeInfo.js";
+import {ERR_INVALID_SIG, Session} from "./session.js";
 import {
-  IRequestCall,
-  ISessionEvents,
-  ISessionConfig,
-  IChallenge,
-  RequestErrorType,
   ConnectionDirection,
-  NodeAddressString,
+  type IChallenge,
+  type IRequestCall,
+  type ISessionConfig,
+  type ISessionEvents,
+  type NodeAddressString,
+  RequestErrorType,
 } from "./types.js";
-import { getNodeAddress, INodeAddress, INodeContactType, nodeAddressToString, NodeContact } from "./nodeInfo.js";
-import { LRUCache } from "lru-cache";
-import { TimeoutMap } from "../util/index.js";
-import { IDiscv5Metrics } from "../metrics.js";
-import { getSocketAddressMultiaddrOnENR } from "../util/ip.js";
 
 const log = debug("discv5:sessionService");
 
@@ -70,19 +79,19 @@ export interface SessionServiceOpts {
  * to match the source, the `Session` is promoted to an established state. RPC requests are not sent
  * to untrusted Sessions, only responses.
  */
-export class SessionService extends (EventEmitter as { new (): StrictEventEmitter<EventEmitter, ISessionEvents> }) {
+export class SessionService extends (EventEmitter as {new (): StrictEventEmitter<EventEmitter, ISessionEvents>}) {
   /**
    * The local ENR
    */
-  public enr: SignableENR;
+  enr: SignableENR;
   /**
    * The keypair to sign the ENR and set up encrypted communication with peers
    */
-  public keypair: IKeypair;
+  keypair: IKeypair;
   /**
    * The underlying packet transport
    */
-  public transport: ITransportService;
+  transport: ITransportService;
 
   /**
    * Configuration
@@ -149,20 +158,20 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     this.keypair = keypair;
     this.transport = transport;
 
-    this.activeRequests = new TimeoutMap(config.requestTimeout, (k, v) =>
+    this.activeRequests = new TimeoutMap(config.requestTimeout, (_k, v) =>
       this.handleRequestTimeout(getNodeAddress(v.contact), v)
     );
     this.activeRequestsNonceMapping = new Map();
     this.pendingRequests = new Map();
-    this.activeChallenges = new LRUCache({ ttl: config.requestTimeout * 2, max: config.sessionCacheCapacity });
-    this.sessions = new LRUCache({ ttl: config.sessionTimeout, max: config.sessionCacheCapacity });
+    this.activeChallenges = new LRUCache({max: config.sessionCacheCapacity, ttl: config.requestTimeout * 2});
+    this.sessions = new LRUCache({max: config.sessionCacheCapacity, ttl: config.sessionTimeout});
     this.ipMode = this.transport.ipMode;
   }
 
   /**
    * Starts the session service, starting the underlying UDP transport service.
    */
-  public async start(): Promise<void> {
+  async start(): Promise<void> {
     log(`Starting session service with node id ${this.enr.nodeId}`);
     this.transport.on("packet", this.processInboundPacket);
     await this.transport.start();
@@ -171,7 +180,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   /**
    * Stops the session service, stopping the underlying UDP transport service.
    */
-  public async stop(): Promise<void> {
+  async stop(): Promise<void> {
     log("Stopping session service");
     this.transport.removeListener("packet", this.processInboundPacket);
     await this.transport.stop();
@@ -182,14 +191,14 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     this.sessions.clear();
   }
 
-  public sessionsSize(): number {
+  sessionsSize(): number {
     return this.sessions.size;
   }
 
   /**
    * Sends an RequestMessage to a node.
    */
-  public sendRequest(contact: NodeContact, request: RequestMessage): void {
+  sendRequest(contact: NodeContact, request: RequestMessage): void {
     const nodeAddr = getNodeAddress(contact);
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
@@ -211,7 +220,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     }
 
     const session = this.sessions.get(nodeAddrStr);
-    let packet, initiatingSession;
+    let packet: IPacket, initiatingSession: boolean;
     if (session) {
       // Encrypt the message and send
       packet = session.encryptMessage(this.enr.nodeId, nodeAddr.nodeId, encode(request));
@@ -227,10 +236,10 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
 
     const call: IRequestCall = {
       contact,
+      handshakeSent: false,
+      initiatingSession,
       packet,
       request,
-      initiatingSession,
-      handshakeSent: false,
       retries: 1,
     };
 
@@ -246,7 +255,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   /**
    * Sends an RPC response
    */
-  public sendResponse(nodeAddr: INodeAddress, response: ResponseMessage): void {
+  sendResponse(nodeAddr: INodeAddress, response: ResponseMessage): void {
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
     // Check for an established session
@@ -257,7 +266,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     }
 
     // Encrypt the message and send
-    let packet;
+    let packet: IPacket;
     try {
       packet = session.encryptMessage(this.enr.nodeId, nodeAddr.nodeId, encode(response));
     } catch (e) {
@@ -272,7 +281,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * This is called in response to a "whoAreYouRequest" event.
    * The application finds the highest known ENR for a node then we respond to the node with a WHOAREYOU packet.
    */
-  public sendChallenge(nodeAddr: INodeAddress, nonce: Uint8Array, remoteEnr: ENR | null): void {
+  sendChallenge(nodeAddr: INodeAddress, nonce: Uint8Array, remoteEnr: ENR | null): void {
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
     // Ignore this request if the session is already established
@@ -294,23 +303,26 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     this.addExpectedResponse(nodeAddr.socketAddr);
     this.send(nodeAddr, packet);
 
-    this.activeChallenges.set(nodeAddrStr, { data: challengeData, remoteEnr: remoteEnr ?? undefined });
+    this.activeChallenges.set(nodeAddrStr, {data: challengeData, remoteEnr: remoteEnr ?? undefined});
   }
 
-  public processInboundPacket = (src: Multiaddr, packet: IPacket): void => {
+  processInboundPacket = (src: Multiaddr, packet: IPacket): void => {
     switch (packet.header.flag) {
       case PacketType.WhoAreYou:
-        return this.handleChallenge(src, packet);
+        this.handleChallenge(src, packet);
+        break;
       case PacketType.Handshake:
-        return this.handleHandshake(src, packet);
+        this.handleHandshake(src, packet);
+        break;
       case PacketType.Message:
-        return this.handleMessage(src, packet);
+        this.handleMessage(src, packet);
+        break;
     }
   };
 
   private handleChallenge(src: Multiaddr, packet: IPacket): void {
     // First decode the authdata
-    let authdata;
+    let authdata: IWhoAreYouAuthdata;
     try {
       authdata = decodeWhoAreYouAuthdata(packet.header.authdata);
     } catch (e) {
@@ -336,7 +348,6 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     // Verify that the src_addresses match
     if (!nodeAddr.socketAddr.equals(src)) {
       log(
-        // eslint-disable-next-line max-len
         "Received a WHOAREYOU packet for a message with a non-expected source. Source %s, expected_source: %s message_nonce %s",
         src.toString(),
         nodeAddr.socketAddr.toString(),
@@ -353,7 +364,6 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     const requestCall = this.activeRequests.get(nodeAddrStr);
     if (!requestCall) {
       log(
-        // eslint-disable-next-line max-len
         "Active request mappings are not in sync. Message_id %s, node_address %o doesn't exist in active request mapping",
         nonce,
         nodeAddr
@@ -417,12 +427,12 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     // All sent requests must have an associated node_id. Therefore the following
     // must not panic.
     switch (requestCall.contact.type) {
-      case INodeContactType.ENR: {
+      case INodeContactType.Enr: {
         // NOTE: Here we decide if the session is outgoing or ingoing. The condition for an
         // outgoing session is that we originally sent a RANDOM packet (signifying we did
         // not have a session for a request) and the packet is not a PING (we are not
         // trying to update an old session that may have expired).
-        let connectionDirection;
+        let connectionDirection: ConnectionDirection;
         if (requestCall.initiatingSession) {
           if (requestCall.request.type === MessageType.PING) {
             connectionDirection = ConnectionDirection.Incoming;
@@ -481,8 +491,8 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
    * Returns true if they match
    */
   private verifyEnr(enr: ENR, nodeAddr: INodeAddress): boolean {
-    const enrMultiaddrIP4 = getSocketAddressMultiaddrOnENR(enr, { ...this.ipMode, ip6: false } as IPMode);
-    const enrMultiaddrIP6 = getSocketAddressMultiaddrOnENR(enr, { ...this.ipMode, ip4: false } as IPMode);
+    const enrMultiaddrIP4 = getSocketAddressMultiaddrOnENR(enr, {...this.ipMode, ip6: false} as IPMode);
+    const enrMultiaddrIP6 = getSocketAddressMultiaddrOnENR(enr, {...this.ipMode, ip4: false} as IPMode);
     return (
       enr.nodeId === nodeAddr.nodeId &&
       (enrMultiaddrIP4?.equals(nodeAddr.socketAddr) ?? enrMultiaddrIP6?.equals(nodeAddr.socketAddr) ?? true)
@@ -494,7 +504,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     // Needs to match an outgoing WHOAREYOU packet (so we have the required nonce to be signed).
     // If it doesn't we drop the packet.
     // This will lead to future outgoing WHOAREYOU packets if they proceed to send further encrypted packets
-    let authdata;
+    let authdata: IHandshakeAuthdata;
     try {
       authdata = decodeHandshakeAuthdata(packet.header.authdata);
     } catch (e) {
@@ -502,8 +512,8 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       return;
     }
     const nodeAddr = {
-      socketAddr: src,
       nodeId: authdata.srcId,
+      socketAddr: src,
     };
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
@@ -547,12 +557,8 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
 
       // decrypt the message
       this.handleMessage(src, {
+        header: createHeader(PacketType.Message, encodeMessageAuthdata({srcId: nodeAddr.nodeId}), packet.header.nonce),
         maskingIv: packet.maskingIv,
-        header: createHeader(
-          PacketType.Message,
-          encodeMessageAuthdata({ srcId: nodeAddr.nodeId }),
-          packet.header.nonce
-        ),
         message: packet.message,
         messageAd: encodeChallengeData(packet.maskingIv, packet.header),
       });
@@ -568,7 +574,7 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   }
 
   private handleMessage(src: Multiaddr, packet: IPacket): void {
-    let authdata;
+    let authdata: IMessageAuthdata;
     try {
       authdata = decodeMessageAuthdata(packet.header.authdata);
     } catch (e) {
@@ -576,8 +582,8 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       return;
     }
     const nodeAddr = {
-      socketAddr: src,
       nodeId: authdata.srcId,
+      socketAddr: src,
     };
     const nodeAddrStr = nodeAddressToString(nodeAddr);
 
@@ -594,14 +600,14 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     }
 
     // attempt to decrypt and process the message
-    let encodedMessage;
+    let encodedMessage: Uint8Array;
     try {
       encodedMessage = session.decryptMessage(
         packet.header.nonce,
         packet.message,
         packet.messageAd || encodeChallengeData(packet.maskingIv, packet.header)
       );
-    } catch (e) {
+    } catch {
       // We have a session but the message could not be decrypted.
       // It is likely the node sending this message has dropped their session.
       // In this case, this message is a random packet and we should reply with a WHOAREYOU.
@@ -637,37 +643,35 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
       // Sessions could be awaiting an ENR response.
       // Check if this response matches these
       const requestId = session.awaitingEnr;
-      if (requestId !== undefined) {
-        if (equalsBytes(requestId, message.id)) {
-          delete session.awaitingEnr;
-          if (message.type === MessageType.NODES) {
-            // Received the requested ENR
-            const enr = message.enrs.pop();
+      if (requestId !== undefined && equalsBytes(requestId, message.id)) {
+        session.awaitingEnr = undefined;
+        if (message.type === MessageType.NODES) {
+          // Received the requested ENR
+          const enr = message.enrs.pop();
 
-            if (enr) {
-              // Verify the ENR endpoint matches observed node address
-              const verified = this.verifyEnr(enr, nodeAddr);
+          if (enr) {
+            // Verify the ENR endpoint matches observed node address
+            const verified = this.verifyEnr(enr, nodeAddr);
 
-              // Drop session if invalid ENR and session service not configured to allow unverified sessions
-              if (!verified && !this.config.allowUnverifiedSessions) {
-                log("ENR contains invalid socket address. Dropping session with %o", nodeAddr);
-                this.failSession(nodeAddr, RequestErrorType.InvalidRemoteENR, true);
-                return;
-              }
-              // Notify the application
-              // This can occur when we try to dial a node without an
-              // ENR. In this case we have attempted to establish the
-              // connection, so this is an outgoing connection.
-              this.emit("established", nodeAddr, enr, ConnectionDirection.Outgoing, verified);
-
+            // Drop session if invalid ENR and session service not configured to allow unverified sessions
+            if (!verified && !this.config.allowUnverifiedSessions) {
+              log("ENR contains invalid socket address. Dropping session with %o", nodeAddr);
+              this.failSession(nodeAddr, RequestErrorType.InvalidRemoteENR, true);
               return;
             }
-          }
+            // Notify the application
+            // This can occur when we try to dial a node without an
+            // ENR. In this case we have attempted to establish the
+            // connection, so this is an outgoing connection.
+            this.emit("established", nodeAddr, enr, ConnectionDirection.Outgoing, verified);
 
-          log("Session failed invalid ENR response");
-          this.failSession(nodeAddr, RequestErrorType.InvalidRemoteENR, true);
-          return;
+            return;
+          }
         }
+
+        log("Session failed invalid ENR response");
+        this.failSession(nodeAddr, RequestErrorType.InvalidRemoteENR, true);
+        return;
       }
 
       // Handle standard responses
@@ -700,27 +704,24 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
     // The response matches a request
 
     // Check to see if this is a Nodes response, in which case we may require to wait for extra responses
-    if (response.type === MessageType.NODES) {
-      if (response.total > 1) {
-        // This is a multi-response Nodes response
-        if (requestCall.remainingResponses === undefined) {
-          // This is the first nodes response
-          requestCall.remainingResponses = response.total - 1;
-          // add back the request and send the response
-          this.activeRequests.set(nodeAddrStr, requestCall);
-          this.emit("response", nodeAddr, response);
-          return;
-        } else {
-          // This is not the first nodes response
-          requestCall.remainingResponses--;
-          if (requestCall.remainingResponses !== 0) {
-            // more responses remaining, add back the request and send the response
-            // add back the request and send the response
-            this.activeRequests.set(nodeAddrStr, requestCall);
-            this.emit("response", nodeAddr, response);
-            return;
-          }
-        }
+    if (response.type === MessageType.NODES && response.total > 1) {
+      // This is a multi-response Nodes response
+      if (requestCall.remainingResponses === undefined) {
+        // This is the first nodes response
+        requestCall.remainingResponses = response.total - 1;
+        // add back the request and send the response
+        this.activeRequests.set(nodeAddrStr, requestCall);
+        this.emit("response", nodeAddr, response);
+        return;
+      }
+      // This is not the first nodes response
+      requestCall.remainingResponses--;
+      if (requestCall.remainingResponses !== 0) {
+        // more responses remaining, add back the request and send the response
+        // add back the request and send the response
+        this.activeRequests.set(nodeAddrStr, requestCall);
+        this.emit("response", nodeAddr, response);
+        return;
       }
     }
 
@@ -759,11 +760,11 @@ export class SessionService extends (EventEmitter as { new (): StrictEventEmitte
   }
 
   private removeExpectedResponse(socketAddr: Multiaddr): void {
-    this.transport.addExpectedResponse?.(socketAddr.toOptions().host);
+    this.transport.removeExpectedResponse?.(multiaddrToObject(socketAddr).host);
   }
 
   private addExpectedResponse(socketAddr: Multiaddr): void {
-    this.transport.removeExpectedResponse?.(socketAddr.toOptions().host);
+    this.transport.addExpectedResponse?.(multiaddrToObject(socketAddr).host);
   }
 
   private handleRequestTimeout(nodeAddr: INodeAddress, requestCall: IRequestCall): void {

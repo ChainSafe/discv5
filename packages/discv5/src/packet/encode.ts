@@ -1,20 +1,23 @@
 import Crypto from "node:crypto";
-
-import { bytesToNumber, CodeError, numberToBytes } from "../util/index.js";
+import {bigintToBytes, bytesToBigint} from "@chainsafe/enr";
+import {bytesToHex, bytesToUtf8, concatBytes, hexToBytes, utf8ToBytes} from "ethereum-cryptography/utils.js";
+import {CodeError, bytesToNumber, numberToBytes} from "../util/index.js";
 import {
   AUTHDATA_SIZE_SIZE,
   EPH_KEY_SIZE_SIZE,
+  ERR_INVALID_AUTHDATA_SIZE,
   ERR_INVALID_FLAG,
   ERR_INVALID_PROTOCOL_ID,
   ERR_INVALID_VERSION,
-  ERR_INVALID_AUTHDATA_SIZE,
   ERR_TOO_LARGE,
   ERR_TOO_SMALL,
   FLAG_SIZE,
+  ID_NONCE_SIZE,
   MASKING_IV_SIZE,
   MASKING_KEY_SIZE,
   MAX_PACKET_SIZE,
   MESSAGE_AUTHDATA_SIZE,
+  MIN_HANDSHAKE_AUTHDATA_SIZE,
   MIN_PACKET_SIZE,
   NONCE_SIZE,
   PROTOCOL_SIZE,
@@ -22,12 +25,15 @@ import {
   STATIC_HEADER_SIZE,
   VERSION_SIZE,
   WHOAREYOU_AUTHDATA_SIZE,
-  ID_NONCE_SIZE,
-  MIN_HANDSHAKE_AUTHDATA_SIZE,
 } from "./constants.js";
-import { IHandshakeAuthdata, IHeader, IMessageAuthdata, IPacket, IWhoAreYouAuthdata, PacketType } from "./types.js";
-import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes, bytesToUtf8 } from "ethereum-cryptography/utils.js";
-import { bigintToBytes, bytesToBigint } from "@chainsafe/enr";
+import {
+  type IHandshakeAuthdata,
+  type IHeader,
+  type IMessageAuthdata,
+  type IPacket,
+  type IWhoAreYouAuthdata,
+  PacketType,
+} from "./types.js";
 
 export function encodePacket(destId: string, packet: IPacket): Uint8Array {
   return concatBytes(packet.maskingIv, encodeHeader(destId, packet.maskingIv, packet.header), packet.message);
@@ -62,8 +68,8 @@ export function decodePacket(srcId: string, data: Uint8Array): IPacket {
 
   const message = data.slice(MASKING_IV_SIZE + headerBuf.length);
   return {
-    maskingIv,
     header,
+    maskingIv,
     message,
     messageAd: concatBytes(maskingIv, headerBuf),
   };
@@ -111,12 +117,12 @@ export function decodeHeader(srcId: string, maskingIv: Uint8Array, data: Uint8Ar
 
   return [
     {
-      protocolId,
-      version,
+      authdata,
+      authdataSize,
       flag,
       nonce,
-      authdataSize,
-      authdata,
+      protocolId,
+      version,
     },
     Buffer.concat([staticHeaderBuf, authdata]),
   ];
@@ -151,8 +157,8 @@ export function decodeWhoAreYouAuthdata(data: Uint8Array): IWhoAreYouAuthdata {
     throw new CodeError(`Invalid authdata length: ${data.length}`, ERR_INVALID_AUTHDATA_SIZE);
   }
   return {
-    idNonce: data.slice(0, ID_NONCE_SIZE),
     enrSeq: bytesToBigint(data.slice(ID_NONCE_SIZE)),
+    idNonce: data.slice(0, ID_NONCE_SIZE),
   };
 }
 
@@ -176,12 +182,12 @@ export function decodeHandshakeAuthdata(data: Uint8Array): IHandshakeAuthdata {
   const ephPubkey = data.slice(34 + sigSize, 34 + sigSize + ephKeySize);
   const record = data.slice(34 + sigSize + ephKeySize);
   return {
-    srcId,
-    sigSize,
     ephKeySize,
-    idSignature,
     ephPubkey,
+    idSignature,
     record,
+    sigSize,
+    srcId,
   };
 }
 

@@ -48,6 +48,7 @@ export class RateLimiterGRCA<Key> {
 
   allows(key: Key, tokens: number, msSinceStart?: number): boolean {
     if (msSinceStart === undefined) {
+      // biome-ignore lint/style/noParameterAssign: Preexisting code
       msSinceStart = Date.now() - this.startTimeMs;
     }
 

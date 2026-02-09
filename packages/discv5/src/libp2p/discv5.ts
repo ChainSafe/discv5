@@ -1,18 +1,17 @@
+import type {ENR} from "@chainsafe/enr";
 import {
-  PeerDiscovery,
-  PeerDiscoveryEvents,
-  peerDiscoverySymbol,
-  PeerInfo,
-  PrivateKey,
+  type PeerDiscovery,
+  type PeerDiscoveryEvents,
+  type PeerInfo,
+  type PrivateKey,
   TypedEventEmitter,
+  peerDiscoverySymbol,
 } from "@libp2p/interface";
-import { Multiaddr, multiaddr } from "@multiformats/multiaddr";
-import { ENR } from "@chainsafe/enr";
-
-import { Discv5, ENRInput, SignableENRInput } from "../service/index.js";
-import { IDiscv5Config } from "../config/index.js";
-import { MetricsRegister } from "../metrics.js";
-import { BindAddrs } from "../transport/types.js";
+import {type Multiaddr, multiaddr} from "@multiformats/multiaddr";
+import type {IDiscv5Config} from "../config/index.js";
+import type {MetricsRegister} from "../metrics.js";
+import {Discv5, type ENRInput, type SignableENRInput} from "../service/index.js";
+import type {BindAddrs} from "../transport/types.js";
 
 // Default to 0ms between automatic searches
 // 0ms is 'backwards compatible' with the prior behavior (always be searching)
@@ -67,27 +66,29 @@ export class Discv5Discovery extends TypedEventEmitter<PeerDiscoveryEvents> impl
   [Symbol.toStringTag] = "discv5";
   [peerDiscoverySymbol] = this;
 
-  public discv5: Discv5;
-  public searchInterval: number;
+  discv5: Discv5;
+  searchInterval: number;
   private started: NodeJS.Timer | boolean;
   private controller: AbortController;
 
   constructor(options: IDiscv5DiscoveryOptions) {
     super();
     this.discv5 = Discv5.create({
-      enr: options.enr,
-      privateKey: options.privateKey,
       bindAddrs: {
         ip4: options.bindAddrs.ip4 ? multiaddr(options.bindAddrs.ip4) : undefined,
         ip6: options.bindAddrs.ip6 ? multiaddr(options.bindAddrs.ip6) : undefined,
       } as BindAddrs,
       config: options,
+      enr: options.enr,
       metricsRegistry: options.metricsRegistry,
+      privateKey: options.privateKey,
     });
     this.searchInterval = options.searchInterval ?? DEFAULT_SEARCH_INTERVAL_MS;
     this.started = false;
     this.controller = new AbortController();
-    options.bootEnrs.forEach((bootEnr) => this.discv5.addEnr(bootEnr));
+    for (const bootEnr of options.bootEnrs) {
+      this.discv5.addEnr(bootEnr);
+    }
   }
 
   async start(): Promise<void> {
@@ -126,7 +127,7 @@ export class Discv5Discovery extends TypedEventEmitter<PeerDiscoveryEvents> impl
       try {
         if (this.searchInterval === Infinity) return;
         await sleep(this.searchInterval, this.controller.signal);
-      } catch (e) {
+      } catch {
         return;
       }
     }
@@ -157,8 +158,7 @@ async function sleep(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal.aborted) return reject(new Error());
 
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    let onDone: () => void = () => {};
+    let onDone: () => void;
 
     const timeout = setTimeout(() => {
       onDone();

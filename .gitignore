@@ -70,3 +70,6 @@ lib
 
 # others
 package-lock.json
+
+# benchmark
+benchmark_data/

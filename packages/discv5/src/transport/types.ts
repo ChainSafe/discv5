@@ -1,10 +1,10 @@
-import { EventEmitter } from "events";
-import StrictEventEmitter from "strict-event-emitter-types";
-import { Multiaddr } from "@multiformats/multiaddr";
-import { BaseENR } from "@chainsafe/enr";
+import type {EventEmitter} from "node:events";
+import type {BaseENR} from "@chainsafe/enr";
+import type {Multiaddr} from "@multiformats/multiaddr";
+import type {StrictEventEmitter} from "strict-event-emitter-types";
 
-import { IPacket } from "../packet/index.js";
-import { SocketAddress } from "../util/ip.js";
+import type {IPacket} from "../packet/index.js";
+import type {SocketAddress} from "../util/ip.js";
 
 export interface ISocketAddr {
   port: number;

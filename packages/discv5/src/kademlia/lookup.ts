@@ -1,9 +1,9 @@
-import { EventEmitter } from "events";
-import { ENR, NodeId } from "@chainsafe/enr";
+import {EventEmitter} from "node:events";
+import type {ENR, NodeId} from "@chainsafe/enr";
 
-import { createFindNodeMessage, RequestMessage } from "../message/index.js";
-import { ILookupPeer, ILookupConfig, LookupState, LookupPeerState, LookupEventEmitter } from "./types.js";
-import { distance, findNodeLog2Distances } from "./util.js";
+import {type RequestMessage, createFindNodeMessage} from "../message/index.js";
+import {type ILookupConfig, type ILookupPeer, type LookupEventEmitter, LookupPeerState, LookupState} from "./types.js";
+import {distance, findNodeLog2Distances} from "./util.js";
 
 export function createLookupPeer(nodeId: NodeId, state: LookupPeerState): ILookupPeer {
   return {
@@ -13,7 +13,7 @@ export function createLookupPeer(nodeId: NodeId, state: LookupPeerState): ILooku
   };
 }
 
-export class Lookup extends (EventEmitter as { new (): LookupEventEmitter }) {
+export class Lookup extends (EventEmitter as {new (): LookupEventEmitter}) {
   /**
    * Target we're looking for
    */
@@ -173,11 +173,9 @@ export class Lookup extends (EventEmitter as { new (): LookupEventEmitter }) {
         if (this.noProgress >= this.config.lookupParallelism) {
           this.state = LookupState.Stalled;
         }
-      } else if (this.state === LookupState.Stalled) {
-        if (progress) {
-          this.state = LookupState.Iterating;
-          this.noProgress = 0;
-        }
+      } else if (this.state === LookupState.Stalled && progress) {
+        this.state = LookupState.Iterating;
+        this.noProgress = 0;
       }
     }
     this.nextPeer();
@@ -193,11 +191,9 @@ export class Lookup extends (EventEmitter as { new (): LookupEventEmitter }) {
     }
     const dist = distance(this.target, nodeId);
     const peer = this.closestPeers.get(dist);
-    if (peer) {
-      if (peer.state === LookupPeerState.Waiting) {
-        this.numPeersWaiting -= 1;
-        peer.state = LookupPeerState.Failed;
-      }
+    if (peer && peer.state === LookupPeerState.Waiting) {
+      this.numPeersWaiting -= 1;
+      peer.state = LookupPeerState.Failed;
     }
     this.nextPeer();
   }
@@ -219,37 +215,33 @@ export class Lookup extends (EventEmitter as { new (): LookupEventEmitter }) {
       if (peer.state === LookupPeerState.NotContacted) {
         if (atCapacity) {
           return;
-        } else {
-          // This peer is waiting to be (re)iterated
-          peer.state = LookupPeerState.Waiting;
-          this.numPeersWaiting += 1;
-          this.emit("peer", peer.nodeId);
-          return;
         }
+        // This peer is waiting to be (re)iterated
+        peer.state = LookupPeerState.Waiting;
+        this.numPeersWaiting += 1;
+        this.emit("peer", peer.nodeId);
+        return;
       }
       if (peer.state === LookupPeerState.Waiting) {
         if (atCapacity) {
           // The lookup is still waiting for a result from a peer and is
           // at capacity w.r.t. the maximum number of peers being waited on.
           return;
-        } else {
-          // The lookup is still waiting for a result from a peer and the
-          // `resultCounter` did not yet reach `numResults`.
-          // Therefore the lookup is not yet done, regardless of already successful
-          // lookups to peers farther from the target.
-          resultCounter = -1;
         }
+        // The lookup is still waiting for a result from a peer and the
+        // `resultCounter` did not yet reach `numResults`.
+        // Therefore the lookup is not yet done, regardless of already successful
+        // lookups to peers farther from the target.
+        resultCounter = -1;
       }
-      if (peer.state === LookupPeerState.Succeeded) {
-        if (resultCounter > 0) {
-          resultCounter += 1;
-          // If `numResults` successful results have been delivered for the closest peers,
-          // the lookup is done
-          if (resultCounter >= this.config.lookupNumResults) {
-            this.state = LookupState.Finished;
-            this.emit("finished", this.closestNodesByDistance());
-            return;
-          }
+      if (peer.state === LookupPeerState.Succeeded && resultCounter > 0) {
+        resultCounter += 1;
+        // If `numResults` successful results have been delivered for the closest peers,
+        // the lookup is done
+        if (resultCounter >= this.config.lookupNumResults) {
+          this.state = LookupState.Finished;
+          this.emit("finished", this.closestNodesByDistance());
+          return;
         }
       }
       // Skip over unresponsive or failed peers

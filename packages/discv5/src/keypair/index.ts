@@ -1,11 +1,10 @@
-import { KeyType } from "@libp2p/interface";
+import type {KeyType} from "@libp2p/interface";
+import {ERR_TYPE_NOT_IMPLEMENTED} from "./constants.js";
+import {Secp256k1Keypair} from "./secp256k1.js";
+import type {IKeypair} from "./types.js";
 
-import { IKeypair } from "./types.js";
-import { ERR_TYPE_NOT_IMPLEMENTED } from "./constants.js";
-import { Secp256k1Keypair } from "./secp256k1.js";
-
-export * from "./types.js";
 export * from "./secp256k1.js";
+export * from "./types.js";
 
 export function generateKeypair(type: KeyType): IKeypair {
   switch (type) {

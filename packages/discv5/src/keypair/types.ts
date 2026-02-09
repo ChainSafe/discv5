@@ -1,4 +1,4 @@
-import { KeyType } from "@libp2p/interface";
+import type {KeyType} from "@libp2p/interface";
 
 export interface IKeypair {
   type: KeyType;
@@ -21,11 +21,13 @@ export abstract class AbstractKeypair {
   readonly _privateKey?: Uint8Array;
   readonly _publicKey?: Uint8Array;
   constructor(privateKey?: Uint8Array, publicKey?: Uint8Array) {
-    if ((this._privateKey = privateKey) && !this.privateKeyVerify()) {
+    this._privateKey = privateKey;
+    if (this._privateKey && !this.privateKeyVerify()) {
       throw new Error("Invalid private key");
     }
-    if ((this._publicKey = publicKey) && !this.publicKeyVerify()) {
-      throw new Error("Invalid private key");
+    this._publicKey = publicKey;
+    if (this._publicKey && !this.publicKeyVerify()) {
+      throw new Error("Invalid public key");
     }
   }
   get privateKey(): Uint8Array {

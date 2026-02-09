@@ -1,5 +1,5 @@
-import { ISessionConfig } from "../session/index.js";
-import { ILookupConfig } from "../kademlia/index.js";
+import type {ILookupConfig} from "../kademlia/index.js";
+import type {ISessionConfig} from "../session/index.js";
 
 export type IDiscv5Config = ISessionConfig &
   ILookupConfig & {
@@ -20,16 +20,16 @@ export type IDiscv5Config = ISessionConfig &
 
 export const defaultConfig: IDiscv5Config = {
   addrVotesToUpdateEnr: 10,
-  requestTimeout: 1 * 1000,
-  requestRetries: 1,
-  sessionTimeout: 86400 * 1000, // 1 day
-  sessionEstablishTimeout: 15 * 1000,
-  sessionCacheCapacity: 2000,
+  allowUnverifiedSessions: false,
+  enrUpdate: true,
+  lookupNumResults: 16,
   lookupParallelism: 3,
   lookupRequestLimit: 3,
-  lookupNumResults: 16,
   lookupTimeout: 60 * 1000,
   pingInterval: 300 * 1000,
-  enrUpdate: true,
-  allowUnverifiedSessions: false,
+  requestRetries: 1,
+  requestTimeout: 1 * 1000,
+  sessionCacheCapacity: 2000,
+  sessionEstablishTimeout: 15 * 1000,
+  sessionTimeout: 86400 * 1000, // 1 day
 };

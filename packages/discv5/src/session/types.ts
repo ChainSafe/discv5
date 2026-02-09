@@ -1,9 +1,8 @@
-import { Multiaddr } from "@multiformats/multiaddr";
-import { NodeId, ENR } from "@chainsafe/enr";
-
-import { IPacket } from "../packet/index.js";
-import { RequestId, RequestMessage, ResponseMessage } from "../message/index.js";
-import { INodeAddress, NodeContact } from "./nodeInfo.js";
+import type {ENR, NodeId} from "@chainsafe/enr";
+import type {Multiaddr} from "@multiformats/multiaddr";
+import type {RequestId, RequestMessage, ResponseMessage} from "../message/index.js";
+import type {IPacket} from "../packet/index.js";
+import type {INodeAddress, NodeContact} from "./nodeInfo.js";
 
 export type NodeAddressString = string;
 
@@ -40,30 +39,30 @@ export interface ISessionConfig {
 
 export enum RequestErrorType {
   /** The request timed out. */
-  Timeout,
+  Timeout = 0,
   /** The discovery service has not been started. */
-  ServiceNotStarted,
+  ServiceNotStarted = 1,
   /** The request was sent to ourselves. */
-  SelfRequest,
+  SelfRequest = 2,
   /** An invalid ENR was provided. */
-  InvalidENR,
+  InvalidENR = 3,
   /** The remote's ENR was invalid. */
-  InvalidRemoteENR,
+  InvalidRemoteENR = 4,
   /** The remote returned an invalid packet. */
-  InvalidRemotePacket,
+  InvalidRemotePacket = 5,
   /** Failed attempting to encrypt the request. */
-  Encryptionailed,
+  EncryptionFailed = 6,
   /** The multiaddr provided is invalid */
-  InvalidMultiaddr,
+  InvalidMultiaddr = 7,
 }
 
 export enum ResponseErrorType {
   /** The responder address does not match the expected address */
-  WrongAddress,
+  WrongAddress = 0,
   /** The response type does not match the expected response type */
-  WrongResponseType,
+  WrongResponseType = 1,
   /** The response handler threw */
-  InternalError,
+  InternalError = 2,
 }
 export interface IKeys {
   encryptionKey: Uint8Array;
@@ -73,9 +72,9 @@ export interface IKeys {
 /** How we connected to the node. */
 export enum ConnectionDirection {
   /** The node contacted us. */
-  Incoming,
+  Incoming = 0,
   /** We contacted the node. */
-  Outgoing,
+  Outgoing = 1,
 }
 
 /** A Challenge (WHOAREYOU) object used to handle and send WHOAREYOU requests. */

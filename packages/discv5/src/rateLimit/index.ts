@@ -1,5 +1,5 @@
-import { IDiscv5Metrics } from "../metrics.js";
-import { RateLimiterGRCA, RateLimiterQuota } from "./rateLimiterGRCA.js";
+import type {IDiscv5Metrics} from "../metrics.js";
+import {RateLimiterGRCA, type RateLimiterQuota} from "./rateLimiterGRCA.js";
 
 type IPAddress = string;
 
@@ -28,7 +28,10 @@ export class RateLimiter implements IRateLimiter {
   private readonly bannedIPs = new Map<IPAddress, number>();
   private readonly expectedResponsesByIP = new Map<IPAddress, number>();
 
-  constructor(opts: RateLimiterOpts, private readonly metrics: IDiscv5Metrics | null) {
+  constructor(
+    opts: RateLimiterOpts,
+    private readonly metrics: IDiscv5Metrics | null
+  ) {
     this.rateLimiterGlobal = RateLimiterGRCA.fromQuota(opts.globalQuota);
     this.rateLimiterIP = RateLimiterGRCA.fromQuota(opts.byIPQuota);
   }

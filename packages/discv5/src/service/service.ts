@@ -1,74 +1,79 @@
-import { EventEmitter } from "events";
-import debug from "debug";
-import { randomBytes } from "@noble/hashes/utils";
-import { Multiaddr } from "@multiformats/multiaddr";
-import { PeerId, PrivateKey } from "@libp2p/interface";
+import {EventEmitter} from "node:events";
 import {
-  createPeerIdFromPublicKey,
   ENR,
-  NodeId,
   MAX_RECORD_SIZE,
-  createNodeId,
+  type NodeId,
   SignableENR,
   bytesToBigint,
+  createNodeId,
+  createPeerIdFromPublicKey,
 } from "@chainsafe/enr";
-
-import { BindAddrs, IPMode, ITransportService, UDPTransportService } from "../transport/index.js";
-import { MAX_PACKET_SIZE } from "../packet/index.js";
-import { ConnectionDirection, RequestErrorType, ResponseErrorType, SessionService } from "../session/index.js";
-import { IKeypair, createKeypair } from "../keypair/index.js";
+import type {PeerId, PrivateKey} from "@libp2p/interface";
+import type {Multiaddr} from "@multiformats/multiaddr";
+import {randomBytes} from "@noble/hashes/utils.js";
+import debug from "weald";
+import {type IDiscv5Config, defaultConfig} from "../config/index.js";
 import {
   EntryStatus,
   InsertResult,
   KademliaRoutingTable,
-  log2Distance,
   Lookup,
   UpdateResult,
+  log2Distance,
 } from "../kademlia/index.js";
+import {type IKeypair, createKeypair} from "../keypair/index.js";
 import {
-  RequestMessage,
-  ResponseMessage,
-  createPingMessage,
+  type IFindNodeMessage,
+  type INodesMessage,
+  type IPingMessage,
+  type IPongMessage,
+  type ITalkReqMessage,
+  type ITalkRespMessage,
+  MessageType,
+  type RequestId,
+  type RequestMessage,
+  type ResponseMessage,
   createFindNodeMessage,
   createNodesMessage,
-  MessageType,
-  IFindNodeMessage,
-  INodesMessage,
-  IPongMessage,
-  IPingMessage,
-  requestMatchesResponse,
-  ITalkReqMessage,
-  ITalkRespMessage,
+  createPingMessage,
   createTalkRequestMessage,
   createTalkResponseMessage,
-  RequestId,
+  requestMatchesResponse,
 } from "../message/index.js";
-import { AddrVotes } from "./addrVotes.js";
-import { CodeError } from "../util/index.js";
-import { IDiscv5Config, defaultConfig } from "../config/index.js";
-import { createNodeContact, getNodeAddress, getNodeId, INodeAddress, NodeContact } from "../session/nodeInfo.js";
+import {type IDiscv5Metrics, type MetricsRegister, createDiscv5Metrics} from "../metrics.js";
+import {MAX_PACKET_SIZE} from "../packet/index.js";
+import {RateLimiter, type RateLimiterOpts} from "../rateLimit/index.js";
+import {ConnectionDirection, RequestErrorType, ResponseErrorType, SessionService} from "../session/index.js";
 import {
-  ConnectionStatus,
-  ConnectionStatusType,
-  Discv5EventEmitter,
-  ENRInput,
-  IActiveRequest,
-  INodesResponse,
-  PongResponse,
-  ResponseType,
-  SignableENRInput,
-  toResponseType,
-} from "./types.js";
-import { RateLimiter, RateLimiterOpts } from "../rateLimit/index.js";
+  type INodeAddress,
+  type NodeContact,
+  createNodeContact,
+  getNodeAddress,
+  getNodeId,
+} from "../session/nodeInfo.js";
+import {type BindAddrs, type IPMode, type ITransportService, UDPTransportService} from "../transport/index.js";
+import {CodeError} from "../util/index.js";
 import {
-  multiaddrFromSocketAddress,
+  getSocketAddressMultiaddrOnENR,
+  getSocketAddressOnENR,
   isEqualSocketAddress,
+  multiaddrFromSocketAddress,
   multiaddrToSocketAddress,
   setSocketAddressOnENR,
-  getSocketAddressOnENR,
-  getSocketAddressMultiaddrOnENR,
 } from "../util/ip.js";
-import { createDiscv5Metrics, IDiscv5Metrics, MetricsRegister } from "../metrics.js";
+import {AddrVotes} from "./addrVotes.js";
+import {
+  type ConnectionStatus,
+  ConnectionStatusType,
+  type Discv5EventEmitter,
+  type ENRInput,
+  type IActiveRequest,
+  type INodesResponse,
+  type PongResponse,
+  type ResponseType,
+  type SignableENRInput,
+  toResponseType,
+} from "./types.js";
 
 const log = debug("discv5:service");
 
@@ -110,11 +115,11 @@ export interface IDiscv5CreateOptions {
  *
  * Additionally, the service offers events when peers are added to the peer table or discovered via lookup.
  */
-export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
+export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
   /**
    * Session service that establishes sessions with peers
    */
-  public sessionService: SessionService;
+  sessionService: SessionService;
 
   /**
    * Configuration
@@ -193,11 +198,9 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.addrVotes = new AddrVotes(config.addrVotesToUpdateEnr);
     if (metrics) {
       this.metrics = metrics;
-      // eslint-disable-next-line @typescript-eslint/no-this-alias
-      const discv5 = this;
-      metrics.kadTableSize.collect = () => metrics.kadTableSize.set(discv5.kbuckets.size);
-      metrics.connectedPeerCount.collect = () => metrics.connectedPeerCount.set(discv5.connectedPeers.size);
-      metrics.activeSessionCount.collect = () => metrics.activeSessionCount.set(discv5.sessionService.sessionsSize());
+      metrics.kadTableSize.collect = () => metrics.kadTableSize.set(this.kbuckets.size);
+      metrics.connectedPeerCount.collect = () => metrics.connectedPeerCount.set(this.connectedPeers.size);
+      metrics.activeSessionCount.collect = () => metrics.activeSessionCount.set(this.sessionService.sessionsSize());
       metrics.lookupCount.collect = () => metrics.lookupCount.set(this.nextLookupId - 1);
     }
     this.ipMode = this.sessionService.transport.ipMode;
@@ -210,18 +213,18 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * @param privateKey the PrivateKey that identifies the enr
    * @param multiaddr The multiaddr which contains the network interface and port to which the UDP server binds
    */
-  public static create(opts: IDiscv5CreateOptions): Discv5 {
-    const { enr, privateKey, bindAddrs, config = {}, metricsRegistry, transport } = opts;
-    const fullConfig = { ...defaultConfig, ...config };
+  static create(opts: IDiscv5CreateOptions): Discv5 {
+    const {enr, privateKey, bindAddrs, config = {}, metricsRegistry, transport} = opts;
+    const fullConfig = {...defaultConfig, ...config};
     const metrics = metricsRegistry ? createDiscv5Metrics(metricsRegistry) : undefined;
-    const keypair = createKeypair({ type: privateKey.type, privateKey: privateKey.raw });
+    const keypair = createKeypair({privateKey: privateKey.raw, type: privateKey.type});
     const decodedEnr = typeof enr === "string" ? SignableENR.decodeTxt(enr, privateKey.raw) : enr;
     const rateLimiter = opts.rateLimiterOpts && new RateLimiter(opts.rateLimiterOpts, metrics ?? null);
     const sessionService = new SessionService(
       fullConfig,
       decodedEnr,
       keypair,
-      transport ?? new UDPTransportService({ bindAddrs, nodeId: decodedEnr.nodeId, rateLimiter })
+      transport ?? new UDPTransportService({bindAddrs, nodeId: decodedEnr.nodeId, rateLimiter})
     );
     return new Discv5(fullConfig, sessionService, metrics);
   }
@@ -229,7 +232,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Starts the service and adds all initial bootstrap peers to be considered.
    */
-  public async start(): Promise<void> {
+  async start(): Promise<void> {
     if (this.started) {
       log("Starting discv5 service failed -- already started");
       return;
@@ -249,7 +252,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Stops the service, closing any underlying networking activity.
    */
-  public async stop(): Promise<void> {
+  async stop(): Promise<void> {
     if (!this.started) {
       log("Stopping discv5 service -- already stopped");
       return;
@@ -258,13 +261,17 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.kbuckets.off("pendingEviction", this.onPendingEviction);
     this.kbuckets.off("appliedEviction", this.onAppliedEviction);
     this.kbuckets.clear();
-    this.activeLookups.forEach((lookup) => lookup.stop());
+    for (const lookup of this.activeLookups.values()) {
+      lookup.stop();
+    }
     this.activeLookups.clear();
     this.nextLookupId = 1;
     this.activeRequests.clear();
     this.activeNodesResponses.clear();
     this.addrVotes.clear();
-    this.connectedPeers.forEach((intervalId) => clearInterval(intervalId));
+    for (const intervalId of this.connectedPeers.values()) {
+      clearInterval(intervalId);
+    }
     this.connectedPeers.clear();
     this.sessionService.off("established", this.onEstablished);
     this.sessionService.off("request", this.handleRpcRequest);
@@ -275,7 +282,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     this.started = false;
   }
 
-  public isStarted(): boolean {
+  isStarted(): boolean {
     return this.started;
   }
 
@@ -286,12 +293,12 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * so that they can be used immediately in following DHT operations involving one of these peers,
    * without having to dial them upfront.
    */
-  public addEnr(enr: ENRInput): void {
+  addEnr(enr: ENRInput): void {
     let decodedEnr: ENR;
     try {
       decodedEnr = typeof enr === "string" ? ENR.decodeTxt(enr) : enr;
       decodedEnr.encode();
-    } catch (e) {
+    } catch {
       log("Unable to add enr: %o", enr);
       return;
     }
@@ -300,45 +307,45 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     }
   }
 
-  public get bindAddrs(): Multiaddr[] {
+  get bindAddrs(): Multiaddr[] {
     return this.sessionService.transport.bindAddrs;
   }
 
-  public get keypair(): IKeypair {
+  get keypair(): IKeypair {
     return this.sessionService.keypair;
   }
 
-  public get peerId(): PeerId {
+  get peerId(): PeerId {
     return createPeerIdFromPublicKey(this.keypair.type, this.keypair.publicKey);
   }
 
-  public get enr(): SignableENR {
+  get enr(): SignableENR {
     return this.sessionService.enr;
   }
 
-  public get connectedPeerCount(): number {
+  get connectedPeerCount(): number {
     return this.connectedPeers.size;
   }
 
-  public getKadValue(nodeId: NodeId): ENR | undefined {
+  getKadValue(nodeId: NodeId): ENR | undefined {
     return this.kbuckets.getValue(nodeId);
   }
 
   /**
    * Return all ENRs of nodes currently contained in buckets of the kad routing table
    */
-  public kadValues(): ENR[] {
+  kadValues(): ENR[] {
     return this.kbuckets.values();
   }
 
-  public async findRandomNode(): Promise<ENR[]> {
+  async findRandomNode(): Promise<ENR[]> {
     return await this.findNode(createNodeId(randomBytes(32)));
   }
 
   /**
    * Starts an iterative FIND_NODE lookup
    */
-  public async findNode(target: NodeId): Promise<ENR[]> {
+  async findNode(target: NodeId): Promise<ENR[]> {
     const lookupId = this.nextLookupId;
     log("Starting a new lookup. Id: %d", lookupId);
     if (this.nextLookupId >= 2 ** 32) {
@@ -368,7 +375,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    *
    * This includes ENRs from any ongoing lookups not yet in the kad table
    */
-  public findEnr(nodeId: NodeId): ENR | undefined {
+  findEnr(nodeId: NodeId): ENR | undefined {
     // check if we know this node id in our routing table
     const enr = this.kbuckets.getValue(nodeId);
     if (enr) {
@@ -387,18 +394,18 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Send FINDNODE message to remote and returns response
    */
-  public async sendFindNode(remote: ENR | Multiaddr, distances: number[]): Promise<ENR[]> {
+  async sendFindNode(remote: ENR | Multiaddr, distances: number[]): Promise<ENR[]> {
     const contact = createNodeContact(remote, this.ipMode);
     const request = createFindNodeMessage(distances);
 
     return await new Promise((resolve, reject) => {
       this.sendRpcRequest({
+        callbackPromise: {
+          reject,
+          resolve: resolve as (val: ENR[]) => void,
+        },
         contact,
         request,
-        callbackPromise: {
-          resolve: resolve as (val: ENR[]) => void,
-          reject,
-        },
       });
     });
   }
@@ -406,22 +413,18 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Send TALKREQ message to dstId and returns response
    */
-  public async sendTalkReq(
-    remote: ENR | Multiaddr,
-    payload: Uint8Array,
-    protocol: string | Uint8Array
-  ): Promise<Uint8Array> {
+  async sendTalkReq(remote: ENR | Multiaddr, payload: Uint8Array, protocol: string | Uint8Array): Promise<Uint8Array> {
     const contact = createNodeContact(remote, this.ipMode);
     const request = createTalkRequestMessage(payload, protocol);
 
     return await new Promise((resolve, reject) => {
       this.sendRpcRequest({
+        callbackPromise: {
+          reject,
+          resolve: resolve as (val: Uint8Array) => void,
+        },
         contact,
         request,
-        callbackPromise: {
-          resolve: resolve as (val: Uint8Array) => void,
-          reject,
-        },
       });
     });
   }
@@ -429,7 +432,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Send TALKRESP message to requesting node
    */
-  public async sendTalkResp(remote: INodeAddress, requestId: RequestId, payload: Uint8Array): Promise<void> {
+  async sendTalkResp(remote: INodeAddress, requestId: RequestId, payload: Uint8Array): Promise<void> {
     const msg = createTalkResponseMessage(requestId, payload);
     this.sendRpcResponse(remote, msg);
   }
@@ -437,25 +440,25 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   /**
    * Hack to get debug logs to work in browser
    */
-  public enableLogs(): void {
+  enableLogs(): void {
     debug.enable("discv5*");
   }
 
   /**
    * Sends a PING request to a node and returns response
    */
-  public async sendPing(nodeAddr: ENR | Multiaddr): Promise<PongResponse> {
+  async sendPing(nodeAddr: ENR | Multiaddr): Promise<PongResponse> {
     const contact = createNodeContact(nodeAddr, this.ipMode);
     const request = createPingMessage(this.enr.seq);
 
     return await new Promise((resolve, reject) => {
       this.sendRpcRequest({
+        callbackPromise: {
+          reject,
+          resolve: resolve as (val: PongResponse) => void,
+        },
         contact,
         request,
-        callbackPromise: {
-          resolve: resolve as (val: PongResponse) => void,
-          reject,
-        },
       });
     });
   }
@@ -475,7 +478,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * Request an external node's ENR
    */
   private requestEnr(contact: NodeContact): void {
-    this.sendRpcRequest({ request: createFindNodeMessage([0]), contact });
+    this.sendRpcRequest({contact, request: createFindNodeMessage([0])});
   }
 
   /**
@@ -491,8 +494,8 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
 
     this.sendRpcRequest({
       contact: createNodeContact(enr, this.ipMode),
-      request,
       lookupId,
+      request,
     });
   }
 
@@ -512,7 +515,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     log("Sending %s to node: %o", MessageType[activeRequest.request.type], nodeAddr);
     try {
       this.sessionService.sendRequest(activeRequest.contact, activeRequest.request);
-      this.metrics?.sentMessageCount.inc({ type: MessageType[activeRequest.request.type] });
+      this.metrics?.sentMessageCount.inc({type: MessageType[activeRequest.request.type]});
     } catch (e) {
       this.activeRequests.delete(bytesToBigint(activeRequest.request.id));
       log("Error sending RPC to node: %o, :Error: %s", nodeAddr, (e as Error).message);
@@ -526,7 +529,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     log("Sending %s to node: %o", MessageType[response.type], nodeAddr);
     try {
       this.sessionService.sendResponse(nodeAddr, response);
-      this.metrics?.sentMessageCount.inc({ type: MessageType[response.type] });
+      this.metrics?.sentMessageCount.inc({type: MessageType[response.type]});
     } catch (e) {
       log("Error sending RPC to node: %o, :Error: %s", nodeAddr, (e as Error).message);
     }
@@ -651,16 +654,14 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       // If any of the discovered nodes are in the routing table,
       // and there contains an older ENR, update it.
       const entry = this.kbuckets.getWithPending(enr.nodeId);
-      if (entry) {
-        if (entry.value.seq < enr.seq) {
-          switch (this.kbuckets.update(enr)) {
-            case UpdateResult.FailedBucketFull:
-            case UpdateResult.FailedKeyNonExistent: {
-              clearInterval(this.connectedPeers.get(enr.nodeId) as NodeJS.Timeout);
-              this.connectedPeers.delete(enr.nodeId);
-              log("Failed to update discovered ENR. Node: %s", enr.nodeId);
-              continue;
-            }
+      if (entry && entry.value.seq < enr.seq) {
+        switch (this.kbuckets.update(enr)) {
+          case UpdateResult.FailedBucketFull:
+          case UpdateResult.FailedKeyNonExistent: {
+            clearInterval(this.connectedPeers.get(enr.nodeId) as NodeJS.Timeout);
+            this.connectedPeers.delete(enr.nodeId);
+            log("Failed to update discovered ENR. Node: %s", enr.nodeId);
+            continue;
           }
         }
       }
@@ -700,7 +701,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   // process events from the session service
 
   private onEstablished = (
-    nodeAddr: INodeAddress,
+    _nodeAddr: INodeAddress,
     enr: ENR,
     direction: ConnectionDirection,
     verified: boolean
@@ -712,7 +713,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
 
     const nodeId = enr.nodeId;
     log("Session established with Node: %s, Direction: %s", nodeId, ConnectionDirection[direction]);
-    this.connectionUpdated(nodeId, { type: ConnectionStatusType.Connected, enr, direction });
+    this.connectionUpdated(nodeId, {direction, enr, type: ConnectionStatusType.Connected});
   };
 
   private handleWhoAreYouRequest = (nodeAddr: INodeAddress, nonce: Uint8Array): void => {
@@ -735,22 +736,25 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    */
   private handleRpcRequest = (nodeAddr: INodeAddress, request: RequestMessage): void => {
     const requestType = MessageType[request.type];
-    this.metrics?.rcvdMessageCount.inc({ type: requestType });
+    this.metrics?.rcvdMessageCount.inc({type: requestType});
 
     try {
       switch (request.type) {
         case MessageType.PING:
-          return this.handlePing(nodeAddr, request as IPingMessage);
+          this.handlePing(nodeAddr, request as IPingMessage);
+          break;
         case MessageType.FINDNODE:
-          return this.handleFindNode(nodeAddr, request as IFindNodeMessage);
+          this.handleFindNode(nodeAddr, request as IFindNodeMessage);
+          break;
         case MessageType.TALKREQ:
-          return this.handleTalkReq(nodeAddr, request as ITalkReqMessage);
+          this.handleTalkReq(nodeAddr, request as ITalkReqMessage);
+          break;
         default:
           log("Received request type which is unimplemented: %s", request.type);
           // TODO Implement all RPC methods
           return;
       }
-    } catch (e) {
+    } catch {
       log("Error handling rpc request: node: %o, requestType: %s", nodeAddr, requestType);
     }
   };
@@ -758,26 +762,24 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
   private handlePing(nodeAddr: INodeAddress, message: IPingMessage): void {
     // check if we need to update the known ENR
     const entry = this.kbuckets.getWithPending(nodeAddr.nodeId);
-    if (entry) {
-      if (entry.value.seq < message.enrSeq) {
-        this.requestEnr(createNodeContact(entry.value, this.ipMode));
-      }
+    if (entry && entry.value.seq < message.enrSeq) {
+      this.requestEnr(createNodeContact(entry.value, this.ipMode));
     }
 
     const ipUDP = multiaddrToSocketAddress(nodeAddr.socketAddr);
 
     const pongMessage: IPongMessage = {
-      type: MessageType.PONG,
-      id: message.id,
-      enrSeq: this.enr.seq,
       addr: ipUDP,
+      enrSeq: this.enr.seq,
+      id: message.id,
+      type: MessageType.PONG,
     };
 
     // build the Pong response
     log("Sending PONG response to node: %o", nodeAddr);
     try {
       this.sessionService.sendResponse(nodeAddr, pongMessage);
-      this.metrics?.sentMessageCount.inc({ type: MessageType[MessageType.PONG] });
+      this.metrics?.sentMessageCount.inc({type: MessageType[MessageType.PONG]});
     } catch (e) {
       log("Failed to send Pong. Error %s", (e as Error).message);
     }
@@ -789,7 +791,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    * the maximum packet size
    */
   private handleFindNode(nodeAddr: INodeAddress, message: IFindNodeMessage): void {
-    const { id, distances } = message;
+    const {id, distances} = message;
     let nodes: ENR[] = [];
     for (const distance of new Set(distances)) {
       // filter out invalid distances
@@ -809,7 +811,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       log("Sending empty NODES response to %o", nodeAddr);
       try {
         this.sessionService.sendResponse(nodeAddr, createNodesMessage(id, 1, nodes));
-        this.metrics?.sentMessageCount.inc({ type: MessageType[MessageType.NODES] });
+        this.metrics?.sentMessageCount.inc({type: MessageType[MessageType.NODES]});
       } catch (e) {
         log("Failed to send a NODES response. Error: %s", (e as Error).message);
       }
@@ -828,7 +830,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
       const _nodes = nodes.slice(i, i + nodesPerPacket);
       try {
         this.sessionService.sendResponse(nodeAddr, createNodesMessage(id, total, _nodes));
-        this.metrics?.sentMessageCount.inc({ type: MessageType[MessageType.NODES] });
+        this.metrics?.sentMessageCount.inc({type: MessageType[MessageType.NODES]});
       } catch (e) {
         log("Failed to send a NODES response. Error: %s", (e as Error).message);
       }
@@ -847,7 +849,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
    */
   private handleRpcResponse = (nodeAddr: INodeAddress, response: ResponseMessage): void => {
     const responseType = MessageType[response.type];
-    this.metrics?.rcvdMessageCount.inc({ type: responseType });
+    this.metrics?.rcvdMessageCount.inc({type: responseType});
 
     // verify we know of the rpc id
 
@@ -942,7 +944,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
           request: createFindNodeMessage([0]),
         });
       }
-      this.connectionUpdated(nodeAddr.nodeId, { type: ConnectionStatusType.PongReceived, enr });
+      this.connectionUpdated(nodeAddr.nodeId, {enr, type: ConnectionStatusType.PongReceived});
     }
   }
 
@@ -954,7 +956,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     activeRequest: IActiveRequest<IFindNodeMessage>,
     message: INodesMessage
   ): boolean {
-    const { request, lookupId } = activeRequest;
+    const {request, lookupId} = activeRequest;
     // Currently a maximum of 16 peers can be returned.
     // Datagrams have a max size of 1280 and ENRs have a max size of 300 bytes.
     // There should be no more than 5 responses to return 16 peers
@@ -970,7 +972,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
 
     // handle the case that there is more than one response
     if (message.total > 1) {
-      const currentResponse = this.activeNodesResponses.get(bytesToBigint(message.id)) || { count: 1, enrs: [] };
+      const currentResponse = this.activeNodesResponses.get(bytesToBigint(message.id)) || {count: 1, enrs: []};
       this.activeNodesResponses.delete(bytesToBigint(message.id));
       log("NODES response: %d of %d received, length: %d", currentResponse.count, message.total, message.enrs.length);
       // If there are more requests coming, store the nodes and wait for another response
@@ -1001,7 +1003,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
 
   private handleTalkResp = (
     nodeAddr: INodeAddress,
-    activeRequest: IActiveRequest<ITalkReqMessage>,
+    _activeRequest: IActiveRequest<ITalkReqMessage>,
     message: ITalkRespMessage
   ): void => {
     log("Received TALKRESP message from Node: %o", nodeAddr);
@@ -1017,7 +1019,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     if (!req) {
       return;
     }
-    const { request, contact, lookupId, callbackPromise } = req;
+    const {request, contact, lookupId, callbackPromise} = req;
     this.activeRequests.delete(bytesToBigint(request.id));
 
     const nodeId = getNodeId(contact);
@@ -1053,7 +1055,7 @@ export class Discv5 extends (EventEmitter as { new (): Discv5EventEmitter }) {
     }
 
     // report the node as being disconnected
-    this.connectionUpdated(nodeId, { type: ConnectionStatusType.Disconnected });
+    this.connectionUpdated(nodeId, {type: ConnectionStatusType.Disconnected});
 
     // If this is initiated by the user, return the error on the callback.
     callbackPromise?.reject(new CodeError("RPC failure", RequestErrorType[error]));

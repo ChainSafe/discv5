@@ -1,14 +1,14 @@
-import { randomBytes, toBytes } from "@noble/hashes/utils";
-import { SequenceNumber, ENR } from "@chainsafe/enr";
+import type {ENR, SequenceNumber} from "@chainsafe/enr";
+import {randomBytes, utf8ToBytes} from "@noble/hashes/utils.js";
 
 import {
-  RequestId,
-  IPingMessage,
+  type IFindNodeMessage,
+  type INodesMessage,
+  type IPingMessage,
+  type ITalkReqMessage,
+  type ITalkRespMessage,
   MessageType,
-  IFindNodeMessage,
-  INodesMessage,
-  ITalkReqMessage,
-  ITalkRespMessage,
+  type RequestId,
 } from "./types.js";
 
 export function createRequestId(): RequestId {
@@ -17,41 +17,41 @@ export function createRequestId(): RequestId {
 
 export function createPingMessage(enrSeq: SequenceNumber): IPingMessage {
   return {
-    type: MessageType.PING,
-    id: createRequestId(),
     enrSeq,
+    id: createRequestId(),
+    type: MessageType.PING,
   };
 }
 
 export function createFindNodeMessage(distances: number[]): IFindNodeMessage {
   return {
-    type: MessageType.FINDNODE,
-    id: createRequestId(),
     distances,
+    id: createRequestId(),
+    type: MessageType.FINDNODE,
   };
 }
 
 export function createNodesMessage(id: RequestId, total: number, enrs: ENR[]): INodesMessage {
   return {
-    type: MessageType.NODES,
+    enrs,
     id,
     total,
-    enrs,
+    type: MessageType.NODES,
   };
 }
 
 export function createTalkRequestMessage(request: string | Uint8Array, protocol: string | Uint8Array): ITalkReqMessage {
   return {
-    type: MessageType.TALKREQ,
     id: createRequestId(),
-    protocol: toBytes(protocol),
-    request: toBytes(request),
+    protocol: protocol instanceof Uint8Array ? protocol : utf8ToBytes(protocol),
+    request: request instanceof Uint8Array ? request : utf8ToBytes(request),
+    type: MessageType.TALKREQ,
   };
 }
 export function createTalkResponseMessage(requestId: RequestId, payload: Uint8Array): ITalkRespMessage {
   return {
-    type: MessageType.TALKRESP,
     id: requestId,
     response: payload,
+    type: MessageType.TALKRESP,
   };
 }

@@ -1,14 +1,10 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "strict": true,
     "strictNullChecks": true,
-    "typeRoots": [
-       "./node_modules/@types",
-       "./types"
-    ],
     "esModuleInterop": true,
     "sourceMap": true,
   }

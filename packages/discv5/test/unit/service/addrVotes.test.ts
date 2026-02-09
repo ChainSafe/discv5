@@ -1,7 +1,7 @@
-import { expect } from "chai";
-import { createNodeId } from "@chainsafe/enr";
-import { AddrVotes } from "../../../src/service/addrVotes.js";
-import { SocketAddress } from "../../../src/util/ip.js";
+import {createNodeId} from "@chainsafe/enr";
+import {beforeEach, describe, expect, it} from "vitest";
+import {AddrVotes} from "../../../src/service/addrVotes.js";
+import type {SocketAddress} from "../../../src/util/ip.js";
 
 describe("AddrVotes", () => {
   let addVotes: AddrVotes;
@@ -11,7 +11,7 @@ describe("AddrVotes", () => {
   });
 
   it("should return winning vote after 3 same votes", () => {
-    const addr: SocketAddress = { ip: { type: 4, octets: new Uint8Array([127, 0, 0, 1]) }, port: 30303 };
+    const addr: SocketAddress = {ip: {octets: new Uint8Array([127, 0, 0, 1]), type: 4}, port: 30303};
     const nodeId = createNodeId(Buffer.alloc(32));
     expect(addVotes.addVote(nodeId, addr)).equals(false);
     // same vote, no effect
@@ -25,8 +25,8 @@ describe("AddrVotes", () => {
   });
 
   it("1 node adds 2 different vote", () => {
-    const addr: SocketAddress = { ip: { type: 4, octets: new Uint8Array([127, 0, 0, 1]) }, port: 30303 };
-    const ipStrange: SocketAddress = { ip: addr.ip, port: 30304 };
+    const addr: SocketAddress = {ip: {octets: new Uint8Array([127, 0, 0, 1]), type: 4}, port: 30303};
+    const ipStrange: SocketAddress = {ip: addr.ip, port: 30304};
     const nodeId = createNodeId(Buffer.alloc(32));
     expect(addVotes.addVote(nodeId, addr)).equals(false);
     // new vote, strange one => 1st vote is deleted
