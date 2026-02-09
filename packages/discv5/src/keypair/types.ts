@@ -27,7 +27,7 @@ export abstract class AbstractKeypair {
     }
     this._publicKey = publicKey;
     if (this._publicKey && !this.publicKeyVerify()) {
-      throw new Error("Invalid private key");
+      throw new Error("Invalid public key");
     }
   }
   get privateKey(): Uint8Array {
