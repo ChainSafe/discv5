@@ -14,16 +14,16 @@ describe(
     const bootnodesENRText = getMainnetBootnodesENRText();
 
     for (const bindAddrs of [
-      // {
-      //   ip4: multiaddr(`/ip4/0.0.0.0/udp/${port++}`),
-      // },
+      {
+        ip4: multiaddr(`/ip4/0.0.0.0/udp/${port++}`),
+      },
       {
         ip6: multiaddr(`/ip6/::/udp/${port++}`),
       },
-      // {
-      //   ip4: multiaddr(`/ip4/0.0.0.0/udp/${port++}`),
-      //   ip6: multiaddr(`/ip6/::/udp/${port++}`),
-      // },
+      {
+        ip4: multiaddr(`/ip4/0.0.0.0/udp/${port++}`),
+        ip6: multiaddr(`/ip6/::/udp/${port++}`),
+      },
     ]) {
       // ip6 test fails in github runner
       it.skipIf(process.env.CI && bindAddrs.ip6)(
