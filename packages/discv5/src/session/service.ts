@@ -760,11 +760,11 @@ export class SessionService extends (EventEmitter as {new (): StrictEventEmitter
   }
 
   private removeExpectedResponse(socketAddr: Multiaddr): void {
-    this.transport.addExpectedResponse?.(multiaddrToObject(socketAddr).host);
+    this.transport.removeExpectedResponse?.(multiaddrToObject(socketAddr).host);
   }
 
   private addExpectedResponse(socketAddr: Multiaddr): void {
-    this.transport.removeExpectedResponse?.(multiaddrToObject(socketAddr).host);
+    this.transport.addExpectedResponse?.(multiaddrToObject(socketAddr).host);
   }
 
   private handleRequestTimeout(nodeAddr: INodeAddress, requestCall: IRequestCall): void {
