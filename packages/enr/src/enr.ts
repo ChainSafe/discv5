@@ -204,7 +204,8 @@ export function parseLocationMultiaddr(ma: Multiaddr): {
   protoName: "udp" | "tcp" | "quic";
   protoVal: Uint8Array;
 } {
-  ma.bytes; // ensure bytes are populated
+  // Force cache population of bytes property to ensure getComponents() works correctly
+  void ma.bytes;
   const components = ma.getComponents();
   let family: 4 | 6;
   let protoName: "udp" | "tcp" | "quic";
