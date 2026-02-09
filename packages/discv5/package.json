@@ -41,7 +41,7 @@
     "check-types": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "prepublishOnly": "pnpm build",
-    "lint": "eslint --color --ext .ts src/ test/",
+    "lint": "biome check src test",
     "test": "pnpm test:unit && pnpm test:e2e",
     "test:unit": "vitest --run 'test/unit'",
     "test:e2e": "vitest --run 'test/e2e'"
