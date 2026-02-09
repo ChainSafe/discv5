@@ -51,7 +51,7 @@ export enum RequestErrorType {
   /** The remote returned an invalid packet. */
   InvalidRemotePacket = 5,
   /** Failed attempting to encrypt the request. */
-  Encryptionailed = 6,
+  EncryptionFailed = 6,
   /** The multiaddr provided is invalid */
   InvalidMultiaddr = 7,
 }
