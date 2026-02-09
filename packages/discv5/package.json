@@ -4,6 +4,7 @@
   "description": "Discovery V5",
   "type": "module",
   "files": [
+    "src",
     "lib"
   ],
   "exports": {
@@ -42,8 +43,8 @@
     "prepublishOnly": "pnpm build",
     "lint": "eslint --color --ext .ts src/ test/",
     "test": "pnpm test:unit && pnpm test:e2e",
-    "test:unit": "mocha 'test/unit/**/*.test.ts'",
-    "test:e2e": "mocha 'test/e2e/**/*.test.ts'"
+    "test:unit": "vitest --run 'test/unit'",
+    "test:e2e": "vitest --run 'test/e2e'"
   },
   "pre-push": [
     "lint"
@@ -67,16 +68,16 @@
   "devDependencies": {},
   "dependencies": {
     "@chainsafe/enr": "workspace:^",
-    "@ethereumjs/rlp": "^5.0.2",
+    "@ethereumjs/rlp": "^10.1.1",
     "@libp2p/crypto": "^5.0.1",
-    "@libp2p/interface": "^2.0.1",
-    "@libp2p/peer-id": "^5.0.1",
-    "@multiformats/multiaddr": "^12.1.10",
-    "@noble/hashes": "^1.7.0",
-    "@noble/secp256k1": "^2.2.2",
-    "debug": "^4.3.1",
-    "ethereum-cryptography": "^2.2.0",
-    "lru-cache": "^10.1.0",
-    "strict-event-emitter-types": "^2.0.0"
+    "@libp2p/interface": "^3.1.0",
+    "@libp2p/peer-id": "^6.0.4",
+    "@multiformats/multiaddr": "^13.0.1",
+    "@noble/hashes": "^2.0.1",
+    "@noble/secp256k1": "^3.0.0",
+    "ethereum-cryptography": "^3.2.0",
+    "lru-cache": "^11.2.5",
+    "strict-event-emitter-types": "^2.0.0",
+    "weald": "^1.1.1"
   }
 }

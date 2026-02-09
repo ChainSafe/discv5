@@ -1,6 +1,6 @@
-import { NodeId } from "./types.js";
-import { bytesToHex, hexToBytes } from "ethereum-cryptography/utils";
-import { base64urlnopad } from "@scure/base";
+import {base64urlnopad} from "@scure/base";
+import {bytesToHex, hexToBytes} from "ethereum-cryptography/utils";
+import type {NodeId} from "./types.js";
 // multiaddr 8.0.0 expects an Uint8Array with internal buffer starting at 0 offset
 export function toNewUint8Array(buf: Uint8Array): Uint8Array {
   const arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);

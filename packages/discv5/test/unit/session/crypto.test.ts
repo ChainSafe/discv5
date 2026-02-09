@@ -1,19 +1,17 @@
-/* eslint-env mocha */
-import { expect } from "chai";
-import { randomBytes } from "@noble/hashes/utils";
-import { getV4Crypto, SignableENR } from "@chainsafe/enr";
-
+import {SignableENR, getV4Crypto} from "@chainsafe/enr";
+import {randomBytes} from "@noble/hashes/utils.js";
+import {describe, expect, it} from "vitest";
+import {createKeypair, generateKeypair} from "../../../src/keypair/index.js";
 import {
+  decryptMessage,
   deriveKey,
-  generateSessionKeys,
   deriveKeysFromPubkey,
+  encryptMessage,
+  generateSessionKeys,
   idSign,
   idVerify,
-  encryptMessage,
-  decryptMessage,
 } from "../../../src/session/index.js";
-import { createKeypair, generateKeypair } from "../../../src/keypair/index.js";
-import { getDiscv5Crypto } from "../../../src/util/crypto.js";
+import {getDiscv5Crypto} from "../../../src/util/crypto.js";
 
 describe("session crypto", () => {
   it("ecdh should produce expected secret", () => {
@@ -57,7 +55,7 @@ describe("session crypto", () => {
     const [a1, b1, pk] = generateSessionKeys(
       enr1.nodeId,
       enr2.nodeId,
-      createKeypair({ type: enr2.keypairType, publicKey: enr2.publicKey }),
+      createKeypair({publicKey: enr2.publicKey, type: enr2.keypairType}),
       nonce
     );
     const [a2, b2] = deriveKeysFromPubkey(kp2, enr2.nodeId, enr1.nodeId, pk, nonce);
@@ -80,11 +78,11 @@ describe("session crypto", () => {
     const ephemPK = Buffer.from("039961e4c2356d61bedb83052c115d311acb3a96f5777296dcf297351130266231", "hex");
     const nodeIdB = "bbbb9d047f0488c0b5a93c1c3f2d8bafc7c8ff337024a55434a0d0555de64db9";
 
-    const actual = idSign(createKeypair({ type: "secp256k1", privateKey: localSK }), challengeData, ephemPK, nodeIdB);
+    const actual = idSign(createKeypair({privateKey: localSK, type: "secp256k1"}), challengeData, ephemPK, nodeIdB);
     expect(actual).to.deep.equal(expected);
     expect(
       idVerify(
-        createKeypair({ type: "secp256k1", publicKey: getV4Crypto().publicKey(localSK) }),
+        createKeypair({publicKey: getV4Crypto().publicKey(localSK), type: "secp256k1"}),
         challengeData,
         ephemPK,
         nodeIdB,

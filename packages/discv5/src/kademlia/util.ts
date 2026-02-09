@@ -1,7 +1,6 @@
-import { bytesToBigint, NodeId } from "@chainsafe/enr";
-
-import { NUM_BUCKETS } from "./constants.js";
-import { hexToBytes } from "ethereum-cryptography/utils.js";
+import {type NodeId, bytesToBigint} from "@chainsafe/enr";
+import {hexToBytes} from "ethereum-cryptography/utils.js";
+import {NUM_BUCKETS} from "./constants.js";
 
 /**
  * Computes the xor distance between two NodeIds
@@ -25,9 +24,8 @@ export function log2Distance(a: NodeId, b: NodeId): number {
         firstMatch += 3;
       }
       break;
-    } else {
-      firstMatch += 4;
     }
+    firstMatch += 4;
   }
 
   return NUM_BUCKETS - firstMatch;

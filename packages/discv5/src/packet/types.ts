@@ -1,4 +1,4 @@
-import { NodeId } from "@chainsafe/enr";
+import type {NodeId} from "@chainsafe/enr";
 
 // DISCV5 message packet types
 
@@ -10,13 +10,13 @@ export enum PacketType {
   /**
    * Sent when the recipient of an ordinary message packet cannot decrypt/authenticate the packet's message
    */
-  WhoAreYou,
+  WhoAreYou = 1,
   /**
    * Sent following a WHOAREYOU.
    * These packets establish a new session and carry handshake related data
    * in addition to the encrypted/authenticated message
    */
-  Handshake,
+  Handshake = 2,
 }
 
 export interface IStaticHeader {

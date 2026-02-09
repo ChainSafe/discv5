@@ -3,7 +3,7 @@
  * A callback, onTimeout, can optionally be registered which will be called upon each value's timeout
  */
 export class TimeoutMap<K, V> extends Map<K, V> {
-  public onTimeout: ((k: K, v: V) => void) | undefined;
+  onTimeout: ((k: K, v: V) => void) | undefined;
   private timeout: number;
   private timeouts: Map<K, NodeJS.Timeout>;
 

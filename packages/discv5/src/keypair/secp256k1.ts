@@ -1,10 +1,12 @@
-import { KeyType } from "@libp2p/interface";
-import { AbstractKeypair, IKeypair, IKeypairClass } from "./types.js";
-import { ERR_INVALID_KEYPAIR_TYPE } from "./constants.js";
-import { getDiscv5Crypto } from "../util/crypto.js";
-import { concatBytes } from "@noble/hashes/utils";
+import type {KeyType} from "@libp2p/interface";
+import {concatBytes} from "@noble/hashes/utils.js";
+import {getDiscv5Crypto} from "../util/crypto.js";
+import {ERR_INVALID_KEYPAIR_TYPE} from "./constants.js";
+import {AbstractKeypair, type IKeypair, type IKeypairClass} from "./types.js";
+
 export function secp256k1PublicKeyToCompressed(publicKey: Uint8Array): Uint8Array {
   if (publicKey.length === 64) {
+    // biome-ignore lint/style/noParameterAssign: Preexisting code
     publicKey = concatBytes(Uint8Array.from([4]), publicKey);
   }
   return getDiscv5Crypto().secp256k1.publicKeyConvert(publicKey, true);
@@ -14,6 +16,7 @@ export function secp256k1PublicKeyToRaw(publicKey: Uint8Array): Uint8Array {
   return getDiscv5Crypto().secp256k1.publicKeyConvert(publicKey, false);
 }
 
+// biome-ignore lint/style/useNamingConvention: additional typecheck
 export const Secp256k1Keypair: IKeypairClass = class Secp256k1Keypair extends AbstractKeypair implements IKeypair {
   readonly type: KeyType;
 

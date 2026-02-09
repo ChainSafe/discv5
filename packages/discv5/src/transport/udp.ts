@@ -1,12 +1,13 @@
 import * as dgram from "node:dgram";
-import { EventEmitter } from "events";
-import { Multiaddr, multiaddr, MultiaddrObject } from "@multiformats/multiaddr";
-import { ENR } from "@chainsafe/enr";
+import {EventEmitter} from "node:events";
 
-import { decodePacket, encodePacket, IPacket, MAX_PACKET_SIZE } from "../packet/index.js";
-import { BindAddrs, IPMode, IRemoteInfo, ITransportService, TransportEventEmitter } from "./types.js";
-import { IRateLimiter } from "../rateLimit/index.js";
-import { getSocketAddressOnENR, SocketAddress } from "../util/ip.js";
+import type {ENR} from "@chainsafe/enr";
+import {type Multiaddr, multiaddr} from "@multiformats/multiaddr";
+
+import {type IPacket, MAX_PACKET_SIZE, decodePacket, encodePacket} from "../packet/index.js";
+import type {IRateLimiter} from "../rateLimit/index.js";
+import {type MultiaddrObject, type SocketAddress, getSocketAddressOnENR, multiaddrToObject} from "../util/ip.js";
+import type {BindAddrs, IPMode, IRemoteInfo, ITransportService, TransportEventEmitter} from "./types.js";
 
 export type UDPTransportServiceInit = {
   bindAddrs: BindAddrs;
@@ -24,7 +25,7 @@ type SocketOpts = {
  * This class is responsible for encoding outgoing Packets and decoding incoming Packets over UDP
  */
 export class UDPTransportService
-  extends (EventEmitter as { new (): TransportEventEmitter })
+  extends (EventEmitter as {new (): TransportEventEmitter})
   implements ITransportService
 {
   readonly bindAddrs: Multiaddr[];
@@ -41,7 +42,7 @@ export class UDPTransportService
   private readonly srcId: string;
   private readonly rateLimiter?: IRateLimiter;
 
-  public constructor(init: UDPTransportServiceInit) {
+  constructor(init: UDPTransportServiceInit) {
     super();
     this.srcId = init.nodeId;
     this.rateLimiter = init.rateLimiter;
@@ -49,10 +50,7 @@ export class UDPTransportService
       throw new Error("Must bind with an IPv4 and/or IPv6 multiaddr");
     }
     const toSocketOpts = (addr: Multiaddr): SocketOpts => {
-      const opts = addr.toOptions();
-      if (opts.transport !== "udp") {
-        throw new Error("Local multiaddr must use UDP");
-      }
+      const opts = multiaddrToObject(addr);
       return {
         addr,
         opts,
@@ -60,7 +58,7 @@ export class UDPTransportService
     };
 
     this.bindAddrs = [];
-    this.ipMode = { ip4: false, ip6: false } as unknown as IPMode;
+    this.ipMode = {ip4: false, ip6: false} as unknown as IPMode;
 
     if (init.bindAddrs.ip4) {
       this.ip4 = toSocketOpts(init.bindAddrs.ip4);
@@ -80,7 +78,7 @@ export class UDPTransportService
     }
   }
 
-  public async start(): Promise<void> {
+  async start(): Promise<void> {
     const [socket4, socket6] = await Promise.all([
       this.ip4 ? openSocket(this.ip4.opts) : undefined,
       this.ip6 ? openSocket(this.ip6.opts) : undefined,
@@ -95,7 +93,7 @@ export class UDPTransportService
     }
   }
 
-  public async stop(): Promise<void> {
+  async stop(): Promise<void> {
     const socket4 = this.ip4?.socket;
     const socket6 = this.ip6?.socket;
     socket4?.off("message", this.handleIncoming);
@@ -103,8 +101,8 @@ export class UDPTransportService
     await Promise.all([closeSocket(socket4), closeSocket(socket6)]);
   }
 
-  public async send(to: Multiaddr, toId: string, packet: IPacket): Promise<void> {
-    const nodeAddr = to.toOptions();
+  async send(to: Multiaddr, toId: string, packet: IPacket): Promise<void> {
+    const nodeAddr = multiaddrToObject(to);
     if (nodeAddr.family === 4) {
       if (!this.ip4) {
         throw new Error("Cannot send to an IPv4 address without a bound IPv4 socket");
@@ -151,10 +149,10 @@ export class UDPTransportService
 
 async function openSocket(opts: MultiaddrObject): Promise<dgram.Socket> {
   const socket = dgram.createSocket({
+    ipv6Only: opts.family === 6,
     recvBufferSize: 16 * MAX_PACKET_SIZE,
     sendBufferSize: MAX_PACKET_SIZE,
     type: opts.family === 4 ? "udp4" : "udp6",
-    ipv6Only: opts.family === 6,
   });
   await new Promise((resolve) => socket.bind(opts.port, opts.host, resolve as () => void));
   return socket;

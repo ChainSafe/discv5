@@ -1,17 +1,16 @@
-/* eslint-env mocha */
-import { expect } from "chai";
+import {describe, expect, it} from "vitest";
 
-import { TimeoutMap } from "../../../src/util/index.js";
+import {TimeoutMap} from "../../../src/util/index.js";
 
 describe("TimeoutMap", () => {
-  it("should evict items after a timeout", async function () {
+  it("should evict items after a timeout", async () => {
     const timeout = 15;
     const map = new TimeoutMap(timeout);
     map.set("foo", "bar");
     await new Promise((resolve) => setTimeout(resolve, timeout + 1));
     expect(map.size).to.equal(0);
   });
-  it("should call onTimeout after a timeout", async function () {
+  it("should call onTimeout after a timeout", async () => {
     const timeout = 15;
     let callbackCalled = false;
     const map = new TimeoutMap(timeout, (k, v) => {
@@ -24,7 +23,7 @@ describe("TimeoutMap", () => {
     expect(map.size).to.equal(0);
     expect(callbackCalled).to.equal(true);
   });
-  it("should update a timeout", async function () {
+  it("should update a timeout", async () => {
     const timeout = 15;
     const map = new TimeoutMap(timeout);
     map.set("foo", "bar");

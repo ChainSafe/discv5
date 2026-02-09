@@ -1,28 +1,19 @@
-import { NodeId, ENR } from "@chainsafe/enr";
-
-import { IKeys } from "./types.js";
+import {ENR, type NodeId} from "@chainsafe/enr";
+import {randomBytes} from "@noble/hashes/utils.js";
+import {type IKeypair, createKeypair} from "../keypair/index.js";
+import type {RequestId} from "../message/index.js";
 import {
-  IPacket,
-  PacketType,
-  encodeHandshakeAuthdata,
-  createHeader,
+  type IPacket,
   MASKING_IV_SIZE,
+  PacketType,
+  createHeader,
   encodeChallengeData,
+  encodeHandshakeAuthdata,
   encodeMessageAuthdata,
 } from "../packet/index.js";
-import {
-  generateSessionKeys,
-  deriveKeysFromPubkey,
-  decryptMessage,
-  encryptMessage,
-  idSign,
-  idVerify,
-} from "./crypto.js";
-import { IKeypair, createKeypair } from "../keypair/index.js";
-import { randomBytes } from "@noble/hashes/utils";
-import { RequestId } from "../message/index.js";
-import { IChallenge } from ".";
-import { getNodeId, getPublicKey, NodeContact } from "./nodeInfo.js";
+import {decryptMessage, deriveKeysFromPubkey, encryptMessage, generateSessionKeys, idSign, idVerify} from "./crypto.js";
+import {type NodeContact, getNodeId, getPublicKey} from "./nodeInfo.js";
+import type {IChallenge, IKeys} from "./types.js";
 
 // The `Session` struct handles the stages of creating and establishing a handshake with a
 // peer.
@@ -64,7 +55,7 @@ export class Session {
    */
   awaitingEnr?: RequestId;
 
-  constructor({ keys }: ISessionOpts) {
+  constructor({keys}: ISessionOpts) {
     this.keys = keys;
   }
 
@@ -84,7 +75,7 @@ export class Session {
   ): [Session, ENR] {
     let enr: ENR;
     // check and verify a potential ENR update
-    if (enrRecord && enrRecord.length) {
+    if (enrRecord?.length) {
       const newRemoteEnr = ENR.decode(enrRecord);
       if (challenge.remoteEnr) {
         if (challenge.remoteEnr.seq < newRemoteEnr.seq) {
@@ -104,7 +95,7 @@ export class Session {
     // verify the auth header nonce
     if (
       !idVerify(
-        createKeypair({ type: enr.keypairType, publicKey: enr.publicKey }),
+        createKeypair({publicKey: enr.publicKey, type: enr.keypairType}),
         challenge.data,
         ephPubkey,
         localId,
@@ -119,9 +110,9 @@ export class Session {
 
     // generate session keys
     const [decryptionKey, encryptionKey] = deriveKeysFromPubkey(localKey, localId, remoteId, ephPubkey, challenge.data);
-    const keys = { encryptionKey, decryptionKey };
+    const keys = {decryptionKey, encryptionKey};
 
-    return [new Session({ keys }), enr];
+    return [new Session({keys}), enr];
   }
 
   /**
@@ -142,19 +133,19 @@ export class Session {
       getPublicKey(remoteContact),
       challengeData
     );
-    const keys = { encryptionKey, decryptionKey };
+    const keys = {decryptionKey, encryptionKey};
 
     // construct nonce signature
     const idSignature = idSign(localKey, challengeData, ephPubkey, getNodeId(remoteContact));
 
     // create authdata
     const authdata = encodeHandshakeAuthdata({
-      srcId: localNodeId,
-      sigSize: 64,
       ephKeySize: 33,
-      idSignature,
       ephPubkey,
+      idSignature,
       record: updatedEnr || undefined,
+      sigSize: 64,
+      srcId: localNodeId,
     });
 
     const header = createHeader(PacketType.Handshake, authdata);
@@ -166,11 +157,11 @@ export class Session {
 
     return [
       {
-        maskingIv,
         header,
+        maskingIv,
         message: messageCiphertext,
       },
-      new Session({ keys }),
+      new Session({keys}),
     ];
   }
 
@@ -187,15 +178,15 @@ export class Session {
    * Encrypt packets with the current session key if we are awaiting a response from an
    * IAuthMessagePacket.
    */
-  encryptMessage(srcId: NodeId, destId: NodeId, message: Uint8Array): IPacket {
-    const authdata = encodeMessageAuthdata({ srcId });
+  encryptMessage(srcId: NodeId, _destId: NodeId, message: Uint8Array): IPacket {
+    const authdata = encodeMessageAuthdata({srcId});
     const header = createHeader(PacketType.Message, authdata);
     const maskingIv = randomBytes(MASKING_IV_SIZE);
     const aad = encodeChallengeData(maskingIv, header);
     const ciphertext = encryptMessage(this.keys.encryptionKey, header.nonce, message, aad);
     return {
-      maskingIv,
       header,
+      maskingIv,
       message: ciphertext,
     };
   }
@@ -210,12 +201,12 @@ export class Session {
     // try with the new keys
     if (this.awaitingKeys) {
       const newKeys = this.awaitingKeys;
-      delete this.awaitingKeys;
+      this.awaitingKeys = undefined;
       try {
         const result = decryptMessage(newKeys.decryptionKey, nonce, message, aad);
         this.keys = newKeys;
         return result;
-      } catch (e) {
+      } catch {
         //
       }
     }

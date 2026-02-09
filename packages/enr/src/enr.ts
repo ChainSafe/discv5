@@ -1,18 +1,21 @@
-import { Multiaddr, multiaddr, protocols } from "@multiformats/multiaddr";
-import * as RLP from "@ethereumjs/rlp";
-import { KeyType, PeerId, PrivateKey } from "@libp2p/interface";
-import { convertToString, convertToBytes } from "@multiformats/multiaddr/convert";
-import { encode as varintEncode } from "uint8-varint";
+import * as Rlp from "@ethereumjs/rlp";
+import type {KeyType, PeerId, PrivateKey} from "@libp2p/interface";
+import {type Component, type Multiaddr, multiaddr, registry} from "@multiformats/multiaddr";
+import {bytesToUtf8, equalsBytes, utf8ToBytes} from "ethereum-cryptography/utils.js";
+import {ERR_INVALID_ID, MAX_RECORD_SIZE} from "./constants.js";
+import {getV4Crypto} from "./crypto.js";
+import {createPeerIdFromPublicKey} from "./peerId.js";
+import type {ENRKey, ENRValue, NodeId, SequenceNumber} from "./types.js";
+import {bytesToBigint, fromBase64url, toBase64url, toNewUint8Array} from "./util.js";
 
-import { ERR_INVALID_ID, MAX_RECORD_SIZE } from "./constants.js";
-import { ENRKey, ENRValue, SequenceNumber, NodeId } from "./types.js";
-import { createPeerIdFromPublicKey } from "./peerId.js";
-import { bytesToBigint, fromBase64url, toBase64url, toNewUint8Array } from "./util.js";
-import { getV4Crypto } from "./crypto.js";
-import { bytesToUtf8, equalsBytes, utf8ToBytes } from "ethereum-cryptography/utils.js";
+const ip4 = registry.getProtocol("ip4");
+const ip6 = registry.getProtocol("ip6");
+const tcp = registry.getProtocol("tcp");
+const udp = registry.getProtocol("udp");
 
 /** ENR identity scheme */
 export enum IDScheme {
+  // biome-ignore lint/style/useNamingConvention: existing code
   v4 = "v4",
 }
 
@@ -35,7 +38,7 @@ export function id(kvs: ReadonlyMap<ENRKey, ENRValue>): IDScheme {
   if (!idBuf) throw new Error("id not found");
   const id = bytesToUtf8(idBuf) as IDScheme;
   if (IDScheme[id] == null) {
-    throw new Error("Unknown enr id scheme: " + id);
+    throw new Error(`Unknown enr id scheme: ${id}`);
   }
   return id;
 }
@@ -95,8 +98,7 @@ export function encodeToValues(
   // sort keys and flatten into [k, v, k, v, ...]
   const content: Array<ENRKey | ENRValue | number> = Array.from(kvs.keys())
     .sort((a, b) => a.localeCompare(b))
-    .map((k) => [k, kvs.get(k)] as [ENRKey, ENRValue])
-    .flat();
+    .flatMap((k) => [k, kvs.get(k)] as [ENRKey, ENRValue]);
   content.unshift(Number(seq));
   if (signature) {
     content.unshift(signature);
@@ -105,7 +107,7 @@ export function encodeToValues(
 }
 
 export function encode(kvs: ReadonlyMap<ENRKey, ENRValue>, seq: SequenceNumber, signature: Uint8Array): Uint8Array {
-  const encoded = RLP.encode(encodeToValues(kvs, seq, signature));
+  const encoded = Rlp.encode(encodeToValues(kvs, seq, signature));
   if (encoded.length >= MAX_RECORD_SIZE) {
     throw new Error("ENR must be less than 300 bytes");
   }
@@ -138,7 +140,7 @@ export function decodeFromValues(decoded: Uint8Array[]): ENRData {
   }
 
   const _id = id(kvs);
-  if (!verify(_id, RLP.encode(signed), publicKey(_id, kvs), signature)) {
+  if (!verify(_id, Rlp.encode(signed), publicKey(_id, kvs), signature)) {
     throw new Error("Unable to verify enr signature");
   }
   return {
@@ -148,7 +150,7 @@ export function decodeFromValues(decoded: Uint8Array[]): ENRData {
   };
 }
 export function decode(encoded: Uint8Array): ENRData {
-  return decodeFromValues(RLP.decode(encoded) as Uint8Array[]);
+  return decodeFromValues(Rlp.decode(encoded) as Uint8Array[]);
 }
 export function txtToBuf(encoded: string): Uint8Array {
   if (!encoded.startsWith("enr:")) {
@@ -165,13 +167,17 @@ export function decodeTxt(encoded: string): ENRData {
 /** Protocols automagically supported by this library */
 export type Protocol = "udp" | "tcp" | "quic" | "udp4" | "udp6" | "tcp4" | "tcp6" | "quic4" | "quic6";
 
-export function getIPValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string, multifmtStr: string): string | undefined {
+export function getIPValue(
+  kvs: ReadonlyMap<ENRKey, ENRValue>,
+  key: string,
+  multifmtStr: "ip4" | "ip6"
+): string | undefined {
   const raw = kvs.get(key);
   if (raw) {
-    return convertToString(multifmtStr, toNewUint8Array(raw)) as string;
-  } else {
-    return undefined;
+    const protocol = multifmtStr === "ip4" ? ip4 : ip6;
+    return protocol.bytesToValue?.(toNewUint8Array(raw)) as string;
   }
+  return undefined;
 }
 
 export function getProtocolValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string): number | undefined {
@@ -181,9 +187,8 @@ export function getProtocolValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string
       throw new Error("Encoded protocol length should be 2");
     }
     return (raw[0] << 8) + raw[1];
-  } else {
-    return undefined;
   }
+  return undefined;
 }
 
 export function portToBuf(port: number): Uint8Array {
@@ -199,37 +204,43 @@ export function parseLocationMultiaddr(ma: Multiaddr): {
   protoName: "udp" | "tcp" | "quic";
   protoVal: Uint8Array;
 } {
-  const protoNames = ma.protoNames();
-  const tuples = ma.tuples();
+  ma.bytes; // ensure bytes are populated
+  const components = ma.getComponents();
   let family: 4 | 6;
   let protoName: "udp" | "tcp" | "quic";
 
-  if (protoNames[0] === "ip4") {
+  if (components[0].name === "ip4") {
     family = 4;
-  } else if (protoNames[0] === "ip6") {
+  } else if (components[0].name === "ip6") {
     family = 6;
   } else {
     throw new Error("Invalid multiaddr: must start with ip4 or ip6");
   }
-  if (tuples[0][1] == null) {
+  // Remove varint prefix
+  const ip = components[0].bytes?.slice(1);
+  if (ip == null) {
     throw new Error("Invalid multiaddr: ip address is missing");
   }
-  const ip = tuples[0][1];
 
-  if (protoNames[1] === "udp") {
+  if (components[1].name === "udp") {
     protoName = "udp";
-  } else if (protoNames[1] === "tcp") {
+  } else if (components[1].name === "tcp") {
     protoName = "tcp";
   } else {
     throw new Error("Invalid multiaddr: must have udp or tcp protocol");
   }
-  if (tuples[1][1] == null) {
+  if (components[1].value == null) {
     throw new Error("Invalid multiaddr: udp or tcp port is missing");
   }
-  const protoVal = tuples[1][1];
+  // Remove varint prefix
+  // Note that tcp's code is 6 (1 byte) while udp's code is 273 (2 bytes), so we slice accordingly
+  const protoVal = components[1].bytes?.slice(protoName === "udp" ? 2 : 1);
+  if (protoVal == null) {
+    throw new Error("Invalid multiaddr: udp or tcp port is missing");
+  }
 
-  if (protoNames.length === 3) {
-    if (protoNames[2] === "quic-v1") {
+  if (components.length === 3) {
+    if (components[2].name === "quic-v1") {
       if (protoName !== "udp") {
         throw new Error("Invalid multiaddr: quic protocol must be used with udp");
       }
@@ -237,27 +248,27 @@ export function parseLocationMultiaddr(ma: Multiaddr): {
     } else {
       throw new Error("Invalid multiaddr: unknown protocol");
     }
-  } else if (protoNames.length > 2) {
+  } else if (components.length > 2) {
     throw new Error("Invalid multiaddr: unknown protocol");
   }
 
-  return { family, ip, protoName, protoVal };
+  return {family, ip, protoName, protoVal};
 }
 
 // Classes
 
 export abstract class BaseENR {
   /** Raw enr key-values */
-  public abstract kvs: ReadonlyMap<ENRKey, ENRValue>;
+  abstract kvs: ReadonlyMap<ENRKey, ENRValue>;
   /** Sequence number */
-  public abstract seq: SequenceNumber;
-  public abstract signature: Uint8Array;
+  abstract seq: SequenceNumber;
+  abstract signature: Uint8Array;
 
   // Identity methods
 
   /** Node identifier */
-  public abstract nodeId: NodeId;
-  public abstract publicKey: Uint8Array;
+  abstract nodeId: NodeId;
+  abstract publicKey: Uint8Array;
 
   /** enr identity scheme */
   get id(): IDScheme {
@@ -311,49 +322,58 @@ export abstract class BaseENR {
     if (!ipVal) {
       return undefined;
     }
-
     const isUdp = protocol.startsWith("udp");
     const isTcp = protocol.startsWith("tcp");
     const isQuic = protocol.startsWith("quic");
-    let protoName, protoVal;
+    if (!isUdp && !isTcp && !isQuic) {
+      return undefined;
+    }
+
+    const ipComponent: Component = {
+      code: isIpv6 ? ip6.code : ip4.code,
+      name: isIpv6 ? ip6.name : ip4.name,
+      value: isIpv6 ? ip6.bytesToValue?.(toNewUint8Array(ipVal)) : ip4.bytesToValue?.(toNewUint8Array(ipVal)),
+    };
+
     if (isUdp) {
-      protoName = "udp";
-      protoVal = isIpv6 ? this.kvs.get("udp6") : this.kvs.get("udp");
-    } else if (isTcp) {
-      protoName = "tcp";
-      protoVal = isIpv6 ? this.kvs.get("tcp6") : this.kvs.get("tcp");
-    } else if (isQuic) {
-      protoName = "udp";
-      protoVal = isIpv6 ? this.kvs.get("quic6") : this.kvs.get("quic");
-    } else {
-      return undefined;
+      const protoVal = isIpv6 ? this.kvs.get("udp6") : this.kvs.get("udp");
+      if (!protoVal) {
+        return undefined;
+      }
+      const protoComponent: Component = {
+        code: udp.code,
+        name: udp.name,
+        value: udp.bytesToValue?.(toNewUint8Array(protoVal)),
+      };
+      return multiaddr([ipComponent, protoComponent]);
     }
-    if (!protoVal) {
-      return undefined;
+    if (isTcp) {
+      const protoVal = isIpv6 ? this.kvs.get("tcp6") : this.kvs.get("tcp");
+      if (!protoVal) {
+        return undefined;
+      }
+      const protoComponent: Component = {
+        code: tcp.code,
+        name: tcp.name,
+        value: tcp.bytesToValue?.(toNewUint8Array(protoVal)),
+      };
+      return multiaddr([ipComponent, protoComponent]);
     }
-
-    // Create raw multiaddr buffer
-    // multiaddr length is:
-    //  1 byte for the ip protocol (ip4 or ip6)
-    //  N bytes for the ip address
-    //  1 or 2 bytes for the protocol as buffer (tcp or udp)
-    //  2 bytes for the port
-    const ipMa = protocols(isIpv6 ? "ip6" : "ip4");
-    const ipByteLen = ipMa.size / 8;
-    const protoMa = protocols(protoName);
-    const protoBuf = varintEncode(protoMa.code);
-    const maBuf = new Uint8Array(3 + ipByteLen + protoBuf.length);
-    maBuf[0] = ipMa.code;
-    maBuf.set(ipVal, 1);
-    maBuf.set(protoBuf, 1 + ipByteLen);
-    maBuf.set(protoVal, 1 + ipByteLen + protoBuf.length);
-
-    const ma = multiaddr(maBuf);
     if (isQuic) {
-      return ma.encapsulate("/quic-v1");
+      const protoVal = isIpv6 ? this.kvs.get("quic6") : this.kvs.get("quic");
+      if (!protoVal) {
+        return undefined;
+      }
+      const protoComponent: Component = {
+        code: udp.code,
+        name: udp.name,
+        value: udp.bytesToValue?.(toNewUint8Array(protoVal)),
+      };
+      return multiaddr([ipComponent, protoComponent]).encapsulate("/quic-v1");
     }
-    return ma;
+    return undefined;
   }
+
   async getFullMultiaddr(protocol: Protocol): Promise<Multiaddr | undefined> {
     const locationMultiaddr = this.getLocationMultiaddr(protocol);
     if (locationMultiaddr) {
@@ -367,7 +387,7 @@ export abstract class BaseENR {
   abstract encodeToValues(): (ENRKey | ENRValue | number)[];
   abstract encode(): Uint8Array;
   encodeTxt(): string {
-    return "enr:" + toBase64url(this.encode());
+    return `enr:${toBase64url(this.encode())}`;
   }
 }
 /**
@@ -377,11 +397,13 @@ export abstract class BaseENR {
  *
  * `ENR` is used to read serialized ENRs and may not be modified once created.
  */
+
+// biome-ignore lint/style/useNamingConvention: existing code
 export class ENR extends BaseENR {
-  public kvs: ReadonlyMap<ENRKey, ENRValue>;
-  public seq: SequenceNumber;
-  public signature: Uint8Array;
-  public nodeId: string;
+  kvs: ReadonlyMap<ENRKey, ENRValue>;
+  seq: SequenceNumber;
+  signature: Uint8Array;
+  nodeId: string;
   private encoded?: Uint8Array;
 
   constructor(
@@ -402,16 +424,16 @@ export class ENR extends BaseENR {
     return new ENR(obj.kvs, obj.seq, obj.signature);
   }
   static decodeFromValues(encoded: Uint8Array[]): ENR {
-    const { kvs, seq, signature } = decodeFromValues(encoded);
+    const {kvs, seq, signature} = decodeFromValues(encoded);
     return new ENR(kvs, seq, signature);
   }
   static decode(encoded: Uint8Array): ENR {
-    const { kvs, seq, signature } = decode(encoded);
+    const {kvs, seq, signature} = decode(encoded);
     return new ENR(kvs, seq, signature, encoded);
   }
   static decodeTxt(encoded: string): ENR {
     const encodedBuf = txtToBuf(encoded);
-    const { kvs, seq, signature } = decode(encodedBuf);
+    const {kvs, seq, signature} = decode(encodedBuf);
     return new ENR(kvs, seq, signature, encodedBuf);
   }
 
@@ -428,7 +450,7 @@ export class ENR extends BaseENR {
   }
 
   encodeToValues(): Uint8Array[] {
-    return RLP.decode(this.encode()) as Uint8Array[];
+    return Rlp.decode(this.encode()) as Uint8Array[];
   }
   encode(): Uint8Array {
     if (!this.encoded) {
@@ -446,16 +468,16 @@ export class ENR extends BaseENR {
  * `SignableENR` is used to create and update ENRs.
  */
 export class SignableENR extends BaseENR {
-  public kvs: ReadonlyMap<ENRKey, ENRValue>;
-  public seq: SequenceNumber;
-  public nodeId: NodeId;
-  public publicKey: Uint8Array;
-  public privateKey: Uint8Array;
+  kvs: ReadonlyMap<ENRKey, ENRValue>;
+  seq: SequenceNumber;
+  nodeId: NodeId;
+  publicKey: Uint8Array;
+  privateKey: Uint8Array;
   private _signature?: Uint8Array;
 
   constructor(
-    kvs: ReadonlyMap<ENRKey, ENRValue> | Record<ENRKey, ENRValue> = {},
-    seq: SequenceNumber = 1n,
+    kvs: ReadonlyMap<ENRKey, ENRValue> | Record<ENRKey, ENRValue>,
+    seq: SequenceNumber,
     privateKey: Uint8Array,
     signature?: Uint8Array
   ) {
@@ -467,10 +489,8 @@ export class SignableENR extends BaseENR {
     this.nodeId = nodeId(this.id, this.publicKey);
     this._signature = signature;
 
-    if (this.id === IDScheme.v4) {
-      if (!equalsBytes(getV4Crypto().publicKey(this.privateKey), this.publicKey)) {
-        throw new Error("Provided keypair doesn't match kv pubkey");
-      }
+    if (this.id === IDScheme.v4 && !equalsBytes(getV4Crypto().publicKey(this.privateKey), this.publicKey)) {
+      throw new Error("Provided keypair doesn't match kv pubkey");
     }
   }
 
@@ -498,21 +518,21 @@ export class SignableENR extends BaseENR {
     }
   }
   static decodeFromValues(encoded: Uint8Array[], privateKey: Uint8Array): SignableENR {
-    const { kvs, seq, signature } = decodeFromValues(encoded);
+    const {kvs, seq, signature} = decodeFromValues(encoded);
     return new SignableENR(kvs, seq, privateKey, signature);
   }
   static decode(encoded: Uint8Array, privateKey: Uint8Array): SignableENR {
-    const { kvs, seq, signature } = decode(encoded);
+    const {kvs, seq, signature} = decode(encoded);
     return new SignableENR(kvs, seq, privateKey, signature);
   }
   static decodeTxt(encoded: string, privateKey: Uint8Array): SignableENR {
-    const { kvs, seq, signature } = decodeTxt(encoded);
+    const {kvs, seq, signature} = decodeTxt(encoded);
     return new SignableENR(kvs, seq, privateKey, signature);
   }
 
   get signature(): Uint8Array {
     if (!this._signature) {
-      this._signature = sign(this.id, RLP.encode(encodeToValues(this.kvs, this.seq)), this.privateKey);
+      this._signature = sign(this.id, Rlp.encode(encodeToValues(this.kvs, this.seq)), this.privateKey);
     }
     return this._signature;
   }
@@ -548,7 +568,8 @@ export class SignableENR extends BaseENR {
   }
   set ip(ip: string | undefined) {
     if (ip) {
-      this.set("ip", convertToBytes("ip4", ip));
+      // biome-ignore lint/style/noNonNullAssertion: known to exist
+      this.set("ip", ip4.valueToBytes!(ip));
     } else {
       this.delete("ip");
     }
@@ -588,7 +609,8 @@ export class SignableENR extends BaseENR {
   }
   set ip6(ip: string | undefined) {
     if (ip) {
-      this.set("ip6", convertToBytes("ip6", ip));
+      // biome-ignore lint/style/noNonNullAssertion: known to exist
+      this.set("ip6", ip6.valueToBytes!(ip));
     } else {
       this.delete("ip6");
     }
@@ -624,22 +646,22 @@ export class SignableENR extends BaseENR {
     }
   }
   setLocationMultiaddr(multiaddr: Multiaddr): void {
-    const { family, ip, protoName, protoVal } = parseLocationMultiaddr(multiaddr);
+    const {family, ip, protoName, protoVal} = parseLocationMultiaddr(multiaddr);
 
     if (family === 4) {
       this.set("ip", ip);
       this.set(protoName, protoVal);
     } else {
       this.set("ip6", ip);
-      this.set(protoName + "6", protoVal);
+      this.set(`${protoName}6`, protoVal);
     }
   }
 
   toObject(): SignableENRData {
     return {
       kvs: this.kvs,
-      seq: this.seq,
       privateKey: this.privateKey,
+      seq: this.seq,
     };
   }
   encodeToValues(): (string | number | Uint8Array)[] {

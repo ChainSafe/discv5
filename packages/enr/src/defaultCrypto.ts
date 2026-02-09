@@ -1,8 +1,7 @@
-import { keccak256 } from "ethereum-cryptography/keccak";
-import { secp256k1 } from "ethereum-cryptography/secp256k1";
-
-import { createNodeId } from "./util.js";
-import { NodeId } from "./types.js";
+import {keccak256} from "ethereum-cryptography/keccak";
+import {secp256k1} from "ethereum-cryptography/secp256k1";
+import type {NodeId} from "./types.js";
+import {createNodeId} from "./util.js";
 
 export function hash(input: Uint8Array): Uint8Array {
   return keccak256(input);

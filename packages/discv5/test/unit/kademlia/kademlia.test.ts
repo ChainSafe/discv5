@@ -1,10 +1,9 @@
-/* eslint-env mocha */
-import { KademliaRoutingTable } from "../../../src/kademlia/kademlia.js";
-import { expect } from "chai";
-import { ENR, createNodeId, SignableENR } from "@chainsafe/enr";
-import { EntryStatus, log2Distance } from "../../../src/kademlia/index.js";
-import { randomBytes } from "@noble/hashes/utils";
-import { generateKeypair } from "../../../src/index.js";
+import {type ENR, SignableENR, createNodeId} from "@chainsafe/enr";
+import {randomBytes} from "@noble/hashes/utils.js";
+import {describe, expect, it} from "vitest";
+import {generateKeypair} from "../../../src/index.js";
+import {EntryStatus, log2Distance} from "../../../src/kademlia/index.js";
+import {KademliaRoutingTable} from "../../../src/kademlia/kademlia.js";
 
 describe("Kademlia routing table", () => {
   const nodeId = createNodeId(Buffer.alloc(32));

@@ -1,19 +1,19 @@
-import { EventEmitter } from "events";
-import StrictEventEmitter from "strict-event-emitter-types";
-import { Multiaddr } from "@multiformats/multiaddr";
-import { ENR, SequenceNumber, SignableENR } from "@chainsafe/enr";
+import type {EventEmitter} from "node:events";
+import type {ENR, SequenceNumber, SignableENR} from "@chainsafe/enr";
+import type {Multiaddr} from "@multiformats/multiaddr";
+import type {StrictEventEmitter} from "strict-event-emitter-types";
 
 import {
-  INodesMessage,
-  IPongMessage,
-  ITalkReqMessage,
-  ITalkRespMessage,
+  type INodesMessage,
+  type IPongMessage,
+  type ITalkReqMessage,
+  type ITalkRespMessage,
   MessageType,
-  RequestMessage,
+  type RequestMessage,
 } from "../message/index.js";
-import { INodeAddress, NodeContact } from "../session/nodeInfo.js";
-import { ConnectionDirection } from "../session/index.js";
-import { CodeError, SocketAddress } from "../util/index.js";
+import type {ConnectionDirection} from "../session/index.js";
+import type {INodeAddress, NodeContact} from "../session/nodeInfo.js";
+import type {CodeError, SocketAddress} from "../util/index.js";
 
 export interface IDiscv5Events {
   /**
@@ -96,7 +96,7 @@ export type ResponseType = Uint8Array | ENR[] | PongResponse;
 export function toResponseType(response: IPongMessage | INodesMessage | ITalkRespMessage): ResponseType {
   switch (response.type) {
     case MessageType.PONG:
-      return { enrSeq: response.enrSeq, addr: response.addr };
+      return {addr: response.addr, enrSeq: response.enrSeq};
     case MessageType.NODES:
       return response.enrs;
     case MessageType.TALKRESP:
@@ -105,9 +105,9 @@ export function toResponseType(response: IPongMessage | INodesMessage | ITalkRes
 }
 
 export enum ConnectionStatusType {
-  Connected,
-  PongReceived,
-  Disconnected,
+  Connected = 0,
+  PongReceived = 1,
+  Disconnected = 2,
 }
 
 export type ConnectionStatus =

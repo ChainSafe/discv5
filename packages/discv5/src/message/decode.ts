@@ -1,20 +1,20 @@
-import * as RLP from "@ethereumjs/rlp";
-import { bytesToBigint, ENR } from "@chainsafe/enr";
+import {ENR, bytesToBigint} from "@chainsafe/enr";
+import * as Rlp from "@ethereumjs/rlp";
+import {ipFromBytes} from "../util/ip.js";
 import {
-  IPingMessage,
-  IPongMessage,
-  IFindNodeMessage,
-  INodesMessage,
-  IRegTopicMessage,
-  ITicketMessage,
-  IRegConfirmationMessage,
-  ITopicQueryMessage,
-  Message,
+  type IFindNodeMessage,
+  type INodesMessage,
+  type IPingMessage,
+  type IPongMessage,
+  type IRegConfirmationMessage,
+  type IRegTopicMessage,
+  type ITalkReqMessage,
+  type ITalkRespMessage,
+  type ITicketMessage,
+  type ITopicQueryMessage,
+  type Message,
   MessageType,
-  ITalkReqMessage,
-  ITalkRespMessage,
 } from "./types.js";
-import { ipFromBytes } from "../util/ip.js";
 
 const ERR_INVALID_MESSAGE = "invalid message";
 
@@ -54,19 +54,19 @@ export function decode(data: Uint8Array): Message {
 }
 
 function decodePing(data: Uint8Array): IPingMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
+  const rlpRaw = Rlp.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
   return {
-    type: MessageType.PING,
-    id: decodeRequestId(rlpRaw),
     enrSeq: bytesToBigint(rlpRaw[1]),
+    id: decodeRequestId(rlpRaw),
+    type: MessageType.PING,
   };
 }
 
 function decodePong(data: Uint8Array): IPongMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
+  const rlpRaw = Rlp.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 4) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -84,15 +84,15 @@ function decodePong(data: Uint8Array): IPongMessage {
   const port = rlpRaw[3].length ? Number(bytesToBigint(rlpRaw[3])) : 0;
 
   return {
-    type: MessageType.PONG,
-    id: decodeRequestId(rlpRaw),
+    addr: {ip, port},
     enrSeq: bytesToBigint(rlpRaw[1]),
-    addr: { ip, port },
+    id: decodeRequestId(rlpRaw),
+    type: MessageType.PONG,
   };
 }
 
 function decodeFindNode(data: Uint8Array): IFindNodeMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
+  const rlpRaw = Rlp.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
@@ -101,97 +101,97 @@ function decodeFindNode(data: Uint8Array): IFindNodeMessage {
   }
   const distances = (rlpRaw[1] as Uint8Array[]).map((x) => (x.length ? Number(bytesToBigint(x)) : 0));
   return {
-    type: MessageType.FINDNODE,
-    id: decodeRequestId(rlpRaw),
     distances,
+    id: decodeRequestId(rlpRaw),
+    type: MessageType.FINDNODE,
   };
 }
 
 function decodeNodes(data: Uint8Array): INodesMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as RLP.NestedUint8Array;
+  const rlpRaw = Rlp.decode(data.slice(1)) as Rlp.NestedUint8Array;
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 3 || !Array.isArray(rlpRaw[2])) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
   return {
-    type: MessageType.NODES,
+    enrs: rlpRaw[2].map((enrRaw) => ENR.decodeFromValues(enrRaw as Uint8Array[])),
     id: decodeRequestId(rlpRaw as Uint8Array[]),
     total: rlpRaw[1].length ? Number(bytesToBigint(rlpRaw[1] as Uint8Array)) : 0,
-    enrs: rlpRaw[2].map((enrRaw) => ENR.decodeFromValues(enrRaw as Uint8Array[])),
+    type: MessageType.NODES,
   };
 }
 
 function decodeTalkReq(data: Uint8Array): ITalkReqMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
+  const rlpRaw = Rlp.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 3) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
   return {
-    type: MessageType.TALKREQ,
     id: decodeRequestId(rlpRaw),
     protocol: rlpRaw[1],
     request: rlpRaw[2],
+    type: MessageType.TALKREQ,
   };
 }
 
 function decodeTalkResp(data: Uint8Array): ITalkRespMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
+  const rlpRaw = Rlp.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
   return {
-    type: MessageType.TALKRESP,
     id: decodeRequestId(rlpRaw),
     response: rlpRaw[1],
+    type: MessageType.TALKRESP,
   };
 }
 
 function decodeRegTopic(data: Uint8Array): IRegTopicMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
+  const rlpRaw = Rlp.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 4 || !Array.isArray(rlpRaw[2])) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
   return {
-    type: MessageType.REGTOPIC,
-    id: decodeRequestId(rlpRaw),
-    topic: rlpRaw[1],
     enr: ENR.decodeFromValues(rlpRaw[2] as Uint8Array[]),
+    id: decodeRequestId(rlpRaw),
     ticket: rlpRaw[3],
+    topic: rlpRaw[1],
+    type: MessageType.REGTOPIC,
   };
 }
 
 function decodeTicket(data: Uint8Array): ITicketMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
+  const rlpRaw = Rlp.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 3) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
   return {
-    type: MessageType.TICKET,
     id: decodeRequestId(rlpRaw),
     ticket: rlpRaw[1],
+    type: MessageType.TICKET,
     waitTime: rlpRaw[2].length ? Number(bytesToBigint(rlpRaw[2] as Uint8Array)) : 0,
   };
 }
 
 function decodeRegConfirmation(data: Uint8Array): IRegConfirmationMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
+  const rlpRaw = Rlp.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
   return {
-    type: MessageType.REGCONFIRMATION,
     id: decodeRequestId(rlpRaw),
     topic: rlpRaw[1],
+    type: MessageType.REGCONFIRMATION,
   };
 }
 
 function decodeTopicQuery(data: Uint8Array): ITopicQueryMessage {
-  const rlpRaw = RLP.decode(data.slice(1)) as Uint8Array[];
+  const rlpRaw = Rlp.decode(data.slice(1)) as Uint8Array[];
   if (!Array.isArray(rlpRaw) || rlpRaw.length !== 2) {
     throw new Error(ERR_INVALID_MESSAGE);
   }
   return {
-    type: MessageType.TOPICQUERY,
     id: rlpRaw[0],
     topic: rlpRaw[1],
+    type: MessageType.TOPICQUERY,
   };
 }

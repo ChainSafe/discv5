@@ -1,9 +1,8 @@
 import Crypto from "node:crypto";
-import { NodeId } from "@chainsafe/enr";
-
-import { generateKeypair, IKeypair, createKeypair } from "../keypair/index.js";
-import { getDiscv5Crypto } from "../util/crypto.js";
-import { concatBytes, hexToBytes, utf8ToBytes } from "ethereum-cryptography/utils.js";
+import type {NodeId} from "@chainsafe/enr";
+import {concatBytes, hexToBytes, utf8ToBytes} from "ethereum-cryptography/utils.js";
+import {type IKeypair, createKeypair, generateKeypair} from "../keypair/index.js";
+import {getDiscv5Crypto} from "../util/crypto.js";
 
 // Implementation for generating session keys in the Discv5 protocol.
 // Currently, Diffie-Hellman key agreement is performed with known public key types. Session keys
@@ -38,7 +37,7 @@ export function generateSessionKeys(
   return [...deriveKey(secret, localId, remoteId, challengeData), ephemKeypair.publicKey] as [
     Uint8Array,
     Uint8Array,
-    Uint8Array
+    Uint8Array,
   ];
 }
 
@@ -65,7 +64,7 @@ export function deriveKeysFromPubkey(
   ephemPK: Uint8Array,
   challengeData: Uint8Array
 ): [Uint8Array, Uint8Array] {
-  const secret = kpriv.deriveSecret(createKeypair({ type: kpriv.type, publicKey: ephemPK }));
+  const secret = kpriv.deriveSecret(createKeypair({publicKey: ephemPK, type: kpriv.type}));
   return deriveKey(secret, remoteId, localId, challengeData);
 }
 

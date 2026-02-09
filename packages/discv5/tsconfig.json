@@ -2,15 +2,11 @@
   "include": ["src", "test"],
   "compilerOptions": {
     "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "outDir": "./lib",
     "strict": true,
     "strictNullChecks": true,
-    "typeRoots": [
-       "../../node_modules/@types",
-       "../../types"
-    ],
     "esModuleInterop": true,
     "sourceMap": true,
   }

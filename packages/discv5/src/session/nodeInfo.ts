@@ -1,9 +1,9 @@
-import { Multiaddr, isMultiaddr } from "@multiformats/multiaddr";
-import { peerIdFromString } from "@libp2p/peer-id";
-import { ENR, NodeId, getV4Crypto } from "@chainsafe/enr";
-import { createKeypair, IKeypair } from "../keypair/index.js";
-import { IPMode } from "../transport/types.js";
-import { getSocketAddressMultiaddrOnENR } from "../util/ip.js";
+import {type ENR, type NodeId, getV4Crypto} from "@chainsafe/enr";
+import {peerIdFromString} from "@libp2p/peer-id";
+import {type Multiaddr, isMultiaddr} from "@multiformats/multiaddr";
+import {type IKeypair, createKeypair} from "../keypair/index.js";
+import type {IPMode} from "../transport/types.js";
+import {getSocketAddressMultiaddrOnENR, multiaddrToObject} from "../util/ip.js";
 
 /** A representation of an unsigned contactable node. */
 export interface INodeAddress {
@@ -18,7 +18,7 @@ export function nodeAddressToString(nodeAddr: INodeAddress): string {
   // have a peer ID specified, we remove any p2p portions of the multiaddr when generating the nodeAddressString
   // since only the UDP socket addr is included in the session cache key (e.g. /ip4/127.0.0.1/udp/9000/p2p/Qm...)
   const normalizedAddr = nodeAddr.socketAddr.decapsulateCode(421);
-  return nodeAddr.nodeId + ":" + Buffer.from(normalizedAddr.bytes).toString("hex");
+  return `${nodeAddr.nodeId}:${Buffer.from(normalizedAddr.bytes).toString("hex")}`;
 }
 
 /**
@@ -27,13 +27,13 @@ export function nodeAddressToString(nodeAddr: INodeAddress): string {
  */
 export enum INodeContactType {
   /** We know the ENR of the node we are contacting. */
-  ENR,
+  Enr = 0,
   /**
    * We don't have an ENR, but have enough information to start a handshake.
    * The handshake will request the ENR at the first opportunity.
    * The public key can be derived from multiaddr's whose keys can be inlined.
    */
-  Raw,
+  Raw = 1,
 }
 
 /**
@@ -56,7 +56,7 @@ export type NodeContact =
       nodeAddress: INodeAddress;
     }
   | {
-      type: INodeContactType.ENR;
+      type: INodeContactType.Enr;
       publicKey: IKeypair;
       nodeAddress: INodeAddress;
       enr: ENR;
@@ -69,14 +69,11 @@ export type NodeContact =
  */
 export function createNodeContact(input: ENR | Multiaddr, ipMode: IPMode): NodeContact {
   if (isMultiaddr(input)) {
-    const options = input.toOptions();
-    if (options.transport !== "udp") {
-      throw new Error("Multiaddr must specify a UDP port");
-    }
+    const options = multiaddrToObject(input);
     if ((options.family === 4 && !ipMode.ip4) || (options.family === 6 && !ipMode.ip6)) {
       throw new Error("Multiaddr family not supported by IP mode");
     }
-    const peerIdStr = input.getPeerId();
+    const peerIdStr = input.getComponents().find((c) => c.code === 421)?.value;
     if (!peerIdStr) {
       throw new Error("Multiaddr must specify a peer id");
     }
@@ -85,31 +82,30 @@ export function createNodeContact(input: ENR | Multiaddr, ipMode: IPMode): NodeC
     if (!publicKey) {
       throw new Error("Peer ID must have a public key");
     }
-    const keypair = createKeypair({ type: publicKey.type, publicKey: publicKey.raw });
+    const keypair = createKeypair({publicKey: publicKey.raw, type: publicKey.type});
     const nodeId = getV4Crypto().nodeId(keypair.publicKey);
     return {
-      type: INodeContactType.Raw,
-      publicKey: keypair,
       nodeAddress: {
-        socketAddr: input,
         nodeId,
+        socketAddr: input,
       },
-    };
-  } else {
-    const socketAddr = getSocketAddressMultiaddrOnENR(input, ipMode);
-    if (!socketAddr) {
-      throw new Error("ENR has no suitable udp multiaddr given the IP mode");
-    }
-    return {
-      type: INodeContactType.ENR,
-      publicKey: createKeypair({ type: input.keypairType, publicKey: input.publicKey }),
-      nodeAddress: {
-        socketAddr,
-        nodeId: input.nodeId,
-      },
-      enr: input,
+      publicKey: keypair,
+      type: INodeContactType.Raw,
     };
   }
+  const socketAddr = getSocketAddressMultiaddrOnENR(input, ipMode);
+  if (!socketAddr) {
+    throw new Error("ENR has no suitable udp multiaddr given the IP mode");
+  }
+  return {
+    enr: input,
+    nodeAddress: {
+      nodeId: input.nodeId,
+      socketAddr,
+    },
+    publicKey: createKeypair({publicKey: input.publicKey, type: input.keypairType}),
+    type: INodeContactType.Enr,
+  };
 }
 
 export function getNodeId(contact: NodeContact): NodeId {

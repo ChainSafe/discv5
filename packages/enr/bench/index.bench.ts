@@ -1,18 +1,13 @@
-import { itBench } from "@dapplion/benchmark";
-import { createSecp256k1PeerId } from "@libp2p/peer-id-factory";
+import { describe, itBench } from "@chainsafe/benchmark";
+import { generateKeyPair } from "@libp2p/crypto/keys";
 import {
   ENR,
   SignableENR,
-  createPeerIdFromPrivateKey,
-  createPeerIdFromPublicKey,
-  createPrivateKeyFromPeerId,
-  createPublicKeyFromPeerId,
 } from "../src/index.js";
 
 describe("ENR", async function () {
-  const peerId = await createSecp256k1PeerId();
-  const { privateKey } = createPrivateKeyFromPeerId(peerId);
-  const enr = SignableENR.createV4(privateKey);
+  const kp = await generateKeyPair("secp256k1");
+  const enr = SignableENR.createV4(kp.raw);
   enr.ip = "127.0.0.1";
   enr.tcp = 8080;
 
@@ -24,23 +19,9 @@ describe("ENR", async function () {
   });
 });
 
-describe("createPeerIdFromPrivateKey", async function () {
-  const peerId = await createSecp256k1PeerId();
-  const { type, privateKey } = createPrivateKeyFromPeerId(peerId);
-  const { publicKey } = createPublicKeyFromPeerId(peerId);
-
-  itBench("createPeerIdFromPrivateKey", () => {
-    return createPeerIdFromPrivateKey(type, privateKey);
-  });
-  itBench("createPeerIdFromPublicKey", () => {
-    return createPeerIdFromPublicKey(type, publicKey);
-  });
-});
-
 describe("ENR - encode/decode", async function () {
-  const peerId = await createSecp256k1PeerId();
-  const { privateKey } = createPrivateKeyFromPeerId(peerId);
-  const enr = SignableENR.createV4(privateKey);
+  const kp = await generateKeyPair("secp256k1");
+  const enr = SignableENR.createV4(kp.raw);
   enr.ip = "127.0.0.1";
   enr.tcp = 8080;
   enr.udp = 8080;

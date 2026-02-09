@@ -1,10 +1,17 @@
-import { EventEmitter } from "events";
-import { ENR, NodeId } from "@chainsafe/enr";
+import {EventEmitter} from "node:events";
+import type {ENR, NodeId} from "@chainsafe/enr";
 
-import { MAX_NODES_PER_BUCKET } from "./constants.js";
-import { BucketEventEmitter, EntryStatus, IEntry, IEntryFull, InsertResult, UpdateResult } from "./types.js";
+import {MAX_NODES_PER_BUCKET} from "./constants.js";
+import {
+  type BucketEventEmitter,
+  EntryStatus,
+  type IEntry,
+  type IEntryFull,
+  InsertResult,
+  UpdateResult,
+} from "./types.js";
 
-export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
+export class Bucket extends (EventEmitter as {new (): BucketEventEmitter}) {
   /**
    * Entries ordered from least-recently connected to most-recently connected
    */
@@ -88,32 +95,29 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
       case EntryStatus.Connected: {
         if (this.nodes.length < MAX_NODES_PER_BUCKET) {
           this.firstConnectedIndex = this.firstConnectedIndex ?? this.nodes.length;
-          this.nodes.push({ value, status });
+          this.nodes.push({status, value});
           break;
-        } else {
-          // The bucket is full, attempt to add the node as pending
-          if (this.addPending(value, status)) {
-            return InsertResult.Pending;
-          } else {
-            return InsertResult.FailedBucketFull;
-          }
         }
+        // The bucket is full, attempt to add the node as pending
+        if (this.addPending(value, status)) {
+          return InsertResult.Pending;
+        }
+        return InsertResult.FailedBucketFull;
       }
       case EntryStatus.Disconnected: {
         if (this.nodes.length < MAX_NODES_PER_BUCKET) {
           if (this.firstConnectedIndex === undefined) {
             // No connected nodes, add to the end
-            this.nodes.push({ value, status });
+            this.nodes.push({status, value});
           } else {
             // add before the first connected node
-            this.nodes.splice(this.firstConnectedIndex, 0, { value, status });
+            this.nodes.splice(this.firstConnectedIndex, 0, {status, value});
             this.firstConnectedIndex++;
           }
           break;
-        } else {
-          // The bucket is full
-          return InsertResult.FailedBucketFull;
         }
+        // The bucket is full
+        return InsertResult.FailedBucketFull;
       }
     }
 
@@ -121,7 +125,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
     // happen when a pending node is inserted, a node gets removed from the bucket, freeing up
     // space and then re-inserted here.
     if (isPendingNode) {
-      delete this.pending;
+      this.pending = undefined;
     }
     return InsertResult.Inserted;
   }
@@ -138,15 +142,14 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
       if (value.seq > node.value.seq) {
         node.value = value;
         return UpdateResult.Updated;
-      } else {
-        return UpdateResult.NotModified;
       }
-    } else if (this.pending?.value.nodeId === value.nodeId) {
+      return UpdateResult.NotModified;
+    }
+    if (this.pending?.value.nodeId === value.nodeId) {
       this.pending.value = value;
       return UpdateResult.UpdatedPending;
-    } else {
-      return UpdateResult.FailedKeyNonExistent;
     }
+    return UpdateResult.FailedKeyNonExistent;
   }
 
   /**
@@ -175,7 +178,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
       // If the least-recently connected node re-establishes its
       // connected status, drop the pending node.
       if (index === 0 && isConnected) {
-        delete this.pending;
+        this.pending = undefined;
       }
 
       // Reinsert the node with the desired status
@@ -183,21 +186,21 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
         case InsertResult.Inserted: {
           if (notModified) {
             return UpdateResult.NotModified;
-          } else if (!wasConnected && isConnected) {
-            return UpdateResult.UpdatedAndPromoted;
-          } else {
-            return UpdateResult.Updated;
           }
+          if (!wasConnected && isConnected) {
+            return UpdateResult.UpdatedAndPromoted;
+          }
+          return UpdateResult.Updated;
         }
         default:
           throw new Error("Unreachable");
       }
-    } else if (this.pending?.value.nodeId === id) {
+    }
+    if (this.pending?.value.nodeId === id) {
       this.pending.status = status;
       return UpdateResult.UpdatedPending;
-    } else {
-      return UpdateResult.FailedKeyNonExistent;
     }
+    return UpdateResult.FailedKeyNonExistent;
   }
 
   /**
@@ -208,7 +211,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
    */
   addPending(value: ENR, status: EntryStatus): boolean {
     if (!this.pending && this.firstConnectedIndex !== 0) {
-      this.pending = { value, status };
+      this.pending = {status, value};
       const first = this.nodes[0];
       this.emit("pendingEviction", first.value);
       this.pendingTimeoutId = setTimeout(this.applyPending, this.pendingTimeout);
@@ -253,10 +256,10 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
   getWithPending(id: NodeId): IEntryFull<ENR> | undefined {
     const bucketEntry = this.get(id);
     if (bucketEntry) {
-      return { pending: false, ...bucketEntry };
+      return {pending: false, ...bucketEntry};
     }
     if (this.pending && this.pending.value.nodeId === id) {
-      return { pending: true, ...this.pending };
+      return {pending: true, ...this.pending};
     }
     return undefined;
   }
@@ -297,7 +300,7 @@ export class Bucket extends (EventEmitter as { new (): BucketEventEmitter }) {
       case EntryStatus.Connected: {
         if (this.firstConnectedIndex === index && index === this.nodes.length - 1) {
           // It was the last connected node.
-          delete this.firstConnectedIndex;
+          this.firstConnectedIndex = undefined;
         }
         break;
       }

@@ -1,5 +1,5 @@
-import { NodeId } from "@chainsafe/enr";
-import { SocketAddress } from "../util/ip.js";
+import type {NodeId} from "@chainsafe/enr";
+import type {SocketAddress} from "../util/ip.js";
 
 /** Serialized representation of the IP:port vote from the Pong message */
 type VoteID = string;
@@ -8,7 +8,7 @@ const MAX_VOTES = 200;
 
 export class AddrVotes {
   /** Bounded by `MAX_VOTES`, on new votes evicts the oldest votes */
-  private readonly votes = new Map<NodeId, { socketAddrStr: VoteID; unixTsMs: number }>();
+  private readonly votes = new Map<NodeId, {socketAddrStr: VoteID; unixTsMs: number}>();
   /** Bounded by votes, if the vote count reaches 0, its key is deleted */
   private readonly tallies = new Map<VoteID, number>();
 
@@ -25,7 +25,8 @@ export class AddrVotes {
     if (prevVote?.socketAddrStr === socketAddrStr) {
       // Same vote, ignore
       return false;
-    } else if (prevVote !== undefined) {
+    }
+    if (prevVote !== undefined) {
       // If there was a previous vote, remove from tally
       const prevVoteTally = (this.tallies.get(prevVote.socketAddrStr) ?? 0) - 1;
       if (prevVoteTally <= 0) {
@@ -46,7 +47,7 @@ export class AddrVotes {
 
     // Persist vote
     this.tallies.set(socketAddrStr, currentTally);
-    this.votes.set(voter, { socketAddrStr: socketAddrStr, unixTsMs: Date.now() });
+    this.votes.set(voter, {socketAddrStr: socketAddrStr, unixTsMs: Date.now()});
 
     // If there are too many votes, remove the oldest
     if (this.votes.size > MAX_VOTES) {

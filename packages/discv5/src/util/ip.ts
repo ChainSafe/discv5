@@ -1,26 +1,26 @@
-import { multiaddr, Multiaddr } from "@multiformats/multiaddr";
-import { BaseENR, SignableENR } from "@chainsafe/enr";
-import { IPMode } from "../transport/types.js";
+import type {BaseENR, SignableENR} from "@chainsafe/enr";
+import {type Multiaddr, multiaddr} from "@multiformats/multiaddr";
+import type {IPMode} from "../transport/types.js";
 
-export type IP = { type: 4 | 6; octets: Uint8Array };
+export type Ip = {type: 4 | 6; octets: Uint8Array};
 export type SocketAddress = {
-  ip: IP;
+  ip: Ip;
   port: number;
 };
 
-export function ipFromBytes(bytes: Uint8Array): IP | undefined {
+export function ipFromBytes(bytes: Uint8Array): Ip | undefined {
   // https://github.com/sigp/discv5/blob/517eb3f0c5e5b347d8fe6c2973e1698f89e83524/src/rpc.rs#L429
   switch (bytes.length) {
     case 4:
-      return { type: 4, octets: bytes };
+      return {octets: bytes, type: 4};
     case 16:
-      return { type: 6, octets: bytes };
+      return {octets: bytes, type: 6};
     default:
       return undefined;
   }
 }
 
-export function ipToBytes(ip: IP): Uint8Array {
+export function ipToBytes(ip: Ip): Uint8Array {
   return ip.octets;
 }
 
@@ -95,7 +95,7 @@ export function setSocketAddressOnENR(enr: SignableENR, s: SocketAddress): void 
 // 4     32    ip4
 // 41    128   ip6
 // 273   16    udp
-const Protocol = {
+const PROTOCOL = {
   4: 4,
   6: 41,
   udp: 273,
@@ -108,7 +108,7 @@ const udpProto1 = 2;
 export function multiaddrFromSocketAddress(s: SocketAddress): Multiaddr {
   // ipProto(1) + octets(4 or 16) + udpProto(2) + udpPort(2)
   const multiaddrBuf = new Uint8Array(s.ip.octets.length + 5);
-  multiaddrBuf[0] = Protocol[s.ip.type];
+  multiaddrBuf[0] = PROTOCOL[s.ip.type];
   multiaddrBuf.set(s.ip.octets, 1);
   multiaddrBuf[multiaddrBuf.length - 4] = udpProto0;
   multiaddrBuf[multiaddrBuf.length - 3] = udpProto1;
@@ -118,18 +118,27 @@ export function multiaddrFromSocketAddress(s: SocketAddress): Multiaddr {
 }
 
 export function multiaddrToSocketAddress(multiaddr: Multiaddr): SocketAddress {
-  let ip: IP | undefined;
+  let ip: Ip | undefined;
   let port: number | undefined;
-  for (const tuple of multiaddr.tuples()) {
-    switch (tuple[0]) {
-      case Protocol["4"]:
-        ip = { type: 4, octets: tuple[1]! };
+  multiaddr.bytes; // populate internal cache
+  for (const component of multiaddr.getComponents()) {
+    switch (component.code) {
+      case PROTOCOL["4"]:
+        ip = {
+          // biome-ignore lint/style/noNonNullAssertion: guaranteed with multiaddr.bytes access above
+          octets: component.bytes!.slice(1), // remove varint prefix
+          type: 4,
+        };
         break;
-      case Protocol["6"]:
-        ip = { type: 6, octets: tuple[1]! };
+      case PROTOCOL["6"]:
+        ip = {
+          // biome-ignore lint/style/noNonNullAssertion: guaranteed with multiaddr.bytes access above
+          octets: component.bytes!.slice(1), // remove varint prefix
+          type: 6,
+        };
         break;
-      case Protocol.udp: {
-        port = (tuple[1]![0] << 8) + tuple[1]![1];
+      case PROTOCOL.udp: {
+        port = Number(component.value);
         break;
       }
     }
@@ -143,5 +152,37 @@ export function multiaddrToSocketAddress(multiaddr: Multiaddr): SocketAddress {
   return {
     ip,
     port,
+  };
+}
+
+export type MultiaddrObject = {
+  family: number;
+  host: string;
+  port: number;
+};
+
+export function multiaddrToObject(addr: Multiaddr): MultiaddrObject {
+  const components = addr.getComponents();
+  const ipComponent = components.at(0);
+  const transportComponent = components.at(1);
+  if (!ipComponent || !transportComponent) {
+    throw new Error("Invalid multiaddr format for transport bind address");
+  }
+  if (ipComponent.name !== "ip4" && ipComponent.name !== "ip6") {
+    throw new Error("Local multiaddr must use IPv4 or IPv6");
+  }
+  if (ipComponent.value === undefined) {
+    throw new Error("IP component of multiaddr must have a value");
+  }
+  if (transportComponent.name !== "udp") {
+    throw new Error("Local multiaddr must use UDP");
+  }
+  if (transportComponent.value === undefined) {
+    throw new Error("Transport component of multiaddr must have a value");
+  }
+  return {
+    family: ipComponent.name === "ip4" ? 4 : 6,
+    host: ipComponent.value,
+    port: Number(transportComponent.value),
   };
 }

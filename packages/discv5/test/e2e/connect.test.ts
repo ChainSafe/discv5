@@ -1,15 +1,14 @@
-/* eslint-env mocha */
-import { expect } from "chai";
-import { privateKeyFromProtobuf } from "@libp2p/crypto/keys";
-import { PrivateKey } from "@libp2p/interface";
-import { multiaddr } from "@multiformats/multiaddr";
-import { SignableENR } from "@chainsafe/enr";
-import { Discv5 } from "../../src/index.js";
+import {SignableENR} from "@chainsafe/enr";
+import {privateKeyFromProtobuf} from "@libp2p/crypto/keys";
+import type {PrivateKey} from "@libp2p/interface";
+import {multiaddr} from "@multiformats/multiaddr";
+import {afterEach, describe, expect, it} from "vitest";
+import {Discv5} from "../../src/index.js";
 
 let nodeIdx = 0;
 const portBase = 10000;
 
-describe("discv5 integration test", function () {
+describe("discv5 integration test", () => {
   const nodes: Discv5[] = [];
 
   type Node = {
@@ -28,24 +27,24 @@ describe("discv5 integration test", function () {
     enr.setLocationMultiaddr(multiAddrUdp);
 
     const discv5 = Discv5.create({
-      enr,
-      privateKey,
-      bindAddrs: { ip4: multiAddrUdp },
+      bindAddrs: {ip4: multiAddrUdp},
       config: {
         lookupTimeout: 2000,
       },
+      enr,
+      privateKey,
     });
 
     nodes.push(discv5);
 
     await discv5.start();
 
-    return { privateKey, enr, discv5 };
+    return {discv5, enr, privateKey};
   }
 
   // 2862ae92fa59042fd4d4a3e3bddb92b33a53b72be15deafce07dfbd7c3b12812
 
-  this.afterEach(async () => {
+  afterEach(async () => {
     for (const node of nodes) {
       await node.stop();
     }
@@ -62,7 +61,7 @@ describe("discv5 integration test", function () {
     expect(nodes.map((n) => n.nodeId)).to.deep.equal([node2.enr.nodeId, node1.enr.nodeId], "Should find ENR of node2");
   });
 
-  it("Send TALKREQ/TALKRESP", async function () {
+  it("Send TALKREQ/TALKRESP", async () => {
     const node0 = await getDiscv5Node();
     const node1 = await getDiscv5Node();
 
@@ -72,13 +71,13 @@ describe("discv5 integration test", function () {
     try {
       await node0.discv5.sendTalkReq(node1.enr.toENR(), Buffer.from([0, 1, 2, 3]), "foo");
       expect.fail("TALKREQ response should throw when no response is given");
-    } catch (e) {
+    } catch {
       // expected
     }
 
     // test a TALKRESP with a response
     const expectedResp = Buffer.from([4, 5, 6, 7]);
-    node1.discv5.on("talkReqReceived", (nodeAddr, enr, request) => {
+    node1.discv5.on("talkReqReceived", (nodeAddr, _enr, request) => {
       void node1.discv5.sendTalkResp(nodeAddr, request.id, expectedResp);
     });
     const resp = await node0.discv5.sendTalkReq(node1.enr.toENR(), Buffer.from([0, 1, 2, 3]), "foo");
@@ -99,5 +98,5 @@ function getPrivateKey(i: number): PrivateKey {
     "CAISIHRKcVKLTpKhQOEIPwQjH2xx/nvJWWLUCr90/NOuuZ+l",
     "CAISIP3n7vFWZKye7duop0nhfttFJUXTVvQfd4q0dPpURLke",
   ];
-  return privateKeyFromProtobuf(Buffer.from(privKeysBase64[i], "base64"));
+  return privateKeyFromProtobuf(Buffer.from(privKeysBase64[i], "base64")) as PrivateKey;
 }

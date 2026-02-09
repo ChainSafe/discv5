@@ -1,10 +1,9 @@
-/* eslint-env mocha */
-import { expect } from "chai";
-import { generateKeyPair } from "@libp2p/crypto/keys";
-import { multiaddr } from "@multiformats/multiaddr";
-import { BaseENR, ENR, SignableENR, getV4Crypto } from "../../src/index.js";
-import { peerIdFromString } from "@libp2p/peer-id";
-import { bytesToHex, hexToBytes, utf8ToBytes } from "ethereum-cryptography/utils.js";
+import {generateKeyPair} from "@libp2p/crypto/keys";
+import {peerIdFromString} from "@libp2p/peer-id";
+import {multiaddr} from "@multiformats/multiaddr";
+import {bytesToHex, hexToBytes, utf8ToBytes} from "ethereum-cryptography/utils.js";
+import {beforeEach, describe, expect, it} from "vitest";
+import {type BaseENR, ENR, SignableENR, getV4Crypto} from "../../src/index.js";
 
 describe("ENR spec test vector", () => {
   // spec enr https://eips.ethereum.org/EIPS/eip-778
@@ -19,8 +18,8 @@ describe("ENR spec test vector", () => {
   const kvs = new Map(
     Object.entries({
       id: utf8ToBytes("v4"),
-      secp256k1: publicKey,
       ip: hexToBytes("7f000001"),
+      secp256k1: publicKey,
       udp: hexToBytes((30303).toString(16)),
     })
   );
@@ -73,71 +72,69 @@ describe("ENR multiaddr support", () => {
 
   it("should get / set UDP multiaddr", () => {
     const multi0 = multiaddr("/ip4/127.0.0.1/udp/30303");
-    const tuples0 = multi0.tuples();
+    const components0 = multi0.getComponents();
 
-    if (!tuples0[0][1] || !tuples0[1][1]) {
+    if (!components0[0].value || !components0[1].value) {
       throw new Error("invalid multiaddr");
     }
     // set underlying records
-    record.set("ip", tuples0[0][1]);
-    record.set("udp", tuples0[1][1]);
+    record.ip = components0[0].value;
+    record.udp = Number(components0[1].value);
     // and get the multiaddr
-    expect(record.getLocationMultiaddr("udp")!.toString()).to.equal(multi0.toString());
+    expect(record.getLocationMultiaddr("udp")?.toString()).to.equal(multi0.toString());
     // set the multiaddr
     const multi1 = multiaddr("/ip4/0.0.0.0/udp/30300");
     record.setLocationMultiaddr(multi1);
     // and get the multiaddr
-    expect(record.getLocationMultiaddr("udp")!.toString()).to.equal(multi1.toString());
+    expect(record.getLocationMultiaddr("udp")?.toString()).to.equal(multi1.toString());
     // and get the underlying records
-    const tuples1 = multi1.tuples();
-    expect(record.kvs.get("ip")).to.deep.equal(tuples1[0][1]);
-    expect(record.kvs.get("udp")).to.deep.equal(tuples1[1][1]);
+    const components1 = multi1.getComponents();
+    expect(record.ip).to.deep.equal(components1[0].value);
+    expect(record.udp).to.deep.equal(Number(components1[1].value));
   });
   it("should get / set TCP multiaddr", () => {
     const multi0 = multiaddr("/ip4/127.0.0.1/tcp/30303");
-    const tuples0 = multi0.tuples();
-
-    if (!tuples0[0][1] || !tuples0[1][1]) {
+    const components0 = multi0.getComponents();
+    if (!components0[0].value || !components0[1].value) {
       throw new Error("invalid multiaddr");
     }
 
     // set underlying records
-    record.set("ip", tuples0[0][1]);
-    record.set("tcp", tuples0[1][1]);
+    record.ip = components0[0].value;
+    record.tcp = Number(components0[1].value);
     // and get the multiaddr
-    expect(record.getLocationMultiaddr("tcp")!.toString()).to.equal(multi0.toString());
+    expect(record.getLocationMultiaddr("tcp")?.toString()).to.equal(multi0.toString());
     // set the multiaddr
     const multi1 = multiaddr("/ip4/0.0.0.0/tcp/30300");
     record.setLocationMultiaddr(multi1);
     // and get the multiaddr
-    expect(record.getLocationMultiaddr("tcp")!.toString()).to.equal(multi1.toString());
+    expect(record.getLocationMultiaddr("tcp")?.toString()).to.equal(multi1.toString());
     // and get the underlying records
-    const tuples1 = multi1.tuples();
-    expect(record.kvs.get("ip")).to.deep.equal(tuples1[0][1]);
-    expect(record.kvs.get("tcp")).to.deep.equal(tuples1[1][1]);
+    const components1 = multi1.getComponents();
+    expect(record.ip).to.deep.equal(components1[0].value);
+    expect(record.tcp).to.deep.equal(Number(components1[1].value));
   });
   it("should get / set QUIC multiaddr", () => {
     const multi0 = multiaddr("/ip4/127.0.0.1/udp/30303/quic-v1");
-    const tuples0 = multi0.tuples();
-
-    if (!tuples0[0][1] || !tuples0[1][1]) {
+    const components0 = multi0.getComponents();
+    if (!components0[0].value || !components0[1].value) {
       throw new Error("invalid multiaddr");
     }
 
     // set underlying records
-    record.set("ip", tuples0[0][1]);
-    record.set("quic", tuples0[1][1]);
+    record.ip = components0[0].value;
+    record.quic = Number(components0[1].value);
     // and get the multiaddr
-    expect(record.getLocationMultiaddr("quic")!.toString()).to.equal(multi0.toString());
+    expect(record.getLocationMultiaddr("quic")?.toString()).to.equal(multi0.toString());
     // set the multiaddr
     const multi1 = multiaddr("/ip4/0.0.0.0/udp/30300/quic-v1");
     record.setLocationMultiaddr(multi1);
     // and get the multiaddr
-    expect(record.getLocationMultiaddr("quic")!.toString()).to.equal(multi1.toString());
+    expect(record.getLocationMultiaddr("quic")?.toString()).to.equal(multi1.toString());
     // and get the underlying records
-    const tuples1 = multi1.tuples();
-    expect(record.kvs.get("ip")).to.deep.equal(tuples1[0][1]);
-    expect(record.kvs.get("quic")).to.deep.equal(tuples1[1][1]);
+    const components1 = multi1.getComponents();
+    expect(record.ip).to.deep.equal(components1[0].value);
+    expect(record.quic).to.deep.equal(Number(components1[1].value));
   });
 
   describe("location multiaddr", async () => {
@@ -231,7 +228,7 @@ describe("ENR multiaddr support", () => {
   });
 });
 
-describe("ENR", function () {
+describe("ENR", () => {
   describe("decodeTxt", () => {
     it("should encodeTxt and decodeTxt", async () => {
       const privateKey = await generateKeyPair("secp256k1");
@@ -241,8 +238,8 @@ describe("ENR", function () {
       expect(txt.slice(0, 4)).to.be.equal("enr:");
       const enr2 = ENR.decodeTxt(txt);
       expect(bytesToHex(enr2.signature as Uint8Array)).to.be.equal(bytesToHex(enr.signature as Uint8Array));
-      const mu = enr2.getLocationMultiaddr("udp")!;
-      expect(mu.toString()).to.be.equal("/ip4/18.223.219.100/udp/9000");
+      const mu = enr2.getLocationMultiaddr("udp");
+      expect(mu?.toString()).to.be.equal("/ip4/18.223.219.100/udp/9000");
     });
 
     it("should decode valid enr successfully", () => {

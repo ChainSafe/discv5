@@ -1,8 +1,7 @@
-/* eslint-env mocha */
-import { expect } from "chai";
-import { randomBytes } from "@noble/hashes/utils";
-import { createNodeId } from "@chainsafe/enr";
-import { distance, log2Distance } from "../../../src/kademlia/index.js";
+import {createNodeId} from "@chainsafe/enr";
+import {randomBytes} from "@noble/hashes/utils.js";
+import {describe, expect, it} from "vitest";
+import {distance, log2Distance} from "../../../src/kademlia/index.js";
 
 describe("Kademlia distance function", () => {
   it("identity", () => {
