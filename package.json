@@ -12,7 +12,6 @@
     "build": "pnpm -r build",
     "lint": "biome check",
     "prepublishOnly": "pnpm build",
-    "publish": "pnpm publish -r --access public --no-git-check",
     "test": "pnpm -r test",
     "test:unit": "pnpm -r test:unit",
     "test:e2e": "pnpm -r test:e2e"
