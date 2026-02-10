@@ -50,8 +50,6 @@ jobs:
         id: release
         with:
           release-type: node
-          monorepo-tags: true
-          changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
       
       - uses: actions/checkout@v6
         if: ${{ steps.release.outputs.releases_created }}
