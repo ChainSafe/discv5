@@ -1,5 +1,16 @@
 # Changelog
 
+## [6.0.0](https://github.com/chainsafe/discv5/compare/enr-v5.0.1...enr-v6.0.0) (2026-02-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* refresh dependencies ([#324](https://github.com/chainsafe/discv5/issues/324))
+
+### Features
+
+* refresh dependencies ([#324](https://github.com/chainsafe/discv5/issues/324)) ([1780af6](https://github.com/chainsafe/discv5/commit/1780af659a704f9ae83e45e36faafb472f159615))
+
 ## [5.0.1](https://github.com/ChainSafe/discv5/compare/enr-v5.0.0...enr-v5.0.1) (2025-04-15)
 
 
