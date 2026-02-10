@@ -11,7 +11,6 @@
 * The following workspace dependencies were updated
   * dependencies
     * @chainsafe/enr bumped from ^3.0.0 to ^3.1.0
-
 ## [12.0.0](https://github.com/chainsafe/discv5/compare/discv5-v11.0.4...discv5-v12.0.0) (2026-02-10)
 
 
