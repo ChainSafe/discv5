@@ -338,7 +338,7 @@ export abstract class BaseENR {
 
     if (isUdp) {
       const protoVal = isIpv6 ? this.kvs.get("udp6") : this.kvs.get("udp");
-      if (!protoVal) {
+      if (!protoVal || protoVal.length < 2) {
         return undefined;
       }
       const protoComponent: Component = {
@@ -350,7 +350,7 @@ export abstract class BaseENR {
     }
     if (isTcp) {
       const protoVal = isIpv6 ? this.kvs.get("tcp6") : this.kvs.get("tcp");
-      if (!protoVal) {
+      if (!protoVal || protoVal.length < 2) {
         return undefined;
       }
       const protoComponent: Component = {
@@ -362,7 +362,7 @@ export abstract class BaseENR {
     }
     if (isQuic) {
       const protoVal = isIpv6 ? this.kvs.get("quic6") : this.kvs.get("quic");
-      if (!protoVal) {
+      if (!protoVal || protoVal.length < 2) {
         return undefined;
       }
       const protoComponent: Component = {
