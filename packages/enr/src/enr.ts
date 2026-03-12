@@ -193,7 +193,7 @@ export function getProtocolValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string
 
 function normalizePortBytes(raw: Uint8Array | undefined): Uint8Array | undefined {
   if (!raw || raw.length === 0 || raw.length > 2) return undefined;
-  if (raw[0] === 0) return undefined; 
+  if (raw[0] === 0) return undefined;
   if (raw.length === 1) return new Uint8Array([0, raw[0]]);
   return raw;
 }
