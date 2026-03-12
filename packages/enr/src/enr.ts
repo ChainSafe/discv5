@@ -191,6 +191,13 @@ export function getProtocolValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string
   return undefined;
 }
 
+function normalizePortBytes(raw: Uint8Array | undefined): Uint8Array | undefined {
+  if (!raw || raw.length === 0 || raw.length > 2) return undefined;
+  if (raw[0] === 0) return undefined;
+  if (raw.length === 1) return new Uint8Array([0, raw[0]]);
+  return raw;
+}
+
 export function portToBuf(port: number): Uint8Array {
   const buf = new Uint8Array(2);
   buf[0] = port >> 8;
@@ -337,7 +344,7 @@ export abstract class BaseENR {
     };
 
     if (isUdp) {
-      const protoVal = isIpv6 ? this.kvs.get("udp6") : this.kvs.get("udp");
+      const protoVal = normalizePortBytes(isIpv6 ? this.kvs.get("udp6") : this.kvs.get("udp"));
       if (!protoVal) {
         return undefined;
       }
@@ -349,7 +356,7 @@ export abstract class BaseENR {
       return multiaddr([ipComponent, protoComponent]);
     }
     if (isTcp) {
-      const protoVal = isIpv6 ? this.kvs.get("tcp6") : this.kvs.get("tcp");
+      const protoVal = normalizePortBytes(isIpv6 ? this.kvs.get("tcp6") : this.kvs.get("tcp"));
       if (!protoVal) {
         return undefined;
       }
@@ -361,7 +368,7 @@ export abstract class BaseENR {
       return multiaddr([ipComponent, protoComponent]);
     }
     if (isQuic) {
-      const protoVal = isIpv6 ? this.kvs.get("quic6") : this.kvs.get("quic");
+      const protoVal = normalizePortBytes(isIpv6 ? this.kvs.get("quic6") : this.kvs.get("quic"));
       if (!protoVal) {
         return undefined;
       }
