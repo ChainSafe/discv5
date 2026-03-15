@@ -5,6 +5,7 @@ import {generateKeypair} from "../../../src/index.js";
 import {
   type SocketAddress,
   getSocketAddressOnENR,
+  getSocketAddressOnENRByFamily,
   isEqualSocketAddress,
   multiaddrFromSocketAddress,
   multiaddrToSocketAddress,
@@ -139,6 +140,56 @@ describe("get/set SocketAddress on ENR", () => {
 
     setSocketAddressOnENR(enr, addr);
     expect(getSocketAddressOnENR(enr, {ip4: true, ip6: false})).to.deep.equal(addr);
+  });
+
+  it("returns the requested family from the ENR", () => {
+    const addr4: SocketAddress = {
+      ip: {
+        octets: Uint8Array.from([127, 0, 0, 1]),
+        type: 4,
+      },
+      port: 53,
+    };
+    const addr6: SocketAddress = {
+      ip: {
+        octets: Uint8Array.from([0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8]),
+        type: 6,
+      },
+      port: 54,
+    };
+    const enr = SignableENR.createV4(generateKeypair("secp256k1").privateKey);
+
+    expect(getSocketAddressOnENRByFamily(enr, 4)).to.equal(undefined);
+    expect(getSocketAddressOnENRByFamily(enr, 6)).to.equal(undefined);
+
+    setSocketAddressOnENR(enr, addr4);
+    setSocketAddressOnENR(enr, addr6);
+
+    expect(getSocketAddressOnENRByFamily(enr, 4)).to.deep.equal(addr4);
+    expect(getSocketAddressOnENRByFamily(enr, 6)).to.deep.equal(addr6);
+  });
+
+  it("keeps dual-stack ENR lookup preference for IPv6", () => {
+    const addr4: SocketAddress = {
+      ip: {
+        octets: Uint8Array.from([127, 0, 0, 1]),
+        type: 4,
+      },
+      port: 53,
+    };
+    const addr6: SocketAddress = {
+      ip: {
+        octets: Uint8Array.from([0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8]),
+        type: 6,
+      },
+      port: 54,
+    };
+    const enr = SignableENR.createV4(generateKeypair("secp256k1").privateKey);
+
+    setSocketAddressOnENR(enr, addr4);
+    setSocketAddressOnENR(enr, addr6);
+
+    expect(getSocketAddressOnENR(enr, {ip4: true, ip6: true})).to.deep.equal(addr6);
   });
 });
 

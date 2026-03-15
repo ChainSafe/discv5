@@ -47,32 +47,29 @@ export function getSocketAddressMultiaddrOnENR(enr: BaseENR, ipMode: IPMode): Mu
   }
 }
 
+export function getSocketAddressOnENRByFamily(enr: BaseENR, family: 4 | 6): SocketAddress | undefined {
+  const ipOctets = enr.kvs.get(family === 4 ? "ip" : "ip6");
+  const port = family === 4 ? enr.udp : enr.udp6;
+  if (ipOctets === undefined || port === undefined) {
+    return undefined;
+  }
+
+  const ip = ipFromBytes(ipOctets);
+  if (ip === undefined || ip.type !== family) {
+    return undefined;
+  }
+
+  return {ip, port};
+}
+
 export function getSocketAddressOnENR(enr: BaseENR, ipMode: IPMode): SocketAddress | undefined {
   if (ipMode.ip6) {
-    const ip6Octets = enr.kvs.get("ip6");
-    const udp6 = enr.udp6;
-    if (ip6Octets !== undefined && udp6 !== undefined) {
-      const ip = ipFromBytes(ip6Octets);
-      if (ip !== undefined) {
-        return {
-          ip,
-          port: udp6,
-        };
-      }
-    }
+    const socketAddr = getSocketAddressOnENRByFamily(enr, 6);
+    if (socketAddr) return socketAddr;
   }
   if (ipMode.ip4) {
-    const ip4Octets = enr.kvs.get("ip");
-    const udp4 = enr.udp;
-    if (ip4Octets !== undefined && udp4 !== undefined) {
-      const ip = ipFromBytes(ip4Octets);
-      if (ip !== undefined) {
-        return {
-          ip,
-          port: udp4,
-        };
-      }
-    }
+    const socketAddr = getSocketAddressOnENRByFamily(enr, 4);
+    if (socketAddr) return socketAddr;
   }
   return undefined;
 }

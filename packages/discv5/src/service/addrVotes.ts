@@ -28,12 +28,7 @@ export class AddrVotes {
     }
     if (prevVote !== undefined) {
       // If there was a previous vote, remove from tally
-      const prevVoteTally = (this.tallies.get(prevVote.socketAddrStr) ?? 0) - 1;
-      if (prevVoteTally <= 0) {
-        this.tallies.delete(prevVote.socketAddrStr);
-      } else {
-        this.tallies.set(prevVote.socketAddrStr, prevVoteTally);
-      }
+      this.decrementTally(prevVote.socketAddrStr);
     }
 
     const currentTally = (this.tallies.get(socketAddrStr) ?? 0) + 1;
@@ -52,7 +47,11 @@ export class AddrVotes {
     // If there are too many votes, remove the oldest
     if (this.votes.size > MAX_VOTES) {
       for (const vote of this.votes.keys()) {
+        const evictedVote = this.votes.get(vote);
         this.votes.delete(vote);
+        if (evictedVote) {
+          this.decrementTally(evictedVote.socketAddrStr);
+        }
         if (this.votes.size <= MAX_VOTES) {
           break;
         }
@@ -65,6 +64,15 @@ export class AddrVotes {
   clear(): void {
     this.votes.clear();
     this.tallies.clear();
+  }
+
+  private decrementTally(socketAddrStr: VoteID): void {
+    const nextTally = (this.tallies.get(socketAddrStr) ?? 0) - 1;
+    if (nextTally <= 0) {
+      this.tallies.delete(socketAddrStr);
+    } else {
+      this.tallies.set(socketAddrStr, nextTally);
+    }
   }
 }
 
