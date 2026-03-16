@@ -61,6 +61,14 @@ export class AddrVotes {
     return false;
   }
 
+  /**
+   * Returns the number of unique voters that have cast a vote.
+   * Used by `requireMoreIpVotes` to check if we have enough votes for this family.
+   */
+  currentVoteCount(): number {
+    return this.votes.size;
+  }
+
   clear(): void {
     this.votes.clear();
     this.tallies.clear();

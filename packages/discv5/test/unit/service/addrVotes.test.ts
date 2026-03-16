@@ -70,6 +70,24 @@ describe("AddrVotes", () => {
     expect(addVotes.addVote(createTestNodeId(250), addr)).to.equal(false);
   });
 
+  it("currentVoteCount tracks unique voters", () => {
+    const addr = createIpv4Addr(30303);
+
+    expect(addVotes.currentVoteCount()).to.equal(0);
+    addVotes.addVote(createTestNodeId(1), addr);
+    expect(addVotes.currentVoteCount()).to.equal(1);
+    addVotes.addVote(createTestNodeId(2), addr);
+    expect(addVotes.currentVoteCount()).to.equal(2);
+
+    // Re-vote from same voter doesn't increase count
+    addVotes.addVote(createTestNodeId(1), addr);
+    expect(addVotes.currentVoteCount()).to.equal(2);
+
+    // Clear resets count
+    addVotes.clear();
+    expect(addVotes.currentVoteCount()).to.equal(0);
+  });
+
   it("separate vote pools do not interfere with each other", () => {
     const ip4Votes = new AddrVotes(2);
     const ip6Votes = new AddrVotes(2);

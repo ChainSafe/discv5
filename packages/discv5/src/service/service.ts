@@ -482,6 +482,44 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
     }
   }
 
+  /**
+   * Returns true if we need more IP votes for the given family.
+   * In dual-stack mode, when we haven't reached the vote threshold for a family,
+   * we accept votes from ANY peer (not just connected outgoing ones) to bootstrap
+   * IPv6 address discovery on networks with limited IPv6 peers.
+   * Matches Rust sigp/discv5 `require_more_ip_votes()` behavior.
+   */
+  private requireMoreIpVotes(isIpv6: boolean): boolean {
+    // Only applies in dual-stack mode
+    if (!this.ipMode.ip4 || !this.ipMode.ip6) {
+      return false;
+    }
+
+    const ip4Votes = this.addrVotes.ip4;
+    const ip6Votes = this.addrVotes.ip6;
+    if (!ip4Votes || !ip6Votes) {
+      return false;
+    }
+
+    const ip4HasEnough = ip4Votes.currentVoteCount() >= this.config.addrVotesToUpdateEnr;
+    const ip6HasEnough = ip6Votes.currentVoteCount() >= this.config.addrVotesToUpdateEnr;
+
+    if (!ip4HasEnough && !ip6HasEnough) {
+      // Need both — accept any vote
+      return true;
+    }
+    if (isIpv6 && !ip6HasEnough) {
+      // Have enough IPv4 but need IPv6 — accept IPv6 from any peer
+      return true;
+    }
+    if (!isIpv6 && !ip4HasEnough) {
+      // Have enough IPv6 but need IPv4 — accept IPv4 from any peer
+      return true;
+    }
+
+    return false;
+  }
+
   private maybeUpdateLocalEnrFromVote(voter: NodeId, observedAddr: SocketAddress): void {
     const votes = observedAddr.ip.type === 4 ? this.addrVotes.ip4 : this.addrVotes.ip6;
     if (!votes) {
@@ -594,6 +632,14 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
                 }
               }, this.config.pingInterval)
             );
+            // PING immediately if the direction is outgoing. This allows us to receive
+            // a PONG without waiting for the ping_interval, making ENR updates faster.
+            // Matches Rust sigp/discv5 behavior.
+            if (newStatus.direction === ConnectionDirection.Outgoing) {
+              this.sendPing(newStatus.enr).catch((e) =>
+                log("Error pinging newly connected peer %o: %s", newStatus.enr, (e as Error).message)
+              );
+            }
             this.emit("enrAdded", newStatus.enr);
             break;
           }
@@ -621,11 +667,23 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
           }
 
           case InsertResult.FailedBucketFull:
-          case InsertResult.FailedInvalidSelfUpdate:
+          case InsertResult.FailedInvalidSelfUpdate: {
             log("Could not insert node: %s", nodeId);
             clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout);
             this.connectedPeers.delete(nodeId);
+            // On large networks with limited IPv6 nodes, it is hard to get enough
+            // PONG votes to estimate our external IPv6 address. If we need more votes
+            // and this is an outgoing connection, ping anyway just for the vote.
+            if (
+              newStatus.direction === ConnectionDirection.Outgoing &&
+              this.requireMoreIpVotes(newStatus.enr.ip6 !== undefined)
+            ) {
+              this.sendPing(newStatus.enr).catch((e) =>
+                log("Error pinging peer for IP vote %o: %s", newStatus.enr, (e as Error).message)
+              );
+            }
             break;
+          }
         }
         break;
       }
