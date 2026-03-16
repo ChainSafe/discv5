@@ -642,10 +642,15 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
             // PING immediately if the direction is outgoing. This allows us to receive
             // a PONG without waiting for the ping_interval, making ENR updates faster.
             // Matches Rust sigp/discv5 behavior.
+            // Deferred to next tick: SessionService emits "established" before storing
+            // the session internally, so a synchronous sendPing would not find it.
             if (newStatus.direction === ConnectionDirection.Outgoing) {
-              this.sendPing(newStatus.enr).catch((e) =>
-                log("Error pinging newly connected peer %o: %s", newStatus.enr, (e as Error).message)
-              );
+              const enr = newStatus.enr;
+              setTimeout(() => {
+                this.sendPing(enr).catch((e) =>
+                  log("Error pinging newly connected peer %o: %s", enr, (e as Error).message)
+                );
+              }, 0);
             }
             this.emit("enrAdded", newStatus.enr);
             break;
@@ -685,9 +690,12 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
               newStatus.direction === ConnectionDirection.Outgoing &&
               this.requireMoreIpVotes(newStatus.enr.ip6 !== undefined)
             ) {
-              this.sendPing(newStatus.enr).catch((e) =>
-                log("Error pinging peer for IP vote %o: %s", newStatus.enr, (e as Error).message)
-              );
+              const enr = newStatus.enr;
+              setTimeout(() => {
+                this.sendPing(enr).catch((e) =>
+                  log("Error pinging peer for IP vote %o: %s", enr, (e as Error).message)
+                );
+              }, 0);
             }
             break;
           }
