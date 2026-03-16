@@ -1,5 +1,19 @@
 # Changelog
 
+## [12.0.1](https://github.com/ChainSafe/discv5/compare/discv5-v12.0.0...discv5-v12.0.1) (2026-03-16)
+
+
+### Bug Fixes
+
+* use per-family vote pools for dual-stack ENR auto-discovery ([#334](https://github.com/ChainSafe/discv5/issues/334)) ([1198de5](https://github.com/ChainSafe/discv5/commit/1198de540be9e56b7ded6d6954e903ecb4a57d71))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @chainsafe/enr bumped to 6.0.1
+
 ## [12.0.0](https://github.com/chainsafe/discv5/compare/discv5-v11.0.4...discv5-v12.0.0) (2026-02-10)
 
 
