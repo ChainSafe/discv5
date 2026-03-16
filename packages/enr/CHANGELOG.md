@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.0.1](https://github.com/ChainSafe/discv5/compare/enr-v6.0.0...enr-v6.0.1) (2026-03-16)
+
+
+### Bug Fixes
+
+* **enr:** prevent RangeError crash on malformed ENR port values ([#333](https://github.com/ChainSafe/discv5/issues/333)) ([3ffc7c6](https://github.com/ChainSafe/discv5/commit/3ffc7c6a46fb1fb03ff120a72f225d2fae3c374b))
+
 ## [6.0.0](https://github.com/chainsafe/discv5/compare/enr-v5.0.1...enr-v6.0.0) (2026-02-10)
 
 
