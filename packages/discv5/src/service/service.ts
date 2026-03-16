@@ -54,11 +54,14 @@ import {
 import {type BindAddrs, type IPMode, type ITransportService, UDPTransportService} from "../transport/index.js";
 import {CodeError} from "../util/index.js";
 import {
+  type SocketAddress,
   getSocketAddressMultiaddrOnENR,
   getSocketAddressOnENR,
+  getSocketAddressOnENRByFamily,
   isEqualSocketAddress,
   multiaddrFromSocketAddress,
   multiaddrToSocketAddress,
+  normalizeIp,
   setSocketAddressOnENR,
 } from "../util/ip.js";
 import {AddrVotes} from "./addrVotes.js";
@@ -171,11 +174,11 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
   private nextLookupId: number;
 
   /**
-   * A map of votes that nodes have made about our external IP address
+   * Votes that nodes have made about our external IP address, tracked per address family
    *
    * BOUNDED
    */
-  private addrVotes: AddrVotes;
+  private addrVotes: {ip4?: AddrVotes; ip6?: AddrVotes};
 
   private metrics?: IDiscv5Metrics;
 
@@ -195,7 +198,11 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
     this.activeNodesResponses = new Map();
     this.connectedPeers = new Map();
     this.nextLookupId = 1;
-    this.addrVotes = new AddrVotes(config.addrVotesToUpdateEnr);
+    this.ipMode = this.sessionService.transport.ipMode;
+    this.addrVotes = {
+      ip4: this.ipMode.ip4 ? new AddrVotes(config.addrVotesToUpdateEnr) : undefined,
+      ip6: this.ipMode.ip6 ? new AddrVotes(config.addrVotesToUpdateEnr) : undefined,
+    };
     if (metrics) {
       this.metrics = metrics;
       metrics.kadTableSize.collect = () => metrics.kadTableSize.set(this.kbuckets.size);
@@ -203,7 +210,6 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
       metrics.activeSessionCount.collect = () => metrics.activeSessionCount.set(this.sessionService.sessionsSize());
       metrics.lookupCount.collect = () => metrics.lookupCount.set(this.nextLookupId - 1);
     }
-    this.ipMode = this.sessionService.transport.ipMode;
   }
 
   /**
@@ -245,6 +251,8 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
     this.sessionService.on("response", this.handleRpcResponse);
     this.sessionService.on("whoAreYouRequest", this.handleWhoAreYouRequest);
     this.sessionService.on("requestFailed", this.rpcFailure);
+    this.addrVotes.ip4?.clear();
+    this.addrVotes.ip6?.clear();
     await this.sessionService.start();
     this.started = true;
   }
@@ -268,7 +276,8 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
     this.nextLookupId = 1;
     this.activeRequests.clear();
     this.activeNodesResponses.clear();
-    this.addrVotes.clear();
+    this.addrVotes.ip4?.clear();
+    this.addrVotes.ip6?.clear();
     for (const intervalId of this.connectedPeers.values()) {
       clearInterval(intervalId);
     }
@@ -475,6 +484,72 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
   }
 
   /**
+   * Returns true if we need more IP votes for the given family.
+   * In dual-stack mode, when we haven't reached the vote threshold for a family,
+   * we accept votes from ANY peer (not just connected outgoing ones) to bootstrap
+   * IPv6 address discovery on networks with limited IPv6 peers.
+   * Matches Rust sigp/discv5 `require_more_ip_votes()` behavior.
+   */
+  private requireMoreIpVotes(isIpv6: boolean): boolean {
+    // Only applies in dual-stack mode
+    if (!this.ipMode.ip4 || !this.ipMode.ip6) {
+      return false;
+    }
+
+    const ip4Votes = this.addrVotes.ip4;
+    const ip6Votes = this.addrVotes.ip6;
+    if (!ip4Votes || !ip6Votes) {
+      return false;
+    }
+
+    const ip4HasEnough = ip4Votes.currentVoteCount() >= this.config.addrVotesToUpdateEnr;
+    const ip6HasEnough = ip6Votes.currentVoteCount() >= this.config.addrVotesToUpdateEnr;
+
+    if (!ip4HasEnough && !ip6HasEnough) {
+      // Need both — accept any vote
+      return true;
+    }
+    if (isIpv6 && !ip6HasEnough) {
+      // Have enough IPv4 but need IPv6 — accept IPv6 from any peer
+      return true;
+    }
+    if (!isIpv6 && !ip4HasEnough) {
+      // Have enough IPv6 but need IPv4 — accept IPv4 from any peer
+      return true;
+    }
+
+    return false;
+  }
+
+  private maybeUpdateLocalEnrFromVote(voter: NodeId, observedAddr: SocketAddress): void {
+    // Normalize IPv4-mapped IPv6 addresses (::ffff:x.x.x.x) to IPv4.
+    // Remote peers may report our IPv4 address in IPv4-mapped format,
+    // which would pollute the IPv6 vote pool and prevent real IPv6 votes
+    // from reaching the threshold.
+    const normalizedAddr: SocketAddress = {ip: normalizeIp(observedAddr.ip), port: observedAddr.port};
+
+    const votes = normalizedAddr.ip.type === 4 ? this.addrVotes.ip4 : this.addrVotes.ip6;
+    if (!votes) {
+      return;
+    }
+
+    const isWinningVote = votes.addVote(voter, normalizedAddr);
+    if (!isWinningVote) {
+      return;
+    }
+
+    const currentAddr = getSocketAddressOnENRByFamily(this.enr, normalizedAddr.ip.type);
+    if (currentAddr && isEqualSocketAddress(currentAddr, normalizedAddr)) {
+      return;
+    }
+
+    log("Local ENR (IP & UDP) updated: %s", isWinningVote);
+    setSocketAddressOnENR(this.enr, normalizedAddr);
+    this.emit("multiaddrUpdated", multiaddrFromSocketAddress(normalizedAddr));
+    this.pingConnectedPeers();
+  }
+
+  /**
    * Request an external node's ENR
    */
   private requestEnr(contact: NodeContact): void {
@@ -564,6 +639,19 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
                 }
               }, this.config.pingInterval)
             );
+            // PING immediately if the direction is outgoing. This allows us to receive
+            // a PONG without waiting for the ping_interval, making ENR updates faster.
+            // Matches Rust sigp/discv5 behavior.
+            // Deferred to next tick: SessionService emits "established" before storing
+            // the session internally, so a synchronous sendPing would not find it.
+            if (newStatus.direction === ConnectionDirection.Outgoing) {
+              const enr = newStatus.enr;
+              setTimeout(() => {
+                this.sendPing(enr).catch((e) =>
+                  log("Error pinging newly connected peer %o: %s", enr, (e as Error).message)
+                );
+              }, 0);
+            }
             this.emit("enrAdded", newStatus.enr);
             break;
           }
@@ -591,11 +679,26 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
           }
 
           case InsertResult.FailedBucketFull:
-          case InsertResult.FailedInvalidSelfUpdate:
+          case InsertResult.FailedInvalidSelfUpdate: {
             log("Could not insert node: %s", nodeId);
             clearInterval(this.connectedPeers.get(nodeId) as NodeJS.Timeout);
             this.connectedPeers.delete(nodeId);
+            // On large networks with limited IPv6 nodes, it is hard to get enough
+            // PONG votes to estimate our external IPv6 address. If we need more votes
+            // and this is an outgoing connection, ping anyway just for the vote.
+            if (
+              newStatus.direction === ConnectionDirection.Outgoing &&
+              this.requireMoreIpVotes(newStatus.enr.ip6 !== undefined)
+            ) {
+              const enr = newStatus.enr;
+              setTimeout(() => {
+                this.sendPing(enr).catch((e) =>
+                  log("Error pinging peer for IP vote %o: %s", enr, (e as Error).message)
+                );
+              }, 0);
+            }
             break;
+          }
         }
         break;
       }
@@ -917,21 +1020,7 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
     log("Received a PONG response from %o", nodeAddr);
 
     if (this.config.enrUpdate) {
-      const isWinningVote = this.addrVotes.addVote(nodeAddr.nodeId, message.addr);
-
-      if (isWinningVote) {
-        const currentAddr = getSocketAddressOnENR(this.enr, this.ipMode);
-        const winningAddr = message.addr;
-        if (!currentAddr || !isEqualSocketAddress(currentAddr, winningAddr)) {
-          log("Local ENR (IP & UDP) updated: %s", isWinningVote);
-          // Set new IP and port
-          setSocketAddressOnENR(this.enr, winningAddr);
-          this.emit("multiaddrUpdated", multiaddrFromSocketAddress(winningAddr));
-
-          // publish update to all connected peers
-          this.pingConnectedPeers();
-        }
-      }
+      this.maybeUpdateLocalEnrFromVote(nodeAddr.nodeId, message.addr);
     }
 
     // Check if we need to request a new ENR

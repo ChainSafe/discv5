@@ -24,6 +24,37 @@ export function ipToBytes(ip: Ip): Uint8Array {
   return ip.octets;
 }
 
+/**
+ * Returns true if the IPv6 address is an IPv4-mapped IPv6 address (::ffff:x.x.x.x).
+ * These have the form: 10 bytes of 0x00, 2 bytes of 0xff, 4 bytes of IPv4 address.
+ */
+export function isIpv4MappedIpv6(ip: Ip): boolean {
+  if (ip.type !== 6 || ip.octets.length !== 16) {
+    return false;
+  }
+  // Check prefix: first 10 bytes are 0, bytes 10-11 are 0xff
+  for (let i = 0; i < 10; i++) {
+    if (ip.octets[i] !== 0) return false;
+  }
+  return ip.octets[10] === 0xff && ip.octets[11] === 0xff;
+}
+
+/**
+ * If the address is an IPv4-mapped IPv6 address, extract the IPv4 address.
+ * Otherwise return the address unchanged. This is important for vote handling
+ * where remote peers may report our IPv4 address in IPv4-mapped IPv6 format,
+ * which would otherwise pollute the IPv6 vote pool.
+ */
+export function normalizeIp(ip: Ip): Ip {
+  if (isIpv4MappedIpv6(ip)) {
+    return {
+      octets: ip.octets.slice(12, 16),
+      type: 4,
+    };
+  }
+  return ip;
+}
+
 export function isEqualSocketAddress(s1: SocketAddress, s2: SocketAddress): boolean {
   if (s1.ip.type !== s2.ip.type) {
     return false;
@@ -47,32 +78,29 @@ export function getSocketAddressMultiaddrOnENR(enr: BaseENR, ipMode: IPMode): Mu
   }
 }
 
+export function getSocketAddressOnENRByFamily(enr: BaseENR, family: 4 | 6): SocketAddress | undefined {
+  const ipOctets = enr.kvs.get(family === 4 ? "ip" : "ip6");
+  const port = family === 4 ? enr.udp : enr.udp6;
+  if (ipOctets === undefined || port === undefined) {
+    return undefined;
+  }
+
+  const ip = ipFromBytes(ipOctets);
+  if (ip === undefined || ip.type !== family) {
+    return undefined;
+  }
+
+  return {ip, port};
+}
+
 export function getSocketAddressOnENR(enr: BaseENR, ipMode: IPMode): SocketAddress | undefined {
   if (ipMode.ip6) {
-    const ip6Octets = enr.kvs.get("ip6");
-    const udp6 = enr.udp6;
-    if (ip6Octets !== undefined && udp6 !== undefined) {
-      const ip = ipFromBytes(ip6Octets);
-      if (ip !== undefined) {
-        return {
-          ip,
-          port: udp6,
-        };
-      }
-    }
+    const socketAddr = getSocketAddressOnENRByFamily(enr, 6);
+    if (socketAddr) return socketAddr;
   }
   if (ipMode.ip4) {
-    const ip4Octets = enr.kvs.get("ip");
-    const udp4 = enr.udp;
-    if (ip4Octets !== undefined && udp4 !== undefined) {
-      const ip = ipFromBytes(ip4Octets);
-      if (ip !== undefined) {
-        return {
-          ip,
-          port: udp4,
-        };
-      }
-    }
+    const socketAddr = getSocketAddressOnENRByFamily(enr, 4);
+    if (socketAddr) return socketAddr;
   }
   return undefined;
 }
