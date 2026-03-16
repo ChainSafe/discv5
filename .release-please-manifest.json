@@ -1,4 +1,5 @@
 {
     "packages/discv5": "12.0.0",
-    "packages/enr": "6.0.0"
+    "packages/enr": "6.0.0",
+    ".": "6.0.0"
 }

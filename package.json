@@ -1,7 +1,7 @@
 {
   "name": "discv5-monorepo",
   "private": true,
-  "version": "0.0.0",
+  "version": "6.0.0",
   "description": "Discovery V5 monorepo",
   "type": "module",
   "workspaces": [
