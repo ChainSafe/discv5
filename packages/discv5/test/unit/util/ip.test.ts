@@ -3,12 +3,15 @@ import {multiaddr} from "@multiformats/multiaddr";
 import {describe, expect, it} from "vitest";
 import {generateKeypair} from "../../../src/index.js";
 import {
+  type Ip,
   type SocketAddress,
   getSocketAddressOnENR,
   getSocketAddressOnENRByFamily,
   isEqualSocketAddress,
+  isIpv4MappedIpv6,
   multiaddrFromSocketAddress,
   multiaddrToSocketAddress,
+  normalizeIp,
   setSocketAddressOnENR,
 } from "../../../src/util/ip.js";
 
@@ -251,5 +254,64 @@ describe("multiaddr to/from SocketAddress", () => {
       // also test roundtrip
       expect(multiaddrToSocketAddress(multiaddrFromSocketAddress(addr))).to.deep.equal(addr);
     }
+  });
+});
+
+describe("isIpv4MappedIpv6", () => {
+  it("should detect IPv4-mapped IPv6 addresses", () => {
+    // ::ffff:85.246.147.78
+    const mapped: Ip = {
+      octets: new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 85, 246, 147, 78]),
+      type: 6,
+    };
+    expect(isIpv4MappedIpv6(mapped)).to.equal(true);
+  });
+
+  it("should NOT detect real IPv6 as mapped", () => {
+    // 2001:8a0:4a71:8b00:8aae:ddff:fe0e:527e
+    const real: Ip = {
+      octets: new Uint8Array([
+        0x20, 0x01, 0x08, 0xa0, 0x4a, 0x71, 0x8b, 0x00, 0x8a, 0xae, 0xdd, 0xff, 0xfe, 0x0e, 0x52, 0x7e,
+      ]),
+      type: 6,
+    };
+    expect(isIpv4MappedIpv6(real)).to.equal(false);
+  });
+
+  it("should NOT detect IPv4 as mapped", () => {
+    const ipv4: Ip = {octets: new Uint8Array([85, 246, 147, 78]), type: 4};
+    expect(isIpv4MappedIpv6(ipv4)).to.equal(false);
+  });
+});
+
+describe("normalizeIp", () => {
+  it("should convert IPv4-mapped IPv6 to IPv4", () => {
+    const mapped: Ip = {
+      octets: new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 85, 246, 147, 78]),
+      type: 6,
+    };
+    const normalized = normalizeIp(mapped);
+    expect(normalized.type).to.equal(4);
+    expect(normalized.octets.length).to.equal(4);
+    expect(Array.from(normalized.octets)).to.deep.equal([85, 246, 147, 78]);
+  });
+
+  it("should leave real IPv6 addresses unchanged", () => {
+    const real: Ip = {
+      octets: new Uint8Array([
+        0x20, 0x01, 0x08, 0xa0, 0x4a, 0x71, 0x8b, 0x00, 0x8a, 0xae, 0xdd, 0xff, 0xfe, 0x0e, 0x52, 0x7e,
+      ]),
+      type: 6,
+    };
+    const normalized = normalizeIp(real);
+    expect(normalized.type).to.equal(6);
+    expect(normalized.octets.length).to.equal(16);
+  });
+
+  it("should leave IPv4 addresses unchanged", () => {
+    const ipv4: Ip = {octets: new Uint8Array([85, 246, 147, 78]), type: 4};
+    const normalized = normalizeIp(ipv4);
+    expect(normalized.type).to.equal(4);
+    expect(Array.from(normalized.octets)).to.deep.equal([85, 246, 147, 78]);
   });
 });

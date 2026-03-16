@@ -61,6 +61,7 @@ import {
   isEqualSocketAddress,
   multiaddrFromSocketAddress,
   multiaddrToSocketAddress,
+  normalizeIp,
   setSocketAddressOnENR,
 } from "../util/ip.js";
 import {AddrVotes} from "./addrVotes.js";
@@ -521,24 +522,30 @@ export class Discv5 extends (EventEmitter as {new (): Discv5EventEmitter}) {
   }
 
   private maybeUpdateLocalEnrFromVote(voter: NodeId, observedAddr: SocketAddress): void {
-    const votes = observedAddr.ip.type === 4 ? this.addrVotes.ip4 : this.addrVotes.ip6;
+    // Normalize IPv4-mapped IPv6 addresses (::ffff:x.x.x.x) to IPv4.
+    // Remote peers may report our IPv4 address in IPv4-mapped format,
+    // which would pollute the IPv6 vote pool and prevent real IPv6 votes
+    // from reaching the threshold.
+    const normalizedAddr: SocketAddress = {ip: normalizeIp(observedAddr.ip), port: observedAddr.port};
+
+    const votes = normalizedAddr.ip.type === 4 ? this.addrVotes.ip4 : this.addrVotes.ip6;
     if (!votes) {
       return;
     }
 
-    const isWinningVote = votes.addVote(voter, observedAddr);
+    const isWinningVote = votes.addVote(voter, normalizedAddr);
     if (!isWinningVote) {
       return;
     }
 
-    const currentAddr = getSocketAddressOnENRByFamily(this.enr, observedAddr.ip.type);
-    if (currentAddr && isEqualSocketAddress(currentAddr, observedAddr)) {
+    const currentAddr = getSocketAddressOnENRByFamily(this.enr, normalizedAddr.ip.type);
+    if (currentAddr && isEqualSocketAddress(currentAddr, normalizedAddr)) {
       return;
     }
 
     log("Local ENR (IP & UDP) updated: %s", isWinningVote);
-    setSocketAddressOnENR(this.enr, observedAddr);
-    this.emit("multiaddrUpdated", multiaddrFromSocketAddress(observedAddr));
+    setSocketAddressOnENR(this.enr, normalizedAddr);
+    this.emit("multiaddrUpdated", multiaddrFromSocketAddress(normalizedAddr));
     this.pingConnectedPeers();
   }
 

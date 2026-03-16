@@ -24,6 +24,37 @@ export function ipToBytes(ip: Ip): Uint8Array {
   return ip.octets;
 }
 
+/**
+ * Returns true if the IPv6 address is an IPv4-mapped IPv6 address (::ffff:x.x.x.x).
+ * These have the form: 10 bytes of 0x00, 2 bytes of 0xff, 4 bytes of IPv4 address.
+ */
+export function isIpv4MappedIpv6(ip: Ip): boolean {
+  if (ip.type !== 6 || ip.octets.length !== 16) {
+    return false;
+  }
+  // Check prefix: first 10 bytes are 0, bytes 10-11 are 0xff
+  for (let i = 0; i < 10; i++) {
+    if (ip.octets[i] !== 0) return false;
+  }
+  return ip.octets[10] === 0xff && ip.octets[11] === 0xff;
+}
+
+/**
+ * If the address is an IPv4-mapped IPv6 address, extract the IPv4 address.
+ * Otherwise return the address unchanged. This is important for vote handling
+ * where remote peers may report our IPv4 address in IPv4-mapped IPv6 format,
+ * which would otherwise pollute the IPv6 vote pool.
+ */
+export function normalizeIp(ip: Ip): Ip {
+  if (isIpv4MappedIpv6(ip)) {
+    return {
+      octets: ip.octets.slice(12, 16),
+      type: 4,
+    };
+  }
+  return ip;
+}
+
 export function isEqualSocketAddress(s1: SocketAddress, s2: SocketAddress): boolean {
   if (s1.ip.type !== s2.ip.type) {
     return false;
