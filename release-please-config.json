@@ -1,10 +1,15 @@
 {
+  "release-type": "node",
+  "include-component-in-tag": true,
+  "changelog-sections": [
+    {"type": "feat", "section": "Features", "hidden": false},
+    {"type": "fix", "section": "Bug Fixes", "hidden": false},
+    {"type": "chore", "section": "Miscellaneous", "hidden": false}
+  ],
   "plugins": ["node-workspace"],
   "bootstrap-sha": "04152c123ba55d5e07da3bd72880ba142af48830",
   "packages": {
-    "packages/enr": {
-    },
-    "packages/discv5": {
-    }
+    "packages/enr": {},
+    "packages/discv5": {}
   }
 }
