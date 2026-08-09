@@ -181,11 +181,8 @@ export function getIPValue(
 }
 
 export function getProtocolValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string): number | undefined {
-  const raw = kvs.get(key);
+  const raw = normalizePortBytes(kvs.get(key));
   if (raw) {
-    if (raw.length < 2) {
-      throw new Error("Encoded protocol length should be 2");
-    }
     return (raw[0] << 8) + raw[1];
   }
   return undefined;
@@ -193,8 +190,8 @@ export function getProtocolValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string
 
 function normalizePortBytes(raw: Uint8Array | undefined): Uint8Array | undefined {
   if (!raw || raw.length === 0 || raw.length > 2) return undefined;
-  if (raw[0] === 0) return undefined;
-  if (raw.length === 1) return new Uint8Array([0, raw[0]]);
+  if (raw.length === 1) return raw[0] === 0 ? undefined : new Uint8Array([0, raw[0]]);
+  if (raw[0] === 0 && raw[1] === 0) return undefined;
   return raw;
 }
 
