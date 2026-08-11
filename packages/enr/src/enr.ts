@@ -181,18 +181,10 @@ export function getIPValue(
 }
 
 export function getProtocolValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string): number | undefined {
-  const raw = normalizePortBytes(kvs.get(key));
-  if (raw) {
-    return (raw[0] << 8) + raw[1];
-  }
-  return undefined;
-}
-
-function normalizePortBytes(raw: Uint8Array | undefined): Uint8Array | undefined {
+  const raw = kvs.get(key);
   if (!raw || raw.length === 0 || raw.length > 2) return undefined;
-  if (raw.length === 1) return raw[0] === 0 ? undefined : new Uint8Array([0, raw[0]]);
-  if (raw[0] === 0 && raw[1] === 0) return undefined;
-  return raw;
+  const port = raw.length === 1 ? raw[0] : (raw[0] << 8) + raw[1];
+  return port === 0 ? undefined : port;
 }
 
 export function portToBuf(port: number): Uint8Array {
@@ -341,38 +333,38 @@ export abstract class BaseENR {
     };
 
     if (isUdp) {
-      const protoVal = normalizePortBytes(isIpv6 ? this.kvs.get("udp6") : this.kvs.get("udp"));
-      if (!protoVal) {
+      const port = getProtocolValue(this.kvs, isIpv6 ? "udp6" : "udp");
+      if (port === undefined) {
         return undefined;
       }
       const protoComponent: Component = {
         code: udp.code,
         name: udp.name,
-        value: udp.bytesToValue?.(toNewUint8Array(protoVal)),
+        value: port.toString(),
       };
       return multiaddr([ipComponent, protoComponent]);
     }
     if (isTcp) {
-      const protoVal = normalizePortBytes(isIpv6 ? this.kvs.get("tcp6") : this.kvs.get("tcp"));
-      if (!protoVal) {
+      const port = getProtocolValue(this.kvs, isIpv6 ? "tcp6" : "tcp");
+      if (port === undefined) {
         return undefined;
       }
       const protoComponent: Component = {
         code: tcp.code,
         name: tcp.name,
-        value: tcp.bytesToValue?.(toNewUint8Array(protoVal)),
+        value: port.toString(),
       };
       return multiaddr([ipComponent, protoComponent]);
     }
     if (isQuic) {
-      const protoVal = normalizePortBytes(isIpv6 ? this.kvs.get("quic6") : this.kvs.get("quic"));
-      if (!protoVal) {
+      const port = getProtocolValue(this.kvs, isIpv6 ? "quic6" : "quic");
+      if (port === undefined) {
         return undefined;
       }
       const protoComponent: Component = {
         code: udp.code,
         name: udp.name,
-        value: udp.bytesToValue?.(toNewUint8Array(protoVal)),
+        value: port.toString(),
       };
       return multiaddr([ipComponent, protoComponent]).encapsulate("/quic-v1");
     }
