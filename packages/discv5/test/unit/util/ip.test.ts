@@ -145,6 +145,27 @@ describe("get/set SocketAddress on ENR", () => {
     expect(getSocketAddressOnENR(enr, {ip4: true, ip6: false})).to.deep.equal(addr);
   });
 
+  it("accepts a one-byte UDP port from a remote ENR", () => {
+    const enr = SignableENR.createV4(generateKeypair("secp256k1").privateKey);
+    enr.set("ip", Uint8Array.from([127, 0, 0, 1]));
+    enr.set("udp", Uint8Array.from([53]));
+
+    expect(getSocketAddressOnENR(enr, {ip4: true, ip6: false})).to.deep.equal({
+      ip: {octets: Uint8Array.from([127, 0, 0, 1]), type: 4},
+      port: 53,
+    });
+  });
+
+  it("ignores an invalid UDP port from a remote ENR", () => {
+    const enr = SignableENR.createV4(generateKeypair("secp256k1").privateKey);
+    enr.set("ip", Uint8Array.from([127, 0, 0, 1]));
+
+    for (const port of [new Uint8Array(), Uint8Array.from([0]), Uint8Array.from([1, 2, 3])]) {
+      enr.set("udp", port);
+      expect(getSocketAddressOnENR(enr, {ip4: true, ip6: false})).to.be.undefined;
+    }
+  });
+
   it("returns the requested family from the ENR", () => {
     const addr4: SocketAddress = {
       ip: {

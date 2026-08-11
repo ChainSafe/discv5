@@ -180,23 +180,15 @@ export function getIPValue(
   return undefined;
 }
 
-export function getProtocolValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string): number | undefined {
+export function getPortValue(kvs: ReadonlyMap<ENRKey, ENRValue>, key: string): number | undefined {
   const raw = kvs.get(key);
-  if (raw) {
-    if (raw.length < 2) {
-      throw new Error("Encoded protocol length should be 2");
-    }
-    return (raw[0] << 8) + raw[1];
-  }
-  return undefined;
+  if (!raw || raw.length === 0 || raw.length > 2) return undefined;
+  const port = raw.length === 1 ? raw[0] : (raw[0] << 8) + raw[1];
+  return port === 0 ? undefined : port;
 }
 
-function normalizePortBytes(raw: Uint8Array | undefined): Uint8Array | undefined {
-  if (!raw || raw.length === 0 || raw.length > 2) return undefined;
-  if (raw[0] === 0) return undefined;
-  if (raw.length === 1) return new Uint8Array([0, raw[0]]);
-  return raw;
-}
+/** @deprecated Use {@link getPortValue} instead. */
+export const getProtocolValue = getPortValue;
 
 export function portToBuf(port: number): Uint8Array {
   const buf = new Uint8Array(2);
@@ -295,25 +287,25 @@ export abstract class BaseENR {
     return getIPValue(this.kvs, "ip", "ip4");
   }
   get tcp(): number | undefined {
-    return getProtocolValue(this.kvs, "tcp");
+    return getPortValue(this.kvs, "tcp");
   }
   get udp(): number | undefined {
-    return getProtocolValue(this.kvs, "udp");
+    return getPortValue(this.kvs, "udp");
   }
   get quic(): number | undefined {
-    return getProtocolValue(this.kvs, "quic");
+    return getPortValue(this.kvs, "quic");
   }
   get ip6(): string | undefined {
     return getIPValue(this.kvs, "ip6", "ip6");
   }
   get tcp6(): number | undefined {
-    return getProtocolValue(this.kvs, "tcp6");
+    return getPortValue(this.kvs, "tcp6");
   }
   get udp6(): number | undefined {
-    return getProtocolValue(this.kvs, "udp6");
+    return getPortValue(this.kvs, "udp6");
   }
   get quic6(): number | undefined {
-    return getProtocolValue(this.kvs, "quic6");
+    return getPortValue(this.kvs, "quic6");
   }
   getLocationMultiaddr(protocol: Protocol): Multiaddr | undefined {
     if (protocol === "udp") {
@@ -344,38 +336,38 @@ export abstract class BaseENR {
     };
 
     if (isUdp) {
-      const protoVal = normalizePortBytes(isIpv6 ? this.kvs.get("udp6") : this.kvs.get("udp"));
-      if (!protoVal) {
+      const port = getPortValue(this.kvs, isIpv6 ? "udp6" : "udp");
+      if (port === undefined) {
         return undefined;
       }
       const protoComponent: Component = {
         code: udp.code,
         name: udp.name,
-        value: udp.bytesToValue?.(toNewUint8Array(protoVal)),
+        value: port.toString(),
       };
       return multiaddr([ipComponent, protoComponent]);
     }
     if (isTcp) {
-      const protoVal = normalizePortBytes(isIpv6 ? this.kvs.get("tcp6") : this.kvs.get("tcp"));
-      if (!protoVal) {
+      const port = getPortValue(this.kvs, isIpv6 ? "tcp6" : "tcp");
+      if (port === undefined) {
         return undefined;
       }
       const protoComponent: Component = {
         code: tcp.code,
         name: tcp.name,
-        value: tcp.bytesToValue?.(toNewUint8Array(protoVal)),
+        value: port.toString(),
       };
       return multiaddr([ipComponent, protoComponent]);
     }
     if (isQuic) {
-      const protoVal = normalizePortBytes(isIpv6 ? this.kvs.get("quic6") : this.kvs.get("quic"));
-      if (!protoVal) {
+      const port = getPortValue(this.kvs, isIpv6 ? "quic6" : "quic");
+      if (port === undefined) {
         return undefined;
       }
       const protoComponent: Component = {
         code: udp.code,
         name: udp.name,
-        value: udp.bytesToValue?.(toNewUint8Array(protoVal)),
+        value: port.toString(),
       };
       return multiaddr([ipComponent, protoComponent]).encapsulate("/quic-v1");
     }
@@ -583,7 +575,7 @@ export class SignableENR extends BaseENR {
     }
   }
   get tcp(): number | undefined {
-    return getProtocolValue(this.kvs, "tcp");
+    return getPortValue(this.kvs, "tcp");
   }
   set tcp(port: number | undefined) {
     if (port === undefined) {
@@ -593,7 +585,7 @@ export class SignableENR extends BaseENR {
     }
   }
   get udp(): number | undefined {
-    return getProtocolValue(this.kvs, "udp");
+    return getPortValue(this.kvs, "udp");
   }
   set udp(port: number | undefined) {
     if (port === undefined) {
@@ -603,7 +595,7 @@ export class SignableENR extends BaseENR {
     }
   }
   get quic(): number | undefined {
-    return getProtocolValue(this.kvs, "quic");
+    return getPortValue(this.kvs, "quic");
   }
   set quic(port: number | undefined) {
     if (port === undefined) {
@@ -624,7 +616,7 @@ export class SignableENR extends BaseENR {
     }
   }
   get tcp6(): number | undefined {
-    return getProtocolValue(this.kvs, "tcp6");
+    return getPortValue(this.kvs, "tcp6");
   }
   set tcp6(port: number | undefined) {
     if (port === undefined) {
@@ -634,7 +626,7 @@ export class SignableENR extends BaseENR {
     }
   }
   get udp6(): number | undefined {
-    return getProtocolValue(this.kvs, "udp6");
+    return getPortValue(this.kvs, "udp6");
   }
   set udp6(port: number | undefined) {
     if (port === undefined) {
@@ -644,7 +636,7 @@ export class SignableENR extends BaseENR {
     }
   }
   get quic6(): number | undefined {
-    return getProtocolValue(this.kvs, "quic6");
+    return getPortValue(this.kvs, "quic6");
   }
   set quic6(port: number | undefined) {
     if (port === undefined) {

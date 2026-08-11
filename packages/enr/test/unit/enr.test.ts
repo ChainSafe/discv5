@@ -70,6 +70,38 @@ describe("ENR multiaddr support", () => {
     record = SignableENR.createV4(privateKey);
   });
 
+  describe("port values", () => {
+    beforeEach(() => {
+      record.ip = "127.0.0.1";
+    });
+
+    it("should decode a one-byte port", () => {
+      record.set("udp", new Uint8Array([80]));
+
+      expect(record.udp).to.equal(80);
+      expect(record.getLocationMultiaddr("udp")?.toString()).to.equal("/ip4/127.0.0.1/udp/80");
+    });
+
+    it("should decode a two-byte low port", () => {
+      record.udp = 80;
+
+      expect(record.kvs.get("udp")).to.deep.equal(new Uint8Array([0, 80]));
+      expect(record.udp).to.equal(80);
+      expect(record.getLocationMultiaddr("udp")?.toString()).to.equal("/ip4/127.0.0.1/udp/80");
+    });
+
+    it("should ignore invalid port values", () => {
+      const invalidPorts = [new Uint8Array(), new Uint8Array([0]), new Uint8Array([0, 0]), new Uint8Array([1, 2, 3])];
+
+      for (const port of invalidPorts) {
+        record.set("udp", port);
+
+        expect(record.udp).to.be.undefined;
+        expect(record.getLocationMultiaddr("udp")).to.be.undefined;
+      }
+    });
+  });
+
   it("should get / set UDP multiaddr", () => {
     const multi0 = multiaddr("/ip4/127.0.0.1/udp/30303");
     const components0 = multi0.getComponents();
