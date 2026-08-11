@@ -1,5 +1,19 @@
 # Changelog
 
+## [12.0.2](https://github.com/ChainSafe/discv5/compare/discv5-v12.0.1...discv5-v12.0.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* **enr:** handle short port values without throwing ([#339](https://github.com/ChainSafe/discv5/issues/339)) ([ef01255](https://github.com/ChainSafe/discv5/commit/ef012558f0206819508d3f1ffe690c2e57ffba9d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @chainsafe/enr bumped to 6.0.2
+
 ## [12.0.1](https://github.com/ChainSafe/discv5/compare/discv5-v12.0.0...discv5-v12.0.1) (2026-03-16)
 
 
